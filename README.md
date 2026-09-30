@@ -10,15 +10,15 @@ The MVP's priority is the viral loop:
 
 ## Current scope
 
-**Phases 1–2 — foundation and persistent backend.** The Next.js shell and landing
-work without credentials. PostgreSQL migrations, guest sessions, authorized data
-access and JSON APIs now support persistent intents and participation without
-accounts. The landing still shows an explicit local draft preview; connecting it
-to these APIs and building `/i/[public_slug]` are Phase 3.
+**Phases 1–3 — foundation, persistent backend and guest entry flow.** Turn an
+idea into a plan, share `/i/<slug>`, and let friends add availability, preferences
+and budgets without an account. Copy link, Telegram and native sharing are supported.
+Returning guests can refresh and edit their own details with the same browser.
 
-The landing draft is lost on refresh. Backend guest identity persists in an
-HttpOnly cookie for 30 days. Scheduling/voting UI and AI enhancements come later.
-Read [CODEX_PROGRESS.md](CODEX_PROGRESS.md) before starting work.
+PostgreSQL is required to create or load plans; the landing and build work without
+credentials. Start the local database and apply migrations using the workflow below.
+Scheduling/results/voting and AI enhancements are later phases. Read
+[CODEX_PROGRESS.md](CODEX_PROGRESS.md) before starting work.
 
 ## Local setup
 
@@ -30,8 +30,9 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The example environment works
-as-is. Next.js reads `.env.local`; never commit that file.
+Open [http://localhost:3000](http://localhost:3000). The example environment opens
+the landing; persistent plan creation needs DATABASE_URL and migrations (see below).
+Next.js reads `.env.local`; never commit that file.
 
 To run the production build locally:
 
@@ -58,8 +59,9 @@ npm start
 | `npm run test:e2e` | Desktop/mobile Chromium checks against the production server |
 | `npm run check` | Lint, types, all unit/DOM/integration tests, production build |
 
-Run `npm run build` before `npm run test:e2e`. Playwright starts `next start` on
-port 3100 and stops it afterward. It uses `/usr/bin/chromium` if present;
+Run `npm run build` before `npm run test:e2e`. Playwright starts an isolated native PostgreSQL cluster, applies migrations and
+serves `next start` on port 3100 with a matching origin. It stops both afterward.
+It never uses DATABASE_URL or an already-running development server. It uses `/usr/bin/chromium` if present;
 otherwise install its browser once:
 
 ```bash
@@ -84,11 +86,12 @@ guarded by `server-only`. Errors name invalid fields and omit their values.
 | `DATABASE_URL` | Unset | Server-only PostgreSQL URI; required by HTTP APIs, optional for the landing |
 | `AI_PROVIDER` | `mock` | Phase 1 supports `mock` only |
 | `OPENAI_API_KEY` | Unset | Reserved server-only key; remote provider arrives in Phase 5 |
-| `ANALYTICS_ENABLED` | `false` | Opt into safe PostgreSQL events for intent creation and joins |
+| `ANALYTICS_ENABLED` | `false` | Opt into six safe entry-flow events in PostgreSQL |
 | `NODE_ENV` | Managed by Next.js | `development`, `test` or `production` |
 
 Never prefix secrets with `NEXT_PUBLIC_`. No intent text or display names are sent
-to analytics. The app needs no remote fonts, assets, AI calls or analytics requests.
+to analytics. The app needs no remote fonts, assets or AI calls. Disabled analytics sends no
+tracking requests. Pages render on demand to read the runtime analytics flag.
 
 ## Database boundary
 
@@ -169,17 +172,18 @@ up; it never uses or resets DATABASE_URL or your development/production database
 
 ```text
 src/
-  app/                    Pages, styles, metadata, error/404 UI
+  app/                    Pages, invite route, styles, metadata, error/404 UI
   components/             Shared brand, icons and decorative artwork
   features/
     intents/              Draft validation, examples, interactive composer
     backend/              Validated services, guest authorization, safe views, HTTP
+    entry/                Guest browser API, money/time helpers, invite/share/forms
     scheduling/           Domain-only engine contract for Phase 4
   lib/
     config/               Pure env parser and server-only accessor
     db/                   Typed SQL, transactions, migrations, demo seed
     ai/                   Text-generation contract, mock, server factory
-    analytics/            Typed contract, no-op and opt-in PostgreSQL adapter
+    analytics/            Typed contract, opt-in browser events and PostgreSQL adapter
 db/migrations/            Versioned domain schema and server-only RLS boundaries
 scripts/                  Local PostgreSQL and migration/seed CLI
 tests/
@@ -196,8 +200,36 @@ without a network request. It is an explicit contract stub, not intent
 understanding. Phase 5 adds structured tasks, validated OpenAI output, timeouts
 and fallbacks. Scheduling currently has types only and must remain independent
 of UI, persistence and AI when implemented in Phase 4. date-fns is installed for
-that work. Analytics is disabled by default; enabled backend events store only
+that work. Analytics is disabled by default; enabled events store only
 event names, enumerated surfaces and timestamps, never personal text or tokens.
+
+## Create, invite and join
+
+1. Enter an idea on the landing. Add your name, collect replies for 3/7/14 days,
+   and optionally choose activities and a place. Create invite opens the saved plan.
+2. Copy its link, send it through Telegram, or use native sharing if available.
+   Clipboard failure leaves a selectable URL for manual copying.
+3. Friends open the link and select Add yourself. The creator can also add their
+   own availability. Choose at least one future time in the next seven local days:
+   Morning 09–12, Afternoon 12–17, Evening 17–22, or custom times.
+4. Optionally enter a budget/currency, comma-separated activity/food/location
+   preferences and a note. Times are shown in the browser's named timezone and
+   saved as UTC instants; nonexistent local DST times and overlapping ranges fail.
+5. Refresh the same browser to see saved details and edit them. Only your own
+   private fields are visible. New availability choices cover seven days; valid
+   previously saved windows beyond that horizon are preserved when editing.
+
+A cookie identifies this browser for 30 days; clearing/revoking it loses access
+as that guest. Revoked edits explain the expired session instead of creating a new
+identity. Invalid/expired/decided invites have explicit states. Replies are collected;
+scheduling and voting are not implemented yet. Invite pages request no-store JSON
+and have generic metadata with noindex; richer share previews are Phase 6.
+
+With ANALYTICS_ENABLED=true, backend mutations record intent_created and
+participant_joined once. The browser sends landing_view, intent_started,
+invite_opened and invite_link_copied through bounded same-origin `/api/analytics`.
+That endpoint accepts only fixed event/surface pairs and rejects extra fields.
+Analytics failures do not block the guest UI. Production rate limiting is Phase 7.
 
 ## Backend API contract
 
@@ -209,6 +241,7 @@ and Secure when NODE_ENV=production. Use HTTPS outside localhost.
 
 | Method and path | Behavior |
 | --- | --- |
+| `POST /api/analytics` | Optional bounded browser event; no personal properties |
 | `POST /api/session` with `{}` | Reuse an active cookie or create a guest; returns no token in JSON |
 | `DELETE /api/session` | Revoke the current guest token and clear the cookie |
 | `POST /api/intents` | Create an intent for the current guest |
@@ -246,9 +279,10 @@ type 415, and database failure 503. Driver errors and secrets are never returned
 
 Use a Node-capable Next.js host with Node 24 LTS. Install with `npm ci`, build with
 `npm run build`, then `npm start` (or `npm start -- --port 8080`). Set
-`NEXT_PUBLIC_APP_URL` to the public HTTPS origin **before building**, because the
-landing is statically rendered. Store future database/AI secrets in the host's
-server environment. Rebuild after changing public configuration.
+`NEXT_PUBLIC_APP_URL` to the public HTTPS origin in the server environment before
+starting. Pages render on demand and read runtime metadata/analytics configuration.
+Restart the server after changing its origin or analytics flag. Keep database/AI
+secrets in the host's server environment.
 
 Apply `NODE_ENV=production npm run db:migrate` with the trusted production
 DATABASE_URL before starting the backend. Supply migration files with the CLI
@@ -256,14 +290,14 @@ checkout. Do not run the demo seed in production. API routes require a live
 database; the landing can still build without one. Rate limiting, retention
 policies and a full release audit remain Phase 7 work.
 
-The foundation can be deployed as a preview. It is not yet the viral MVP or a
+The current application can be deployed as a preview. It is not yet the viral MVP or a
 release candidate. No deployment is performed by the development phase run.
 
 ## Roadmap
 
 1. Foundation — complete.
 2. Database and backend — complete.
-3. Create + invite + join — guest entry and sharing.
+3. Create + invite + join — complete.
 4. Scheduling engine — deterministic overlap, compromises, results and votes.
 5. AI layer — optional structured enhancements and fallbacks.
 6. Product quality + virality — mobile polish, previews and repeat creation.

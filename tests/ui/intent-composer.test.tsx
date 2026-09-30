@@ -1,56 +1,95 @@
 // @vitest-environment jsdom
-
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { IntentComposer } from "@/features/intents/components/intent-composer";
-
-afterEach(cleanup);
-
-describe("intent draft composer", () => {
-  it("focuses the input and explains blank submissions", async () => {
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  push.mockClear();
+});
+describe("persistent intent composer", () => {
+  it("explains blank submissions and focuses the idea", async () => {
     const user = userEvent.setup();
     render(<IntentComposer />);
     await user.click(screen.getByRole("button", { name: "Make it happen" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Tell us what you'd like to do.");
-    expect(screen.getByRole("textbox", { name: "What do you want to do?" })).toHaveFocus();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Tell us what you'd like to do.",
+    );
+    expect(
+      screen.getByRole("textbox", { name: "What do you want to do?" }),
+    ).toHaveFocus();
   });
-
-  it("fills the idea from an example without submitting", async () => {
+  it("fills an example without submitting", async () => {
     const user = userEvent.setup();
     render(<IntentComposer />);
     await user.click(screen.getByRole("button", { name: "Play games" }));
-    expect(screen.getByRole("textbox")).toHaveValue("Find friends for a game night.");
-    expect(screen.queryByText("Your next plan")).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox")).toHaveValue(
+      "Find friends for a game night.",
+    );
+    expect(
+      screen.queryByRole("button", { name: "Create invite" }),
+    ).not.toBeInTheDocument();
   });
-
-  it("previews a normalized idea without claiming an invite exists", async () => {
+  it("collects a name, creates a guest/intent and opens its persistent invite", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('{"authenticated":true}'))
+      .mockResolvedValueOnce(
+        new Response('{"intent":{"publicSlug":"abcdefghijklmnopqrstuvwx"}}'),
+      );
+    vi.stubGlobal("fetch", fetcher);
     const user = userEvent.setup();
     render(<IntentComposer />);
-    await user.type(screen.getByRole("textbox"), "  Let's meet this week.  ");
+    await user.type(screen.getByRole("textbox"), "  Coffee this week?  ");
     await user.click(screen.getByRole("button", { name: "Make it happen" }));
-    expect(screen.getByRole("heading", { name: "Let's meet this week." })).toBeInTheDocument();
-    expect(screen.getByText("Invites are coming soon. Your idea stays here while you explore.")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /copy link/i })).not.toBeInTheDocument();
+    await user.type(screen.getByRole("textbox", { name: "Your name" }), "Maya");
+    await user.click(screen.getByRole("button", { name: "Create invite" }));
+    expect(fetcher).toHaveBeenNthCalledWith(
+      2,
+      "/api/intents",
+      expect.objectContaining({
+        body: expect.stringContaining('"rawText":"Coffee this week?"'),
+      }),
+    );
+    expect(push).toHaveBeenCalledWith("/i/abcdefghijklmnopqrstuvwx");
   });
-
-  it("returns to the draft for editing without losing the idea", async () => {
+  it("preserves idea/name on a failed create and allows retry", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response('{"error":{"code":"SERVICE_UNAVAILABLE"}}', {
+            status: 503,
+          }),
+        ),
+    );
     const user = userEvent.setup();
     render(<IntentComposer />);
     await user.click(screen.getByRole("button", { name: "Meet friends" }));
     await user.click(screen.getByRole("button", { name: "Make it happen" }));
+    await user.type(screen.getByRole("textbox", { name: "Your name" }), "Alex");
+    await user.click(screen.getByRole("button", { name: "Create invite" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(/try again/i);
+    expect(screen.getByRole("textbox", { name: "Your name" })).toHaveValue(
+      "Alex",
+    );
     await user.click(screen.getByRole("button", { name: "Edit your idea" }));
-    expect(screen.getByRole("textbox")).toHaveValue("Let's meet somewhere this week.");
-    expect(screen.getByRole("textbox")).toHaveFocus();
+    expect(screen.getByRole("textbox")).toHaveValue(
+      "Let's meet somewhere this week.",
+    );
   });
-
-  it("rejects ideas beyond the 500-character limit", async () => {
+  it("rejects ideas over 500 characters", async () => {
     const user = userEvent.setup();
     render(<IntentComposer />);
     await user.click(screen.getByRole("textbox"));
     await user.paste("a".repeat(501));
     await user.click(screen.getByRole("button", { name: "Make it happen" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Keep your idea to 500 characters or fewer.");
-    expect(screen.queryByText("Your next plan")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Keep your idea to 500 characters or fewer.",
+    );
   });
 });

@@ -38,9 +38,11 @@ export async function startTestDatabase() {
     await rm(directory, { recursive: true, force: true });
     throw error;
   }
-  const db = createDatabase(`postgresql://veya_test:${password}@127.0.0.1:${port}/veya_test`);
+  const connectionString = `postgresql://veya_test:${password}@127.0.0.1:${port}/veya_test`;
+  const db = createDatabase(connectionString);
   return {
     db,
+    connectionString,
     async stop() {
       await db.close();
       try { await postgres.stop(); } finally { await rm(directory, { recursive: true, force: true }); }

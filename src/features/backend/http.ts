@@ -7,11 +7,11 @@ import { GUEST_COOKIE } from "./sessions";
 import { validate } from "./validation";
 
 export interface BackendHttpOptions { backend: () => VeyaBackend; origin: string; secureCookie: boolean }
-class HttpError extends Error {
+export class HttpError extends Error {
   constructor(readonly status: number, readonly code: string, message: string) { super(message); }
 }
 
-const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
+export const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
 function tokenFrom(request: Request): string {
   for (const cookie of (request.headers.get("cookie") ?? "").split(";")) {
@@ -23,7 +23,7 @@ function tokenFrom(request: Request): string {
   return "";
 }
 
-async function readJson(request: Request): Promise<unknown> {
+export async function readJson(request: Request): Promise<unknown> {
   if (request.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() !== "application/json") {
     throw new HttpError(415, "UNSUPPORTED_MEDIA_TYPE", "Use application/json.");
   }

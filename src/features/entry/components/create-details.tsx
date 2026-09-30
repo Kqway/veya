@@ -1,0 +1,141 @@
+"use client";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import type { IntentView } from "@/features/backend/types";
+import { ensureGuest, requestApi } from "../client";
+const activities = ["Coffee", "Dinner", "Walk", "Games", "Study", "Adventure"];
+export function CreateDetails({
+  idea,
+  onEdit,
+}: {
+  idea: string;
+  onEdit: () => void;
+}) {
+  const router = useRouter(),
+    heading = useRef<HTMLHeadingElement>(null),
+    alert = useRef<HTMLParagraphElement>(null);
+  const [name, setName] = useState(""),
+    [place, setPlace] = useState(""),
+    [days, setDays] = useState("7");
+  const [selected, setSelected] = useState<string[]>([]),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState<string | null>(null);
+  useEffect(() => heading.current?.focus(), []);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (busy) return;
+    if (!name.trim() || name.trim().length > 60) {
+      setError("Add your name, up to 60 characters.");
+      requestAnimationFrame(() => alert.current?.focus());
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await ensureGuest();
+      const result = await requestApi<IntentView>("/api/intents", "POST", {
+        rawText: idea,
+        creatorName: name.trim(),
+        structuredIntent: {
+          type: "general",
+          activities: selected.map((a) => a.toLowerCase()),
+          location: place.trim() || null,
+        },
+        expiresAt: new Date(Date.now() + Number(days) * 86400000).toISOString(),
+      });
+      router.push(`/i/${result.intent.publicSlug}`);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Please try again.");
+      requestAnimationFrame(() => alert.current?.focus());
+      setBusy(false);
+    }
+  }
+  return (
+    <form
+      className="composer-card details-card"
+      onSubmit={submit}
+      noValidate
+      aria-busy={busy}
+    >
+      <p className="eyebrow">A little detail. A real plan.</p>
+      <h2 className="draft-title" tabIndex={-1} ref={heading}>
+        {idea}
+      </h2>
+      <fieldset disabled={busy} className="plain-fieldset">
+        <label className="field">
+          Your name
+          <input
+            value={name}
+            maxLength={60}
+            autoComplete="given-name"
+            onChange={(e) => setName(e.target.value)}
+            placeholder="What should your friends call you?"
+            required
+          />
+        </label>
+        <label className="field">
+          Collect replies for
+          <select value={days} onChange={(e) => setDays(e.target.value)}>
+            <option value="3">3 days</option>
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+          </select>
+        </label>
+        <fieldset className="tag-fieldset">
+          <legend>
+            What sounds good? <span>(optional)</span>
+          </legend>
+          <div className="tag-list">
+            {activities.map((a) => (
+              <button
+                type="button"
+                className="choice-chip"
+                aria-pressed={selected.includes(a)}
+                key={a}
+                onClick={() =>
+                  setSelected(
+                    selected.includes(a)
+                      ? selected.filter((v) => v !== a)
+                      : [...selected, a],
+                  )
+                }
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <label className="field">
+          Place or area (optional)
+          <input
+            value={place}
+            maxLength={120}
+            onChange={(e) => setPlace(e.target.value)}
+            placeholder="A neighbourhood, city, or anywhere"
+          />
+        </label>
+      </fieldset>
+      {error && (
+        <p className="entry-error" role="alert" tabIndex={-1} ref={alert}>
+          {error}
+        </p>
+      )}
+      <div className="form-actions">
+        <button className="button button-primary" disabled={busy} type="submit">
+          {busy ? "Creating your invite…" : "Create invite"}
+        </button>
+        <button
+          className="button button-secondary"
+          disabled={busy}
+          type="button"
+          onClick={onEdit}
+        >
+          Edit your idea
+        </button>
+      </div>
+      <p className="quiet-copy">
+        No account needed. Your friends add their own availability.
+      </p>
+    </form>
+  );
+}
