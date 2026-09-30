@@ -1,6 +1,6 @@
 import "server-only";
 import { Pool, type QueryResultRow } from "pg";
-import type { Database, DatabaseResult } from "./types";
+import type { Database, DatabaseExecutor, DatabaseResult } from "./types";
 
 class PostgresDatabase implements Database {
   private readonly pool: Pool;
@@ -31,6 +31,26 @@ class PostgresDatabase implements Database {
 
   async close(): Promise<void> {
     await this.pool.end();
+  }
+
+  async transaction<T>(work: (tx: DatabaseExecutor) => Promise<T>): Promise<T> {
+    const client = await this.pool.connect();
+    let destroy = false;
+    try {
+      await client.query("BEGIN");
+      const tx: DatabaseExecutor = {
+        async query<Row extends QueryResultRow = QueryResultRow>(text: string, values: readonly unknown[] = []) {
+          const result = await client.query<Row>(text, [...values]);
+          return { rows: result.rows, rowCount: result.rowCount ?? 0 };
+        },
+      };
+      const result = await work(tx);
+      await client.query("COMMIT");
+      return result;
+    } catch (error) {
+      try { await client.query("ROLLBACK"); } catch { destroy = true; }
+      throw error;
+    } finally { client.release(destroy); }
   }
 }
 

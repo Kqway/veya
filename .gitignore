@@ -147,3 +147,4 @@ playwright-report/
 test-results/
 .superpowers/
 .worktrees/
+.local/

@@ -15,4 +15,4 @@ export function getDatabase(): Database {
   return database;
 }
 
-export type { Database, DatabaseResult } from "./types";
+export type { Database, DatabaseExecutor, DatabaseResult } from "./types";
