@@ -19,7 +19,8 @@
     "db:local": "tsx scripts/local-postgres.ts",
     "db:migrate": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/database.ts migrate",
     "db:seed": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/database.ts seed",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "db:cleanup": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/retention.ts"
   },
   "dependencies": {
     "date-fns": "^4.1.0",

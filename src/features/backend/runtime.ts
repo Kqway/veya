@@ -1,4 +1,5 @@
 import "server-only";
+import { runtimeLimiter } from "@/lib/security/rate-limit";
 import { createAiHandlers } from "./ai-http";
 import { getAiTasks } from "@/lib/ai";
 import { getDatabase } from "@/lib/db";
@@ -10,6 +11,7 @@ import { VeyaBackend } from "./service";
 
 const config = getServerEnv();
 export const backendHandlers = createBackendHandlers({
+  limiter: runtimeLimiter,
   backend: () =>
     new VeyaBackend(getDatabase(), {
       analyticsEnabled: config.ANALYTICS_ENABLED,
@@ -19,6 +21,7 @@ export const backendHandlers = createBackendHandlers({
 });
 
 export const analyticsHandler = createAnalyticsHandler({
+  limiter: runtimeLimiter,
   origin: config.NEXT_PUBLIC_APP_URL,
   client: () =>
     config.ANALYTICS_ENABLED
@@ -27,6 +30,7 @@ export const analyticsHandler = createAnalyticsHandler({
 });
 
 export const aiHandlers = createAiHandlers({
+  limiter: runtimeLimiter,
   origin: config.NEXT_PUBLIC_APP_URL,
   tasks: getAiTasks,
   backend: () =>

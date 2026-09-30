@@ -10,7 +10,7 @@ The MVP's priority is the viral loop:
 
 ## Current scope
 
-**Phases 1–6 — guest planning, optional AI and a mobile-first sharing loop.** Turn an
+**Phases 1–7 complete — a locally verified MVP release candidate.** Turn an
 idea into a plan, share `/i/<slug>`, and let friends add availability, preferences
 and budgets without an account. Copy link, Telegram and native sharing are supported.
 Returning guests can refresh and edit their own details with the same browser.
@@ -58,6 +58,7 @@ npm start
 | `npm run db:local` | Persistent local PostgreSQL on 127.0.0.1:54322 |
 | `npm run db:migrate` | Apply checked SQL migrations atomically |
 | `npm run db:seed` | Apply migrations and create an idempotent demo |
+| `npm run db:cleanup` | Preview bounded expired-data cleanup; explicit `-- --apply` to delete |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build |
 | `npm run test:e2e` | Desktop/mobile Chromium checks against the production server |
@@ -219,7 +220,8 @@ event names, enumerated surfaces and timestamps, never personal text or tokens.
    Clipboard failure leaves a selectable URL for manual copying.
 3. Friends open the link and select Add yourself. The creator can also add their
    own availability. Choose at least one future time in the next seven local days:
-   Morning 09–12, Afternoon 12–17, Evening 17–22, or custom times.
+   Morning 09–12, Afternoon 12–17, Evening 17–22, or custom times. Select
+   Ends the next day explicitly for an overnight interval (maximum 24 hours).
 4. Optionally enter a budget/currency, comma-separated activity/food/location
    preferences and a note. Times are shown in the browser's named timezone and
    saved as UTC instants; nonexistent local DST times and overlapping ranges fail.
@@ -227,6 +229,8 @@ event names, enumerated surfaces and timestamps, never personal text or tokens.
    private fields are visible on the invite. Group members and the organizer see
    names and derived attendance on results. New availability choices cover seven days; valid
    previously saved windows beyond that horizon are preserved when editing.
+   Unchanged saved elapsed intervals also remain editable; new or changed past
+   intervals are rejected.
 
 A cookie identifies this browser for 30 days; clearing/revoking it loses access
 as that guest. Revoked edits explain the expired session instead of creating a new
@@ -241,14 +245,14 @@ result_viewed through bounded same-origin `/api/analytics`. Create your own plan
 links track new_intent_from_invite with only invite/result surface. Analytics uses
 keepalive for navigation, stays silent when disabled and never delays the next plan.
 That endpoint accepts only fixed event/surface pairs and rejects extra fields.
-Analytics failures do not block the guest UI. Production rate limiting is Phase 7.
+Analytics failures do not block the guest UI. Analytics has its own rate budget.
 
 ## Find a time and decide
 
 The service seeks 60-minute meetups before the invite expires, within 30 days.
 The engine merges adjacent/overlapping windows and evaluates event boundaries,
 30-minute UTC starts and shorter spans across boundaries. Spans normally reach
-at least 15 minutes; if none can, even a shorter real window is offered. Full attendance ranks first, then
+at least 15 minutes; if none can, a real window of at least one minute is offered. Full attendance ranks first, then
 availability quality, shared activity/food/location preferences, compatible budgets
 and deterministic time ordering. Budgets use integer minor units; different
 currencies are never compared or converted. Preference similarity does not assert
@@ -332,13 +336,13 @@ not wait for assistance; raw provider errors or prompts are not logged.
 
 Tests inject the remote transport and force mock/no key in browser tests. Live
 OpenAI access was not verified in this environment, which has no configured key
-or allowed OpenAI egress. Production rate/cost/load controls remain Phase 7 work.
+or allowed OpenAI egress. AI has an independent bounded rate budget; manual creation remains available.
 
 ## Backend API contract
 
 All responses use `Cache-Control: no-store`. POST/PUT/DELETE require an Origin header
 matching `NEXT_PUBLIC_APP_URL`. POST/PUT bodies must be application/json and at
-most 16 KiB. Send cookies with requests; no user/guest/participant IDs are accepted
+most 16 KiB, with a five-second whole-body deadline. Send cookies with requests; no user/guest/participant IDs are accepted
 from clients. Browser guest cookies are HttpOnly, SameSite=Lax, scoped to `/`,
 and Secure when NODE_ENV=production. Use HTTPS outside localhost.
 
@@ -377,9 +381,11 @@ Participant body: `displayName` (1–60), optional `availability` array of
 `{startAt,endAt}` offset ISO instants, `preferences` array of `{category,value}`
 (activity/dietary/location), `notes` (≤1000), and nullable `budgetMin`, `budgetMax`,
 `currency`. Budgets are **integer minor units** (1000 = USD 10.00), nonnegative,
-ordered, and require a supported uppercase currency. Windows must be future,
+ordered, and require a supported uppercase currency. New/changed windows must be future,
 non-overlapping, ≤24 hours each, and inside the intent expiry/next 30 days.
-PUT replaces all fields; omitted optional fields return to their defaults.
+PUT preserves exact own saved elapsed intervals when resubmitted. A plan supports
+32 participants and 128 total windows; exceeding capacity returns 409
+`PLAN_LIMIT_REACHED`. PUT replaces all fields; omitted optional fields return to their defaults.
 
 Vote body: `{suggestionKey,revision,value}`; decision body: `{suggestionKey,revision}`.
 `suggestionKey` is an opaque 32-character hexadecimal public key, separate from
@@ -396,7 +402,70 @@ recompute active plans. Expired and decided plans retain their saved proposals.
 
 Stable error JSON is `{error:{code,message}}`; invalid input is 400, missing
 resources 404, forbidden actions/origins 403, oversized bodies 413, wrong content
-type 415, and database failure 503. Driver errors and secrets are never returned.
+type 415, stalled bodies 408, rate limits 429 with Retry-After, and database
+failure 503. Driver errors and secrets are never returned. Invite and session
+expiry are checked again after acquiring locks, using wall-clock time. Synchronize
+application/database clocks.
+
+## Request protection and maintenance
+
+The process-wide limiter checks before expensive API/database/provider work. It
+uses independent 60-second fixed windows and hashed guest-cookie buckets; anonymous
+requests still consume global budgets. It never trusts forwarded IP headers or
+stores raw tokens. Maximum 4096 active guest/action buckets; active entries are
+not evicted. Limits return safe no-store 429 JSON with Retry-After. Budgets:
+
+| Action | Global requests/minute | Per guest/minute |
+| --- | ---: | ---: |
+| Read | 1200 | 120 |
+| Write | 300 | 30 |
+| Session | 300 | 30 |
+| Create | 100 | 10 |
+| Join | 200 | 30 |
+| AI | 20 | 6 |
+| Analytics | 600 | 60 |
+| Preview | 300 | 30 |
+| Image | 120 | 20 |
+
+Preview/image requests use global budgets. This is a **per-process** safeguard,
+reset on restart; fixed-window boundaries permit bursts. Multiple instances need
+a shared `RequestLimiter` adapter or a configured gateway with appropriate global
+rate/cost controls. Public anonymous quota exhaustion can temporarily deny other
+visitors; select gateway abuse controls for a public launch. AI quota is separate
+from manual planning. Plan size is capped at 32 participants/128 total windows,
+including edits, under the intent lock to bound scheduler enumeration. Engine
+version deterministic-v2 improves short-window ranking; the first read of an
+active old cache refreshes proposal keys and clears votes. Frozen decisions remain.
+
+Responses set nosniff, DENY framing, no-referrer and disabled camera/microphone/
+location permissions. APIs use same-origin CORP and invite routes are noindex.
+No-referrer keeps bearer invite links out of outbound Referer headers.
+
+Maintenance never runs automatically. Apply migrations first, back up the target,
+and preview the exact same server environment before deliberately deleting:
+
+```bash
+NODE_ENV=production npm run db:cleanup
+NODE_ENV=production npm run db:cleanup -- --apply
+```
+
+Production requires an explicit server-only DATABASE_URL. Development defaults
+to the documented local URI; verify the environment before using --apply. Each
+run selects at most 100 rows per category (module maximum 500), oldest first:
+
+- Intents more than 90 days after expiry, including decided plans; associated
+  participants, availability, preferences, suggestions and votes cascade.
+- Unreferenced guest sessions seven days after expiry or revocation; sessions
+  still referenced by retained plans are preserved.
+- Analytics events older than 30 days.
+
+Dry-run reports projected counts, including guest references removed by the
+selected intents; concurrent activity can change the subsequent apply result.
+Apply skips locked rows and uses separate transactions to avoid lock-order
+inversion; a failure can leave earlier categories completed. Reruns are safe.
+Repeat explicit batches until the reported backlog is drained. The CLI prints
+counts and safe errors, never records or connection credentials. Tests use only
+isolated native PostgreSQL and never clean your actual databases.
 
 ## Production deployment
 
@@ -410,11 +479,13 @@ secrets in the host's server environment.
 Apply `NODE_ENV=production npm run db:migrate` with the trusted production
 DATABASE_URL before starting the backend. Supply migration files with the CLI
 checkout. Do not run the demo seed in production. Persistent plan APIs require a live
-database; the landing and stateless intent parser work without one. Rate limiting, retention
-policies and a full release audit remain Phase 7 work.
+database; the landing and stateless intent parser work without one. Migration
+0004 adds retention indexes. Complete the host checks in
+[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md).
 
-The current application can be deployed as a preview. It is not yet the viral MVP or a
-release candidate. No deployment is performed by the development phase run.
+The MVP is a release candidate for a controlled preview. Local production-browser
+verification is complete; live OpenAI, a hosted database and actual deployment
+remain host-specific checks. This development run performs no deployment.
 
 ## Roadmap
 
@@ -424,7 +495,9 @@ release candidate. No deployment is performed by the development phase run.
 4. Scheduling engine — complete: deterministic overlap, compromises, results, votes and confirmation.
 5. AI layer — complete: reviewed structured parsing, optional ideas/explanations and bounded provider fallback.
 6. Product quality + virality — complete: compact mobile creation, responsive availability feedback, resilient sharing, public-only previews and tracked repeat creation.
-7. Hardening + release preparation — audit and release verification.
+7. Hardening + release preparation — complete: temporal authorization, bounded API/workload protection, security headers, explicit retention and release verification.
 
-Each autonomous run completes exactly one phase, verifies it, updates
-`CODEX_PROGRESS.md`, creates a clear commit and stops.
+All seven phases are complete. The latest user instruction authorized finishing
+the remaining phases together, with separate prescribed commits and GitHub pushes.
+Future work should choose one high-impact improvement per cycle and update
+`CODEX_PROGRESS.md`; do not restart completed phases.

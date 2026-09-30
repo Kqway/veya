@@ -4,17 +4,21 @@ export class ApiError extends Error {
     readonly status: number,
   ) {
     super(
-      code === "UNAUTHORIZED"
-        ? "Your session has ended. Reload this page to continue."
-        : code === "STALE_RESULTS"
-          ? "These suggestions changed. Reload the latest results before choosing."
-          : code === "INVITE_EXPIRED"
-            ? "This invite has expired. Start a new plan together."
-            : code === "INTENT_CLOSED"
-              ? "This plan is closed to changes."
-              : code === "INVALID_INPUT"
-                ? "Check your details and future availability, then try again."
-                : "We couldn't save that right now. Your details are still here — please try again.",
+      code === "PLAN_LIMIT_REACHED"
+        ? "This plan is full or has too many time ranges. Try fewer times or start a new plan."
+        : code === "RATE_LIMITED"
+          ? "A few too many requests. Your details are saved here; wait a minute and try again."
+          : code === "UNAUTHORIZED"
+            ? "Your session has ended. Reload this page to continue."
+            : code === "STALE_RESULTS"
+              ? "These suggestions changed. Reload the latest results before choosing."
+              : code === "INVITE_EXPIRED"
+                ? "This invite has expired. Start a new plan together."
+                : code === "INTENT_CLOSED"
+                  ? "This plan is closed to changes."
+                  : code === "INVALID_INPUT"
+                    ? "Check your details and future availability, then try again."
+                    : "We couldn't save that right now. Your details are still here — please try again.",
     );
   }
 }

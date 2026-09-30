@@ -49,3 +49,34 @@ privacy, 320px targets, loading/retry and share failure/cancellation. Audit0 or
 explicit material issue; inspect screenshots and staged secrets/artifacts. Phase7
 must truthfully distinguish locally verified release preparation from unverified
 external OpenAI, hosted database, real-device Web Share and remote CI/deployment.
+
+## Phase 7 concrete contracts
+- Recheck session and invite wall-clock expiry after acquiring an intent row lock;
+  PostgreSQL transaction-start time must not authorize queued writes. Hosts must
+  synchronize application/database clocks. Keep existing guest→intent lock order.
+- Unchanged own saved elapsed windows remain editable; newly added/changed past
+  windows fail. Custom overnight entry explicitly selects Ends the next day, with
+  local DST validation and a 24-hour maximum. Unmounted forms stop subsequent
+  creation/join requests and redirects; already submitted server writes may finish.
+- Bound a plan to 32 participants and 128 total availability windows under the
+  intent lock. Duplicate membership remains idempotent; check ownership before
+  update capacity. Pure scheduling enforces the same bounds. The shorter-than-15-
+  minute fallback evaluates complete boundary pairs, including sub-minute cuts;
+  deterministic-v2 invalidates active cached results, preserving frozen decisions.
+- Limiter: independent 60-second global/hashed-guest buckets, maximum 4096 live
+  guest-action entries, no active eviction, monotonic clock clamp. Per-minute
+  global/guest limits: read1200/120, write300/30, session300/30, create100/10,
+  join200/30, AI20/6, analytics600/60, preview300/30, image120/20. Anonymous
+  requests consume global buckets. All instances need a shared adapter/gateway;
+  the built-in singleton is per process and restart resets it. Do not trust IP
+  headers. Enforce before expensive work and return no-store 429 + Retry-After.
+- JSON reading has a five-second whole-body deadline and 16 KiB size limit;
+  stalled stream cancellation cannot delay the safe 408 response.
+- Headers: no-referrer, nosniff, DENY framing, disabled camera/microphone/location;
+  APIs same-origin CORP, invite routes noindex/nofollow. No hydration-breaking CSP.
+- Retention CLI defaults dry-run; --apply explicitly deletes expired intents after
+  90 days (including decided plans and cascading children), unreferenced guests
+  seven days after expiry/revocation, analytics after 30 days. Separate bounded
+  transactions, 100 rows/category per CLI run, SKIP LOCKED on apply, module cap500.
+  Production requires explicit DATABASE_URL; no automatic invocation. Migration
+  0004 adds retention indexes. Back up before deliberate destructive maintenance.

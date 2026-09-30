@@ -109,8 +109,15 @@ export function validate<T extends z.ZodType>(
   return parsed.data;
 }
 
-export function validateWindows(data: ParticipantInput, expiresAt: Date): void {
+export function validateWindows(
+  data: ParticipantInput,
+  expiresAt: Date,
+  saved: ParticipantInput["availability"] = [],
+): void {
   const now = Date.now();
+  const unchanged = new Set(
+    saved.map((w) => `${Date.parse(w.startAt)}:${Date.parse(w.endAt)}`),
+  );
   const latest = Math.min(expiresAt.getTime(), now + 30 * 86_400_000);
   const windows = data.availability
     .map((window) => ({
@@ -121,7 +128,7 @@ export function validateWindows(data: ParticipantInput, expiresAt: Date): void {
   let previousEnd = -Infinity;
   for (const window of windows) {
     if (
-      window.start < now ||
+      (window.start < now && !unchanged.has(`${window.start}:${window.end}`)) ||
       window.end > latest ||
       window.end <= window.start ||
       window.end - window.start > 86_400_000 ||

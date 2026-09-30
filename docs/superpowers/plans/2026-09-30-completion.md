@@ -39,8 +39,8 @@ next.config.ts; scripts/database.ts + retention module; tests; README/progress.
 **Interfaces:** limiter.check(action,guestToken?): decision with retryAfterSeconds;
 check before expensive API work, shared runtime instance; maintenance explicitly
 selects production URI and dry-run by default, applied retention only with flag.
-- [ ] Independent read-only backend/privacy, scheduling/date and UI/AI/transport audits; consolidate real findings without shared edits.
-- [ ] Write failing tests for actual findings and bounded limiter/headers/retention contracts; observe RED before implementation.
-- [ ] Implement smallest fixes and safeguards; meaningful targeted GREEN.
-- [ ] Complete check/browser/audit/manual screenshots, one whole-change review and fix pass if required. Update release docs/progress with external limitations.
-- [ ] Commit/push Phase 7, verify remote SHA and clean tree; stop when roadmap complete.
+- [x] Independent read-only backend/privacy, scheduling/date and UI/AI/transport audits; consolidate real findings without shared edits.
+- [x] Write failing tests for actual findings and bounded limiter/headers/retention contracts; observe RED before implementation.
+- [x] Implement smallest fixes and safeguards; meaningful targeted GREEN.
+- [x] Complete check/browser/audit/manual screenshots, one whole-change review and fix pass if required. Update release docs/progress with external limitations.
+- [x] Commit/push Phase 7, verify remote SHA and clean tree; stop when roadmap complete.

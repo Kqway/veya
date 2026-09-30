@@ -1,9 +1,17 @@
 import "server-only";
+import type { RequestLimiter } from "@/lib/security/rate-limit";
 import { z } from "zod";
 import type { AiTasks } from "@/lib/ai/tasks";
 import type { PlanContext, PlanAssistanceResult } from "@/lib/ai/types";
 import { parseInputSchema } from "@/lib/ai/schemas";
-import { apiError, HttpError, json, readJson, tokenFrom } from "./http";
+import {
+  apiError,
+  HttpError,
+  json,
+  readJson,
+  tokenFrom,
+  enforceRateLimit,
+} from "./http";
 import { BackendError } from "./errors";
 import { validate, slugSchema } from "./validation";
 import type { VeyaBackend } from "./service";
@@ -17,6 +25,7 @@ export function createAiHandlers(options: {
   origin: string;
   tasks: () => AiTasks;
   backend: () => VeyaBackend;
+  limiter?: RequestLimiter;
 }) {
   const origin = new URL(options.origin).origin;
   function requireOrigin(request: Request) {
@@ -69,6 +78,7 @@ export function createAiHandlers(options: {
     async parseIntent(request: Request) {
       try {
         requireOrigin(request);
+        await enforceRateLimit(options.limiter, "ai", request);
         const input = validate(parseInputSchema, await readJson(request));
         return json(await options.tasks().parseIntent(input));
       } catch (error) {
@@ -78,6 +88,7 @@ export function createAiHandlers(options: {
     async assist(request: Request, slug: string) {
       try {
         requireOrigin(request);
+        await enforceRateLimit(options.limiter, "ai", request);
         validate(slugSchema, slug);
         const selection = validate(selectionSchema, await readJson(request)),
           token = tokenFrom(request),

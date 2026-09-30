@@ -27,9 +27,14 @@ export function ParticipantForm({
   const [busy, setBusy] = useState(false),
     [error, setError] = useState<string | null>(null),
     alert = useRef<HTMLParagraphElement>(null);
+  const active = useRef(false);
   const nameInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
+    active.current = true;
     nameInput.current?.focus();
+    return () => {
+      active.current = false;
+    };
   }, []);
   const existing = Boolean(view.ownParticipant);
   function field(key: keyof typeof fields) {
@@ -52,21 +57,29 @@ export function ParticipantForm({
         availability,
         view.ownParticipant,
       );
-      validateEntryAvailability(availability, view.intent.expiresAt);
+      validateEntryAvailability(
+        availability,
+        view.intent.expiresAt,
+        new Date(),
+        view.ownParticipant?.availability ?? [],
+      );
       setBusy(true);
       const path = `/api/intents/${view.intent.publicSlug}/participants`;
-      if (existing)
-        onSaved(await requestApi<IntentView>(`${path}/me`, "PUT", data));
-      else {
+      if (existing) {
+        const result = await requestApi<IntentView>(`${path}/me`, "PUT", data);
+        if (active.current) onSaved(result);
+      } else {
         await ensureGuest();
+        if (!active.current) return;
         const result = await requestApi<IntentView>(path, "POST", data);
-        onSaved(result);
+        if (active.current) onSaved(result);
       }
     } catch (e) {
+      if (!active.current) return;
       setError((e as Error).message);
       requestAnimationFrame(() => alert.current?.focus());
     } finally {
-      setBusy(false);
+      if (active.current) setBusy(false);
     }
   }
   return (
@@ -95,6 +108,7 @@ export function ParticipantForm({
           value={availability}
           onChange={setAvailability}
           expiresAt={view.intent.expiresAt}
+          saved={view.ownParticipant?.availability ?? []}
         />
         <details className="optional-details">
           <summary>Budget, preferences & a note (optional)</summary>

@@ -1,4 +1,5 @@
 import "server-only";
+import { assertPlanCapacity } from "./capacity";
 import { randomBytes } from "node:crypto";
 import type { Database } from "@/lib/db/types";
 import { createDatabaseAnalyticsClient } from "@/lib/analytics/postgres";
@@ -108,8 +109,16 @@ export class VeyaBackend {
     return this.db.transaction(async (tx) => {
       const guestId = await requireSession(tx, token);
       const intent = await readIntent(tx, slug, "write");
+      await requireSession(tx, token);
       requireOpenIntent(intent);
       validateWindows(data, intent.expires_at);
+      await assertPlanCapacity(
+        tx,
+        intent.id,
+        guestId,
+        data.availability.length,
+        true,
+      );
       const result = await tx.query<{ id: string }>(
         "INSERT INTO participants(intent_id,guest_id,display_name,budget_min,budget_max,currency,notes) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (intent_id,guest_id) DO NOTHING RETURNING id",
         [
@@ -149,8 +158,38 @@ export class VeyaBackend {
     return this.db.transaction(async (tx) => {
       const guestId = await requireSession(tx, token);
       const intent = await readIntent(tx, slug, "write");
+      await requireSession(tx, token);
       requireOpenIntent(intent);
-      validateWindows(data, intent.expires_at);
+      const saved = await tx.query<{
+        id: string;
+        start_at: Date | null;
+        end_at: Date | null;
+      }>(
+        "SELECT p.id,w.start_at,w.end_at FROM participants p LEFT JOIN availability_windows w ON w.participant_id=p.id WHERE p.intent_id=$1 AND p.guest_id=$2",
+        [intent.id, guestId],
+      );
+      if (!saved.rows[0]) throw new BackendError("NOT_FOUND");
+      validateWindows(
+        data,
+        intent.expires_at,
+        saved.rows.flatMap((w) =>
+          w.start_at && w.end_at
+            ? [
+                {
+                  startAt: w.start_at.toISOString(),
+                  endAt: w.end_at.toISOString(),
+                },
+              ]
+            : [],
+        ),
+      );
+      await assertPlanCapacity(
+        tx,
+        intent.id,
+        guestId,
+        data.availability.length,
+        false,
+      );
       const result = await tx.query<{ id: string }>(
         "UPDATE participants SET display_name=$3,budget_min=$4,budget_max=$5,currency=$6,notes=$7,updated_at=now() WHERE intent_id=$1 AND guest_id=$2 RETURNING id",
         [
@@ -175,6 +214,7 @@ export class VeyaBackend {
     await this.db.transaction(async (tx) => {
       const guestId = await requireSession(tx, token);
       const intent = await readIntent(tx, slug, "write");
+      await requireSession(tx, token);
       if (intent.creator_guest_id !== guestId)
         throw new BackendError("FORBIDDEN");
       await tx.query(

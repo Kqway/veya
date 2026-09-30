@@ -1,7 +1,8 @@
 import "server-only";
+import type { RequestLimiter } from "@/lib/security/rate-limit";
 import { z } from "zod";
 import type { AnalyticsClient } from "@/lib/analytics/types";
-import { HttpError, json, readJson } from "./http";
+import { HttpError, json, readJson, enforceRateLimit, apiError } from "./http";
 const eventSchema = z.discriminatedUnion("name", [
   z
     .object({
@@ -31,6 +32,7 @@ const eventSchema = z.discriminatedUnion("name", [
 export function createAnalyticsHandler(options: {
   origin: string;
   client: () => AnalyticsClient | null;
+  limiter?: RequestLimiter;
 }) {
   return async (request: Request) => {
     try {
@@ -40,26 +42,14 @@ export function createAnalyticsHandler(options: {
           "ORIGIN_REJECTED",
           "Use the application's origin.",
         );
+      await enforceRateLimit(options.limiter, "analytics", request);
       const parsed = eventSchema.safeParse(await readJson(request));
       if (!parsed.success)
         throw new HttpError(400, "INVALID_INPUT", "Provide a supported event.");
       await options.client()?.track(parsed.data);
       return json({ accepted: true });
     } catch (error) {
-      if (error instanceof HttpError)
-        return json(
-          { error: { code: error.code, message: error.message } },
-          error.status,
-        );
-      return json(
-        {
-          error: {
-            code: "SERVICE_UNAVAILABLE",
-            message: "The service is temporarily unavailable.",
-          },
-        },
-        503,
-      );
+      return apiError(error);
     }
   };
 }

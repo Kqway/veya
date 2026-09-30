@@ -1,3 +1,4 @@
+import { runtimeLimiter } from "@/lib/security/rate-limit";
 import { getInvitePreview } from "@/features/entry/preview";
 import { shareImage } from "@/components/share-image";
 export const alt = "Bring your people together with Veya";
@@ -9,5 +10,14 @@ export default async function Image({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const limit = runtimeLimiter.check("image");
+  if (!limit.allowed)
+    return new Response(null, {
+      status: 429,
+      headers: {
+        "Retry-After": String(limit.retryAfterSeconds),
+        "Cache-Control": "no-store",
+      },
+    });
   return shareImage(await getInvitePreview((await params).slug));
 }

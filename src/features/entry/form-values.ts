@@ -75,14 +75,15 @@ export function localWindow(
   date: string,
   start: string,
   end: string,
+  endDate = date,
 ): Availability {
-  function instant(time: string) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time))
+  function instant(time: string, localDate = date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate) || !/^\d{2}:\d{2}$/.test(time))
       throw new Error("Choose a valid date and time.");
-    const value = new Date(`${date}T${time}:00`);
+    const value = new Date(`${localDate}T${time}:00`);
     if (
       !Number.isFinite(value.getTime()) ||
-      dateKey(value) !== date ||
+      dateKey(value) !== localDate ||
       `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}` !==
         time
     )
@@ -90,7 +91,7 @@ export function localWindow(
     return value;
   }
   const startAt = instant(start),
-    endAt = instant(end);
+    endAt = instant(end, endDate);
   if (endAt <= startAt || endAt.getTime() - startAt.getTime() > 86_400_000)
     throw new Error("End time must be after start time, within 24 hours.");
   return { startAt: startAt.toISOString(), endAt: endAt.toISOString() };
@@ -99,10 +100,14 @@ export function validateEntryAvailability(
   windows: Availability[],
   expiresAt: string,
   now = new Date(),
+  saved: Availability[] = [],
 ): void {
   if (!windows.length)
     throw new Error("Choose at least one time that works for you.");
   if (windows.length > 28) throw new Error("Choose at most 28 time ranges.");
+  const unchanged = new Set(
+    saved.map((w) => `${Date.parse(w.startAt)}:${Date.parse(w.endAt)}`),
+  );
   const sorted = windows
     .map((w) => ({ start: Date.parse(w.startAt), end: Date.parse(w.endAt) }))
     .sort((a, b) => a.start - b.start);
@@ -110,7 +115,7 @@ export function validateEntryAvailability(
   for (const w of sorted) {
     if (
       !Number.isFinite(w.start + w.end) ||
-      w.start < now.getTime() ||
+      (w.start < now.getTime() && !unchanged.has(`${w.start}:${w.end}`)) ||
       w.end > w.start + 86_400_000 ||
       w.end <= w.start ||
       w.end > Math.min(Date.parse(expiresAt), now.getTime() + 30 * 86_400_000)

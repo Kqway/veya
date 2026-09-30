@@ -258,3 +258,5 @@ button:disabled { cursor: default; opacity: .5; transform: none; }
   .details-card > .form-actions, .participant-form > .form-actions { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 24px; }
 }
 @media (prefers-reduced-motion: reduce) { .entry-card, .composer-card, .loading-shapes span { animation: none; } }
+.overnight-choice { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 14px; padding: 10px 0 16px; cursor: pointer; }
+.overnight-choice input { width: 20px; height: 20px; accent-color: var(--accent); }

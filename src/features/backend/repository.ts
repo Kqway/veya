@@ -10,15 +10,23 @@ export async function readIntent(
   lock: "share" | "write" = "share",
 ): Promise<IntentRow> {
   const result = await db.query<IntentRow>(
-    `SELECT i.*, CASE WHEN expires_at<=now() AND status<>'decided' THEN 'expired' ELSE status END AS status FROM intents i WHERE public_slug=$1 FOR ${lock === "write" ? "UPDATE" : "SHARE"}`,
+    `SELECT i.*, CASE WHEN expires_at<=clock_timestamp() AND status<>'decided' THEN 'expired' ELSE status END AS status FROM intents i WHERE public_slug=$1 FOR ${lock === "write" ? "UPDATE" : "SHARE"}`,
     [slug],
   );
   if (!result.rows[0]) throw new BackendError("NOT_FOUND");
-  return result.rows[0];
+  const intent = result.rows[0];
+  // The SELECT projection may be evaluated before waiting for its row lock.
+  if (intent.status !== "decided" && intent.expires_at.getTime() <= Date.now())
+    intent.status = "expired";
+  return intent;
 }
 
 export function requireOpenIntent(intent: IntentRow): void {
-  if (intent.status === "expired") throw new BackendError("INVITE_EXPIRED");
+  if (
+    intent.status === "expired" ||
+    (intent.status !== "decided" && intent.expires_at.getTime() <= Date.now())
+  )
+    throw new BackendError("INVITE_EXPIRED");
   if (intent.status === "decided") throw new BackendError("INTENT_CLOSED");
 }
 

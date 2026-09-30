@@ -25,6 +25,40 @@ const input = (participants: SchedulingParticipant[]): SchedulingInput => ({
   until: at(0, "2026-10-08"),
 });
 describe("deterministic scheduling", () => {
+  it("keeps the longest sub-15-minute fallback across unrelated subminute boundaries", () => {
+    const a = {
+      ...person("a"),
+      availability: [
+        { startAt: "2026-10-01T09:00:00Z", endAt: "2026-10-01T09:14:00Z" },
+      ],
+    };
+    const b = { ...a, id: "b" };
+    const c = {
+      ...person("c"),
+      availability: [
+        { startAt: "2026-10-01T09:05:00Z", endAt: "2026-10-01T09:05:30Z" },
+      ],
+    };
+    const result = suggest(input([a, b, c]));
+    expect(result.bestMatch?.availableParticipantIds).toEqual(["a", "b"]);
+    expect(result.bestMatch?.durationMinutes).toBe(14);
+  });
+  it("rejects oversized scheduling work before candidate enumeration", () => {
+    expect(() =>
+      suggest(input(Array.from({ length: 33 }, (_, i) => person(String(i))))),
+    ).toThrow(/limit/i);
+    const windows = Array.from({ length: 28 }, () => window(9, 10));
+    expect(() =>
+      suggest(
+        input(
+          Array.from({ length: 5 }, (_, i) => ({
+            ...person(String(i)),
+            availability: windows,
+          })),
+        ),
+      ),
+    ).toThrow(/limit/i);
+  });
   it("finds the full group and distinct non-overlapping alternatives", () => {
     const result = suggest(
       input([person("a", 9, 16), person("b", 10, 15), person("c", 10, 15)]),

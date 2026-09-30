@@ -29,7 +29,14 @@ export function CreateDetails({
       "dateHint" | "budgetHint"
     > | null>(null);
   const availableActivities = [...new Set([...activities, ...selected])];
-  useEffect(() => heading.current?.focus(), []);
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    heading.current?.focus();
+    return () => {
+      active.current = false;
+    };
+  }, []);
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
@@ -42,6 +49,7 @@ export function CreateDetails({
     setError(null);
     try {
       await ensureGuest();
+      if (!active.current) return;
       const result = await requestApi<IntentView>("/api/intents", "POST", {
         rawText: idea,
         creatorName: name.trim(),
@@ -53,11 +61,11 @@ export function CreateDetails({
         },
         expiresAt: new Date(Date.now() + Number(days) * 86400000).toISOString(),
       });
-      router.push(`/i/${result.intent.publicSlug}`);
+      if (active.current) router.push(`/i/${result.intent.publicSlug}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Please try again.");
       requestAnimationFrame(() => alert.current?.focus());
-      setBusy(false);
+      if (active.current) setBusy(false);
     }
   }
   return (

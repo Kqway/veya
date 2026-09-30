@@ -57,6 +57,7 @@ export class ResultsService {
     return this.db.transaction(async (tx) => {
       const guest = await requireSession(tx, token),
         intent = await readIntent(tx, slug, "write");
+      await requireSession(tx, token);
       requireOpenIntent(intent);
       const member = await tx.query<{ id: string }>(
         "SELECT id FROM participants WHERE intent_id=$1 AND guest_id=$2",
@@ -92,6 +93,7 @@ export class ResultsService {
     return this.db.transaction(async (tx) => {
       const guest = await requireSession(tx, token),
         intent = await readIntent(tx, slug, "write");
+      await requireSession(tx, token);
       if (intent.creator_guest_id !== guest)
         throw new BackendError("FORBIDDEN");
       if (intent.status !== "decided") requireOpenIntent(intent);

@@ -1,3 +1,4 @@
+import { MAX_GROUP_WINDOWS, MAX_PARTICIPANTS } from "./limits";
 import { z } from "zod";
 import type {
   BudgetAssessment,
@@ -6,7 +7,7 @@ import type {
   SchedulingParticipant,
   SchedulingResult,
 } from "./types";
-export const ENGINE_VERSION = "deterministic-v1";
+export const ENGINE_VERSION = "deterministic-v2";
 const minute = 60_000;
 const instant = z.iso.datetime({ offset: true });
 const schema = z.object({
@@ -93,6 +94,12 @@ export function suggest(input: SchedulingInput): SchedulingResult {
     until = Date.parse(data.until),
     target = data.durationMinutes * minute;
   if (
+    data.participants.length > MAX_PARTICIPANTS ||
+    data.participants.reduce((sum, p) => sum + p.availability.length, 0) >
+      MAX_GROUP_WINDOWS
+  )
+    throw new Error("Scheduling input exceeds limits.");
+  if (
     until <= from ||
     until - from > 30 * 86400000 ||
     new Set(data.participants.map((p) => p.id)).size !==
@@ -153,10 +160,6 @@ export function suggest(input: SchedulingInput): SchedulingResult {
     )
       add(start, target);
   }
-  const segments = boundaries.slice(0, -1).map((start, i) => ({
-    start,
-    duration: Math.min(target, boundaries[i + 1]! - start),
-  }));
   // Unrelated windows can split a shared period into tiny adjacent segments.
   // Include spans across those boundaries so the real shared period survives.
   for (const [index, start] of boundaries.entries()) {
@@ -242,7 +245,13 @@ export function suggest(input: SchedulingInput): SchedulingResult {
   }
   let ranked = candidates();
   if (!ranked.length) {
-    for (const s of segments) add(s.start, s.duration);
+    for (const [index, start] of boundaries.entries()) {
+      for (let next = index + 1; next < boundaries.length; next++) {
+        const duration = boundaries[next]! - start;
+        if (duration >= Math.min(15 * minute, target)) break;
+        add(start, duration);
+      }
+    }
     ranked = candidates();
   }
   const selected: PlanCandidate[] = [];

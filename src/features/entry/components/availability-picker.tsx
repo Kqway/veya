@@ -2,6 +2,7 @@
 import { useState } from "react";
 import {
   localWindow,
+  dateKey,
   nextDays,
   validateEntryAvailability,
   type Availability,
@@ -27,19 +28,27 @@ export function AvailabilityPicker({
   value,
   onChange,
   expiresAt,
+  saved = [],
 }: {
   value: Availability[];
   onChange: (value: Availability[]) => void;
   expiresAt: string;
+  saved?: Availability[];
 }) {
   const [days] = useState(() => nextDays()),
     [date, setDate] = useState(() => nextDays()[1]!.date);
   const [start, setStart] = useState("18:00"),
     [end, setEnd] = useState("20:00"),
     [error, setError] = useState<string | null>(null);
+  const [overnight, setOvernight] = useState(false);
   function add(window: Availability) {
     try {
-      validateEntryAvailability([...value, window], expiresAt);
+      validateEntryAvailability(
+        [...value, window],
+        expiresAt,
+        new Date(),
+        saved,
+      );
       onChange([...value, window]);
       setError(null);
     } catch (e) {
@@ -139,6 +148,14 @@ export function AvailabilityPicker({
             />
           </label>
         </div>
+        <label className="overnight-choice">
+          <input
+            type="checkbox"
+            checked={overnight}
+            onChange={(e) => setOvernight(e.target.checked)}
+          />{" "}
+          Ends the next day
+        </label>
         <button
           className="button button-secondary"
           type="button"
@@ -146,7 +163,11 @@ export function AvailabilityPicker({
             try {
               if (date < days[0]!.date || date > days[6]!.date)
                 throw new Error("Choose a date in the next 7 days.");
-              add(localWindow(date, start, end));
+              const next = new Date(`${date}T12:00:00`);
+              next.setDate(next.getDate() + 1);
+              add(
+                localWindow(date, start, end, overnight ? dateKey(next) : date),
+              );
             } catch (e) {
               setError((e as Error).message);
             }

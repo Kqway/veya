@@ -1,4 +1,5 @@
 import "server-only";
+import type { RequestLimiter, RateAction } from "@/lib/security/rate-limit";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { VeyaBackend } from "./service";
@@ -10,12 +11,14 @@ export interface BackendHttpOptions {
   backend: () => VeyaBackend;
   origin: string;
   secureCookie: boolean;
+  limiter?: RequestLimiter;
 }
 export class HttpError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
     message: string,
+    readonly retryAfterSeconds?: number,
   ) {
     super(message);
   }
@@ -38,41 +41,80 @@ export function tokenFrom(request: Request): string {
   return "";
 }
 
-export async function readJson(request: Request): Promise<unknown> {
+export async function enforceRateLimit(
+  limiter: RequestLimiter | undefined,
+  action: RateAction,
+  request: Request,
+): Promise<void> {
+  const decision = await limiter?.check(action, tokenFrom(request));
+  if (decision && !decision.allowed)
+    throw new HttpError(
+      429,
+      "RATE_LIMITED",
+      "Too many requests. Wait a little and try again.",
+      decision.retryAfterSeconds,
+    );
+}
+
+export async function readJson(
+  request: Request,
+  timeoutMs = 5000,
+): Promise<unknown> {
   if (
     request.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() !==
     "application/json"
-  ) {
+  )
     throw new HttpError(415, "UNSUPPORTED_MEDIA_TYPE", "Use application/json.");
-  }
   const tooLarge = () =>
     new HttpError(413, "BODY_TOO_LARGE", "The request body exceeds 16 KiB.");
-  if (Number(request.headers.get("content-length")) > 16_384) throw tooLarge();
+  if (Number(request.headers.get("content-length")) > 16384) throw tooLarge();
   const reader = request.body?.getReader();
   if (!reader)
     throw new HttpError(400, "INVALID_JSON", "Provide a valid JSON body.");
-  let size = 0,
-    text = "";
-  const decoder = new TextDecoder();
-  try {
-    while (true) {
-      const chunk = await reader.read();
-      if (chunk.done) break;
-      size += chunk.value.byteLength;
-      if (size > 16_384) {
-        await reader.cancel();
-        throw tooLarge();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const consume = async () => {
+    let size = 0,
+      text = "";
+    const decoder = new TextDecoder();
+    try {
+      while (true) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        size += chunk.value.byteLength;
+        if (size > 16384) {
+          void reader.cancel().catch(() => {});
+          throw tooLarge();
+        }
+        text += decoder.decode(chunk.value, { stream: true });
       }
-      text += decoder.decode(chunk.value, { stream: true });
+      return text + decoder.decode();
+    } finally {
+      reader.releaseLock();
     }
-    text += decoder.decode();
-  } finally {
-    reader.releaseLock();
-  }
+  };
   try {
-    return JSON.parse(text);
-  } catch {
-    throw new HttpError(400, "INVALID_JSON", "Provide a valid JSON body.");
+    const text = await Promise.race([
+      consume(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(
+            new HttpError(
+              408,
+              "REQUEST_TIMEOUT",
+              "The request took too long. Please try again.",
+            ),
+          );
+          void reader.cancel().catch(() => {});
+        }, timeoutMs);
+      }),
+    ]);
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new HttpError(400, "INVALID_JSON", "Provide a valid JSON body.");
+    }
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -95,24 +137,28 @@ export function createBackendHandlers(options: BackendHttpOptions) {
     }
   }
 
-  function requireOrigin(request: Request) {
+  async function requireOrigin(request: Request, action: RateAction = "write") {
     if (request.headers.get("origin") !== allowedOrigin)
       throw new HttpError(
         403,
         "ORIGIN_REJECTED",
         "Use the application's origin for this request.",
       );
+    await enforceRateLimit(options.limiter, action, request);
   }
 
   return {
     getResults(request: Request, slug: string) {
-      return handle(async () =>
-        json(await options.backend().getResults(slug, tokenFrom(request))),
-      );
+      return handle(async () => {
+        await enforceRateLimit(options.limiter, "read", request);
+        return json(
+          await options.backend().getResults(slug, tokenFrom(request)),
+        );
+      });
     },
     vote(request: Request, slug: string) {
       return handle(async () => {
-        requireOrigin(request);
+        await requireOrigin(request);
         const input = await readJson(request);
         return json(
           await options.backend().vote(tokenFrom(request), slug, input),
@@ -121,7 +167,7 @@ export function createBackendHandlers(options: BackendHttpOptions) {
     },
     decide(request: Request, slug: string) {
       return handle(async () => {
-        requireOrigin(request);
+        await requireOrigin(request);
         const input = await readJson(request);
         return json(
           await options.backend().decide(tokenFrom(request), slug, input),
@@ -130,7 +176,7 @@ export function createBackendHandlers(options: BackendHttpOptions) {
     },
     createSession(request: Request) {
       return handle(async () => {
-        requireOrigin(request);
+        await requireOrigin(request, "session");
         validate(z.object({}).strict(), await readJson(request));
         const backend = options.backend();
         const active = await backend.getSession(tokenFrom(request));
@@ -150,7 +196,7 @@ export function createBackendHandlers(options: BackendHttpOptions) {
     },
     revokeSession(request: Request) {
       return handle(async () => {
-        requireOrigin(request);
+        await requireOrigin(request, "session");
         await options.backend().revokeSession(tokenFrom(request));
         const response = json({ authenticated: false });
         response.cookies.set(GUEST_COOKIE, "", {
@@ -163,7 +209,7 @@ export function createBackendHandlers(options: BackendHttpOptions) {
     },
     createIntent(request: Request) {
       return handle(async () => {
-        requireOrigin(request);
+        await requireOrigin(request, "create");
         const input = await readJson(request);
         return json(
           await options.backend().createIntent(tokenFrom(request), input),
@@ -172,13 +218,16 @@ export function createBackendHandlers(options: BackendHttpOptions) {
       });
     },
     getIntent(request: Request, slug: string) {
-      return handle(async () =>
-        json(await options.backend().getIntent(slug, tokenFrom(request))),
-      );
+      return handle(async () => {
+        await enforceRateLimit(options.limiter, "read", request);
+        return json(
+          await options.backend().getIntent(slug, tokenFrom(request)),
+        );
+      });
     },
     joinIntent(request: Request, slug: string) {
       return handle(async () => {
-        requireOrigin(request);
+        await requireOrigin(request, "join");
         const input = await readJson(request);
         const result = await options
           .backend()
@@ -188,7 +237,7 @@ export function createBackendHandlers(options: BackendHttpOptions) {
     },
     updateParticipant(request: Request, slug: string) {
       return handle(async () => {
-        requireOrigin(request);
+        await requireOrigin(request);
         const input = await readJson(request);
         return json(
           await options
@@ -199,7 +248,7 @@ export function createBackendHandlers(options: BackendHttpOptions) {
     },
     closeIntent(request: Request, slug: string) {
       return handle(async () => {
-        requireOrigin(request);
+        await requireOrigin(request);
         await options.backend().closeIntent(tokenFrom(request), slug);
         return json({ closed: true });
       });
@@ -209,11 +258,18 @@ export function createBackendHandlers(options: BackendHttpOptions) {
 
 /** Shared safe response boundary for core and optional APIs. */
 export function apiError(error: unknown): NextResponse {
-  if (error instanceof HttpError)
-    return json(
+  if (error instanceof HttpError) {
+    const response = json(
       { error: { code: error.code, message: error.message } },
       error.status,
     );
+    if (error.retryAfterSeconds)
+      response.headers.set(
+        "Retry-After",
+        String(Math.max(1, Math.ceil(error.retryAfterSeconds))),
+      );
+    return response;
+  }
   if (error instanceof BackendError) {
     const statuses = {
       INVALID_INPUT: 400,
@@ -223,6 +279,7 @@ export function apiError(error: unknown): NextResponse {
       INVITE_EXPIRED: 410,
       INTENT_CLOSED: 409,
       STALE_RESULTS: 409,
+      PLAN_LIMIT_REACHED: 409,
     };
     return json(
       { error: { code: error.code, message: error.message } },

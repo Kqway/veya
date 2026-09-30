@@ -5,9 +5,12 @@ export type BackendErrorCode =
   | "NOT_FOUND"
   | "INVITE_EXPIRED"
   | "INTENT_CLOSED"
-  | "STALE_RESULTS";
+  | "STALE_RESULTS"
+  | "PLAN_LIMIT_REACHED";
 
 const messages: Record<BackendErrorCode, string> = {
+  PLAN_LIMIT_REACHED:
+    "This plan has reached its group or availability limit. Reduce time ranges or start another plan.",
   STALE_RESULTS: "These suggestions changed. Reload the latest results.",
   INVALID_INPUT: "Check the submitted fields.",
   UNAUTHORIZED: "A valid guest session is required.",
