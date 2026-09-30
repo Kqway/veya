@@ -23,11 +23,13 @@ export async function requestApi<T>(
   path: string,
   method = "GET",
   body?: unknown,
+  options: { keepalive?: boolean } = {},
 ): Promise<T> {
   let response: Response;
   try {
     response = await fetch(path, {
       method,
+      ...(options.keepalive ? { keepalive: true } : {}),
       signal: AbortSignal.timeout(15_000),
       credentials: "same-origin",
       cache: "no-store",

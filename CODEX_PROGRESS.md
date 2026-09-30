@@ -1,11 +1,11 @@
 # Veya Development Progress
 
 ## Current Phase
-5
+6
 
-**Status: Phase 5 complete on 2026-09-30.**
-Structured AI tasks, optional reviewed/transient UI and review fixes are verified.
-All quality gates pass; this record belongs to the prescribed Phase 5 commit.
+**Status: Phase 6 complete on 2026-09-30.**
+User now requested completion through Phase 7 in the same run; preserve separate
+phase commits. Phase 7 audit findings recorded; fixes follow Phase 6 publication.
 
 ## Completed Phases
 - **Phase 1 — foundation** (`5766774`): responsive Next.js landing, strict
@@ -18,15 +18,19 @@ All quality gates pass; this record belongs to the prescribed Phase 5 commit.
 - **Phase 4 — scheduling engine** (`f969f52`): pure overlap/ranking,
   shorter/subgroup compromises and alternatives, persistent results, safe attendance
   summaries, YES/MAYBE/NO voting, creator confirmation and recalculation.
-- **Phase 5 — AI layer** (`phase-5: AI integration`): structured intent parsing,
+- **Phase 5 — AI layer** (`3a0c9c3`): structured intent parsing,
   explicit preview/apply, public advisory hints, optional meetup ideas and grounded
   explanations, server-only mock/OpenAI providers and validated bounded fallback.
+- **Phase 6 — viral UX** (`phase-6: viral UX and polish`): compact mobile creation,
+  focus/loading/selection feedback, resilient sharing, public-only Open Graph images
+  and metadata, repeat-plan CTA and bounded navigation-safe analytics.
 
 ## Current Architecture
 - Next.js 16.3.8, React 19.3, strict TypeScript with unchecked-index and exact
   optional-property checks, Tailwind 4. Node 24 LTS recommended (22.12 minimum).
 - `src/app`: landing, `/i/[slug]`, `/i/[slug]/results`, generic noindex invite/result
-  metadata, error/404 UI and Node JSON APIs. Pages read runtime configuration.
+  metadata, error/404 UI and Node JSON APIs. Invite metadata/images select only
+  public organizer and effective status, without cookies/private fields. Pages read runtime configuration.
 - `src/features/intents`: validated idea composer and shared structured intent
   schema. Existing JSON accepts optional dateHint/budgetHint without a migration.
 - `src/features/entry`: cookie browser API with a 15-second timeout; exact BigInt
@@ -49,7 +53,7 @@ All quality gates pass; this record belongs to the prescribed Phase 5 commit.
   Server owns tables or has BYPASSRLS; there are no direct-client RLS policies.
 - `scripts`: persistent loopback/SCRAM native development PostgreSQL, migrate/seed
   CLI. Embedded binaries are dev/test only; `.local/postgres` is ignored.
-- `src/lib/analytics`: disabled by default. Five bounded browser events (including
+- `src/lib/analytics`: disabled by default. Six bounded browser event names (including
   result_viewed) and three server mutation events (including changed vote_submitted).
   Only names, enumerated surfaces and timestamps are stored, never personal data.
 - `src/lib/ai`: typed parseIntent/suggestPlan/explainPlan tasks, strict Zod schemas,
@@ -64,7 +68,8 @@ All quality gates pass; this record belongs to the prescribed Phase 5 commit.
 ## Important Decisions
 - User authorized continued development and GitHub publication. Use the supplied
   work branch, one prescribed phase commit and fast-forward push to main. Never
-  force-push; no deployment/PR is part of this run. Stop after Phase 5.
+  force-push; no deployment/PR is part of this run. Latest instruction supersedes
+  one-phase stopping rule: finish Phase 6 then Phase 7, separate prescribed commits.
 - Guest identity is a 30-day HttpOnly/SameSite=Lax cookie, Secure in production;
   only SHA-256 hashes persist. High-entropy slugs act as invitation links.
 - Mutations require configured Origin and application/json bodies up to 16 KiB.
@@ -138,6 +143,19 @@ All quality gates pass; this record belongs to the prescribed Phase 5 commit.
 - Boundary span enumeration needs production scale/load limits in Phase 7.
 
 ## Tests Status
+- Phase 6 full check after review fixes passed: **177 tests in 23 files**, lint,
+  strict types and build. New preview/PNG tests forbid external assets; SQL/privacy,
+  repeat CTA event surfaces and sharing duplicate/failure behavior verified.
+- Phase 6 review found two Important, no Critical/Minor: external font/emoji
+  requests from Unicode names and overly broad preview read. Five tests reproduced
+  RED; one fix pass uses bundled-font-safe bounded text/generic image plus narrow
+  name/status query. Unicode names stay in metadata. All unit/native/DOM gates pass.
+- Phase 6 full browser gate **30/30 passed** on the final production build,
+  desktop/mobile, including both new viral and 320px/reduced-motion scenarios.
+  Screenshots inspected; no overflow. Prior CTA label expectation updated.
+  Audit0, no dependencies added; staged whitespace/artifact/secret checks passed.
+
+Previous Phase 5 evidence:
 - Final `npm run check` after review fixes — passed: zero-warning lint, generated
   route types, strict TypeScript, **166 tests in 20 files**, production build.
 - Native PostgreSQL coverage totals **68 tests**, including **9 AI integration
@@ -169,35 +187,26 @@ All quality gates pass; this record belongs to the prescribed Phase 5 commit.
   configuration names and synthetic fixtures, no secrets or runtime artifacts.
 
 ## Next Phase
-**Phase 6 — product quality + virality.** Improve mobile landing/create/invite/
-availability/results/share flows, hierarchy, spacing, loading/motion and empty/
-error states. Polish Web Share, Telegram and copy link; add privacy-conscious
-Open Graph invite previews. Improve post-join/post-vote prompts to create another
-plan and track bounded new_intent_from_invite. Review and reduce friction across
-create → share → join → result → create again. Do not begin Phase 7 in that run.
+**Phase 7 — hardening + release preparation**, continuing in this authorized run.
+Independent audits reproduced: intent/session expiry during lock waits; unchanged
+elapsed saved availability blocks unrelated edits; forms continue after unmount.
+Apply regression-tested fixes, reasonable bounded rate limiter/security headers,
+explicit retention maintenance and complete release audit. Preserve optional AI
+and all previous flows; run full checks/browser/audit, update release docs, publish
+`phase-7: release hardening`, verify remote and stop when the roadmap is complete.
 
 ## Notes for Next Codex Run
-- Read README/progress/code/history; verify this phase commit and GitHub main.
-  Do not redo Phases 1–5. Start exactly Phase 6, one prescribed commit and stop.
-- Run npm ci and npm run check. Build before test:e2e; tests own their temporary
-  database and port 3100. Never use/reset development or production DATABASE_URL.
-  Browser server forces AI_PROVIDER=mock and an empty key; do not enable live calls.
-- Manual development: npm run db:local, documented local DATABASE_URL in .env.local,
-  db:migrate and optional db:seed. Match NEXT_PUBLIC_APP_URL to browser origin.
-  Keep keys server-only; add migrations instead of editing applied SQL.
-- POST session reuses an active guest. Join HTTP returns IntentView directly;
-  service join returns {created,view}. Participant PUT is full replacement; preserve
-  saved private fields. Creator confirmation must not invent a membership.
-- Preserve deterministic scheduler and fingerprint/version/revision distinction.
-  Material engine changes require a version bump; closed decisions never regenerate.
-  Private preferences affect ranking, never public activity labels or AI prompts.
-- AI helpers stay explicit and optional. Preserve preview/apply and all manual
-  paths, minimal public projection, no transactions over generation, completion
-  access/revision checks, reason grounding and key/revision remount behavior.
-- Rich previews must not expose membership names, windows, notes, budgets or IDs.
-  Invite/result currently use generic noindex metadata; balance useful previews with
-  bearer-link privacy and existing authorization boundaries.
-- Analytics currently has five browser event/surface pairs and three server events.
-  Add the Phase 6 event with bounded enums; never send personal/model text or keys.
-- Publication remains authorized: finish Phase 6, update this record, commit
-  `phase-6: viral UX and polish`, fast-forward push to main and stop.
+- User's latest “Закончи до конца” replaces the original exactly-one-phase stop.
+  Do not redo Phases1–6; finish Phase7 if no verified phase-7 commit exists.
+- Read README/progress/code/history and docs/superpowers/{specs,plans}/2026-09-30-completion*.
+  Work remains supplied branch, no new worktree, no deployment/PR; publication to
+  GitHub main already authorized, normal fast-forward only.
+- npm run check and build before test:e2e; tests own isolated DB/3100. Never use or
+  reset development/production DATABASE_URL. Browser server forces mock/no key.
+- Preserve guest identity/session/revision/privacy/closed decisions, reviewed AI
+  hints, completion authorization and public-only preview SQL/images. No private
+  fields in metadata or analytics. Repeat event accepts invite/result surfaces only.
+- Retention is explicit CLI, dry-run default; delete eligible old intents before
+  unreferenced expired/revoked guests in separate transactions; analytics independently.
+- External OpenAI credentials/egress, hosted database, production deployment and
+  actual device sharing remain unverified; document truthfully, complete local work.

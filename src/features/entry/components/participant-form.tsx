@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { IntentView } from "@/features/backend/types";
 import { ensureGuest, requestApi } from "../client";
 import {
@@ -27,6 +27,10 @@ export function ParticipantForm({
   const [busy, setBusy] = useState(false),
     [error, setError] = useState<string | null>(null),
     alert = useRef<HTMLParagraphElement>(null);
+  const nameInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    nameInput.current?.focus();
+  }, []);
   const existing = Boolean(view.ownParticipant);
   function field(key: keyof typeof fields) {
     return {
@@ -80,6 +84,7 @@ export function ParticipantForm({
         <label className="field">
           Display name
           <input
+            ref={nameInput}
             {...field("displayName")}
             maxLength={60}
             autoComplete="given-name"

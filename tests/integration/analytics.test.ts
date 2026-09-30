@@ -16,7 +16,7 @@ const request = (body: unknown, origin = "http://localhost:3000") =>
     body: JSON.stringify(body),
   });
 describe("optional browser analytics", () => {
-  it("accepts only five bounded event/surface pairs with no personal fields", async () => {
+  it("accepts bounded event/surface pairs with no personal fields", async () => {
     const handler = createAnalyticsHandler({
       origin: "http://localhost:3000",
       client: () => createDatabaseAnalyticsClient(database.db),
@@ -27,10 +27,14 @@ describe("optional browser analytics", () => {
       ["invite_opened", "invite"],
       ["invite_link_copied", "invite"],
       ["result_viewed", "result"],
+      ["new_intent_from_invite", "invite"],
+      ["new_intent_from_invite", "result"],
     ])
       expect((await handler(request({ name, surface }))).status).toBe(200);
     for (const data of [
       { name: "landing_view", surface: "invite" },
+      { name: "new_intent_from_invite", surface: "landing" },
+      { name: "new_intent_from_invite", surface: "result", slug: "private" },
       { name: "intent_created", surface: "create" },
       { name: "vote_submitted", surface: "result" },
       { name: "invite_opened", surface: "invite", notes: "private" },
@@ -48,7 +52,7 @@ describe("optional browser analytics", () => {
     ).toBe(403);
     expect(
       (await database.db.query("SELECT * FROM analytics_events")).rowCount,
-    ).toBe(5);
+    ).toBe(7);
   });
   it("disabled tracking needs no database and database failures remain safe", async () => {
     const handler = createAnalyticsHandler({

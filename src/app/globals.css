@@ -225,3 +225,36 @@ button:disabled { cursor: default; opacity: .5; transform: none; }
 .meetup-idea { background: #f4f2e8; border-radius: 14px; padding: 18px; }
 .meetup-idea p { font-size: 14px; line-height: 1.7; margin: 8px 0; }
 .meetup-title { font-weight: 600; overflow-wrap: anywhere; }
+
+/* Consumer flow: keep the current action close, calm and easy to tap. */
+.skip-link { clip-path: inset(50%); }
+.skip-link:focus { clip-path: none; }
+.hero:has(.details-card) { padding-top: 8px; padding-bottom: 40px; }
+.hero:has(.details-card) h1 { font-size: clamp(28px, 4vw, 44px); margin: 12px 0 24px; }
+.hero:has(.details-card) .hero-badge,
+.hero:has(.details-card) .hero-description,
+.hero:has(.details-card) .hero-postscript,
+.hero:has(.details-card) .plan-doodle,
+.hero:has(.details-card) + .how-it-works { display: none; }
+.repeat-plan { text-align: center; border-top: 1px solid var(--line); margin-top: 36px; padding: 32px 8px 16px; }
+.repeat-plan h2 { font-size: clamp(25px, 3vw, 32px); line-height: 1.2; letter-spacing: -.04em; margin: 12px 0; }
+.repeat-plan .button { margin-top: 12px; }
+.availability-feedback { color: #396134; font-size: 13px; line-height: 1.6; margin: 12px 0; }
+.loading-plan h1 { font-size: clamp(32px, 5vw, 48px); }
+.loading-shapes { display: flex; justify-content: center; gap: 10px; margin-top: 32px; }
+.loading-shapes span { width: 13px; height: 13px; border-radius: 50%; background: var(--accent); animation: plan-pulse 1.4s ease-in-out infinite; }
+.loading-shapes span:nth-child(2) { animation-delay: .15s; }
+.loading-shapes span:nth-child(3) { animation-delay: .3s; }
+@keyframes plan-pulse { 0%, 100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-5px); } }
+.entry-card, .composer-card { animation: plan-enter 180ms ease-out; }
+@keyframes plan-enter { from { opacity: .5; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 640px) {
+  .hero:has(.details-card) h1 { font-size: 28px; }
+  .repeat-plan .button { width: 100%; }
+  .results-nav { gap: 10px; }
+  .selected-times li { align-items: flex-start; }
+  .selected-times li > span { flex: 1; min-width: 0; }
+  .selected-times button { flex-shrink: 0; }
+  .details-card > .form-actions, .participant-form > .form-actions { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { .entry-card, .composer-card, .loading-shapes span { animation: none; } }

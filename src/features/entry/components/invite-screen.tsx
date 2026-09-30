@@ -1,4 +1,6 @@
 "use client";
+import { RepeatPlan } from "./repeat-plan";
+import { LoadingPlan } from "./loading-plan";
 import { IntentHints } from "./intent-hints";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -82,12 +84,7 @@ export function InviteScreen({ slug }: { slug: string }) {
         </div>
       </section>
     );
-  if (!view)
-    return (
-      <section className="message-page" aria-busy="true">
-        <p role="status">Finding your plan…</p>
-      </section>
-    );
+  if (!view) return <LoadingPlan />;
   const { intent, ownParticipant } = view,
     closed = intent.status === "expired" || intent.status === "decided";
   return (
@@ -154,7 +151,12 @@ export function InviteScreen({ slug }: { slug: string }) {
         </section>
       ) : (
         <>
-          <SharePanel slug={intent.publicSlug} />
+          {view.isCreator && (
+            <SharePanel
+              slug={intent.publicSlug}
+              creatorName={intent.creatorName}
+            />
+          )}
           {editing ? (
             <ParticipantForm
               view={view}
@@ -223,13 +225,17 @@ export function InviteScreen({ slug }: { slug: string }) {
               </button>
             </section>
           )}
+          {!view.isCreator && (
+            <SharePanel
+              slug={intent.publicSlug}
+              creatorName={intent.creatorName}
+            />
+          )}
           <p className="invite-next">
             We&apos;re collecting everyone&apos;s availability. You can share
             this invite while replies come in.
           </p>
-          <Link className="new-plan-link" href="/">
-            Another idea? Start your own plan →
-          </Link>
+          <RepeatPlan surface="invite" />
         </>
       )}
     </div>

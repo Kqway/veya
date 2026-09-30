@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { RepeatPlan } from "@/features/entry/components/repeat-plan";
+import { LoadingPlan } from "@/features/entry/components/loading-plan";
 import { useEffect, useRef, useState } from "react";
 import type { ResultsView, VoteValue } from "@/features/backend/results-types";
 import { ApiError, requestApi } from "@/features/entry/client";
@@ -76,6 +78,7 @@ export function ResultsScreen({ slug }: { slug: string }) {
       setBusy(false);
     }
   }
+  if (!view && !error) return <LoadingPlan results />;
   if (!view)
     return (
       <section className="message-page" aria-busy={!error}>
@@ -251,9 +254,7 @@ export function ResultsScreen({ slug }: { slug: string }) {
           </Link>
         </section>
       )}
-      <Link className="new-plan-link" href="/">
-        Another idea? Start a new plan →
-      </Link>
+      <RepeatPlan surface="result" />
     </div>
   );
 }

@@ -26,23 +26,31 @@ type BrowserEvent =
   | "intent_started"
   | "invite_opened"
   | "invite_link_copied"
-  | "result_viewed";
+  | "result_viewed"
+  | "new_intent_from_invite";
 export function useAnalytics() {
   const enabled = useContext(AnalyticsEnabled);
   return useCallback(
-    (name: BrowserEvent) => {
+    (name: BrowserEvent, source?: "invite" | "result") => {
       if (enabled)
-        void requestApi("/api/analytics", "POST", {
-          name,
-          surface:
-            name === "result_viewed"
-              ? "result"
-              : name === "landing_view"
-                ? "landing"
-                : name === "intent_started"
-                  ? "create"
-                  : "invite",
-        }).catch(() => {});
+        void requestApi(
+          "/api/analytics",
+          "POST",
+          {
+            name,
+            surface:
+              name === "new_intent_from_invite"
+                ? (source ?? "invite")
+                : name === "result_viewed"
+                  ? "result"
+                  : name === "landing_view"
+                    ? "landing"
+                    : name === "intent_started"
+                      ? "create"
+                      : "invite",
+          },
+          { keepalive: true },
+        ).catch(() => {});
     },
     [enabled],
   );

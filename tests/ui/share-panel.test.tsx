@@ -9,6 +9,30 @@ afterEach(() => {
   Reflect.deleteProperty(navigator, "share");
 });
 describe("invite sharing", () => {
+  it("prevents duplicate share calls and uses public organizer copy", async () => {
+    let finish!: () => void;
+    const share = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    Object.defineProperty(navigator, "share", {
+      value: share,
+      configurable: true,
+    });
+    const user = userEvent.setup();
+    render(<SharePanel slug="abcdefghijklmnopqrstuvwx" creatorName="Artem" />);
+    const button = screen.getByRole("button", { name: "Share invite" });
+    await user.click(button);
+    await user.click(button);
+    expect(share).toHaveBeenCalledTimes(1);
+    expect(button).toBeDisabled();
+    expect(share).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Artem wants to make a plan 👀" }),
+    );
+    finish();
+  });
   it("supports native sharing, keeps cancellation quiet and offers a failure fallback", async () => {
     const cancelled = new Error("cancelled");
     cancelled.name = "AbortError";

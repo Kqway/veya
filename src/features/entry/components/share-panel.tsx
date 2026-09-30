@@ -2,7 +2,13 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 import { useAnalytics } from "@/lib/analytics/browser";
 const subscribe = () => () => {};
-export function SharePanel({ slug }: { slug: string }) {
+export function SharePanel({
+  slug,
+  creatorName,
+}: {
+  slug: string;
+  creatorName?: string;
+}) {
   const origin = useSyncExternalStore(
     subscribe,
     () => window.location.origin,
@@ -17,7 +23,17 @@ export function SharePanel({ slug }: { slug: string }) {
     input = useRef<HTMLInputElement>(null),
     track = useAnalytics();
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const locked = useRef(false);
+  const title = creatorName
+    ? `${creatorName} wants to make a plan 👀`
+    : "Let's make a plan · Veya";
+  const text =
+    "Add your availability and Veya will find what works for everyone. No account needed.";
   async function copy() {
+    if (locked.current || !origin) return;
+    locked.current = true;
+    setBusy(true);
     try {
       await navigator.clipboard.writeText(url);
       setMessage("Link copied. Bring your people!");
@@ -26,18 +42,29 @@ export function SharePanel({ slug }: { slug: string }) {
       setMessage("Copy the link below to invite your friends.");
       input.current?.focus();
       input.current?.select();
+    } finally {
+      locked.current = false;
+      setBusy(false);
     }
   }
   async function share() {
+    if (locked.current || !origin) return;
+    locked.current = true;
+    setBusy(true);
+    setMessage("");
     try {
       await navigator.share({
-        title: "Let's make a plan · Veya",
-        text: "Add yourself — no account needed.",
+        title,
+        text,
         url,
       });
+      setMessage("Invite shared. Bring your people!");
     } catch (e) {
       if (!(e instanceof Error && e.name === "AbortError"))
         setMessage("Sharing is unavailable. Copy the link below instead.");
+    } finally {
+      locked.current = false;
+      setBusy(false);
     }
   }
   return (
@@ -53,13 +80,14 @@ export function SharePanel({ slug }: { slug: string }) {
         <button
           className="button button-primary"
           type="button"
+          disabled={busy || !origin}
           onClick={() => void copy()}
         >
           Copy link
         </button>
         <a
           className="button button-secondary"
-          href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent("Let's make a plan! Add yourself — no account needed.")}`}
+          href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(`${title} ${text}`)}`}
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -69,6 +97,7 @@ export function SharePanel({ slug }: { slug: string }) {
           <button
             className="button button-secondary"
             type="button"
+            disabled={busy || !origin}
             onClick={() => void share()}
           >
             Share invite

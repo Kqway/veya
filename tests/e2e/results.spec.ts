@@ -218,6 +218,6 @@ test("empty, invalid and expired results provide a useful next step", async ({
     page.getByRole("button", { name: "YES", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Another idea? Start a new plan →" }),
+    page.getByRole("link", { name: "Create your own plan" }),
   ).toBeVisible();
 });

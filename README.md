@@ -10,7 +10,7 @@ The MVP's priority is the viral loop:
 
 ## Current scope
 
-**Phases 1–5 — guest planning, deterministic scheduling, group decisions and optional AI.** Turn an
+**Phases 1–6 — guest planning, optional AI and a mobile-first sharing loop.** Turn an
 idea into a plan, share `/i/<slug>`, and let friends add availability, preferences
 and budgets without an account. Copy link, Telegram and native sharing are supported.
 Returning guests can refresh and edit their own details with the same browser.
@@ -91,7 +91,7 @@ guarded by `server-only`. Errors name invalid fields and omit their values.
 | `AI_PROVIDER` | `mock` | `mock` for local templates or `openai` for optional remote assistance |
 | `OPENAI_API_KEY` | Unset | Server-only secret; a missing key uses local fallback |
 | `OPENAI_MODEL` | `gpt-4.1-mini` | Optional remote model identifier |
-| `ANALYTICS_ENABLED` | `false` | Opt into eight safe entry/result events in PostgreSQL |
+| `ANALYTICS_ENABLED` | `false` | Opt into nine bounded entry/result event names in PostgreSQL |
 | `NODE_ENV` | Managed by Next.js | `development`, `test` or `production` |
 
 Never prefix secrets with `NEXT_PUBLIC_`. No intent text or display names are sent
@@ -231,12 +231,15 @@ event names, enumerated surfaces and timestamps, never personal text or tokens.
 A cookie identifies this browser for 30 days; clearing/revoking it loses access
 as that guest. Revoked edits explain the expired session instead of creating a new
 identity. Invalid/expired/decided invites have explicit states. Invite/result pages request no-store JSON
-and have generic metadata with noindex; richer share previews are Phase 6.
+and remain noindex. Open Graph/Twitter previews use only the public organizer name
+and fixed invitation copy; participant data, intent text and hints stay out of previews.
 
 With ANALYTICS_ENABLED=true, backend mutations record intent_created and
 participant_joined once, and vote_submitted on a new or changed vote. The browser
 sends landing_view, intent_started, invite_opened, invite_link_copied and
-result_viewed through bounded same-origin `/api/analytics`.
+result_viewed through bounded same-origin `/api/analytics`. Create your own plan
+links track new_intent_from_invite with only invite/result surface. Analytics uses
+keepalive for navigation, stays silent when disabled and never delays the next plan.
 That endpoint accepts only fixed event/surface pairs and rejects extra fields.
 Analytics failures do not block the guest UI. Production rate limiting is Phase 7.
 
@@ -275,6 +278,24 @@ each proposal. Other people's raw windows, preferences, budgets and notes remain
 private. Suggested activity labels come only from the public intent, while private
 preferences affect ranking. Aggregate budget compatibility may appear in the
 group proposal; numerical budget ranges never appear.
+
+## Mobile flow and share previews
+
+Creation keeps the current idea prominent and compacts the landing header. Join
+forms focus the display name, available times show selection feedback, and all
+controls remain usable at 320px. Loading and subtle transitions respect reduced
+motion. Create your own plan follows joining/results and returns directly to the
+landing, closing the create → share → join → result → create loop.
+
+Copy link handles permission failure with a selectable URL; native sharing guards
+duplicate clicks, reports success and keeps cancellation quiet. Telegram/native
+copy includes only the public organizer and fixed invitation text. Link previews
+read only organizer name and effective status; closed/unknown/unavailable plans
+have generic copy. Images render locally from the bundled font. Unicode names are
+preserved in metadata; names requiring extra fonts/emoji use generic image copy,
+so no external asset request is needed. Images and API data use no-store. Social
+platforms may still retain their own cached preview; public names are already part
+of invite visibility. Configure the public HTTPS origin before starting the host.
 
 ## Optional AI assistance
 
@@ -402,7 +423,7 @@ release candidate. No deployment is performed by the development phase run.
 3. Create + invite + join — complete.
 4. Scheduling engine — complete: deterministic overlap, compromises, results, votes and confirmation.
 5. AI layer — complete: reviewed structured parsing, optional ideas/explanations and bounded provider fallback.
-6. Product quality + virality — mobile polish, previews and repeat creation.
+6. Product quality + virality — complete: compact mobile creation, responsive availability feedback, resilient sharing, public-only previews and tracked repeat creation.
 7. Hardening + release preparation — audit and release verification.
 
 Each autonomous run completes exactly one phase, verifies it, updates

@@ -54,6 +54,11 @@ export function AvailabilityPicker({
         {Intl.DateTimeFormat().resolvedOptions().timeZone}. Morning 9–12,
         afternoon 12–17, evening 17–22.
       </p>
+      <p className="availability-feedback" role="status">
+        {value.length
+          ? `${value.length} ${value.length === 1 ? "time" : "times"} selected. You can add more.`
+          : "Tap a time below. One is enough to get started."}
+      </p>
       <div className="day-list">
         {days.map((day) => (
           <div className="day-row" key={day.date}>
