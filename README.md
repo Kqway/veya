@@ -10,16 +10,18 @@ The MVP's priority is the viral loop:
 
 ## Current scope
 
-**Phases 1–4 — guest planning, deterministic scheduling and group decisions.** Turn an
+**Phases 1–5 — guest planning, deterministic scheduling, group decisions and optional AI.** Turn an
 idea into a plan, share `/i/<slug>`, and let friends add availability, preferences
 and budgets without an account. Copy link, Telegram and native sharing are supported.
 Returning guests can refresh and edit their own details with the same browser.
 Open `/i/<slug>/results` for the best time and alternatives, vote YES/MAYBE/NO,
-and let the organizer explicitly confirm the group plan.
+and let the organizer explicitly confirm the group plan. Help with details previews
+editable intent suggestions; Get a meetup idea adds an optional idea and grounded
+explanation. Both work locally without an AI key.
 
 PostgreSQL is required to create or load plans; the landing and build work without
 credentials. Start the local database and apply migrations using the workflow below.
-Optional AI enhancements begin in Phase 5. Read
+Read
 [CODEX_PROGRESS.md](CODEX_PROGRESS.md) before starting work.
 
 ## Local setup
@@ -85,9 +87,10 @@ guarded by `server-only`. Errors name invalid fields and omit their values.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Public HTTP(S) origin for metadata; no paths, query, credentials or fragments |
-| `DATABASE_URL` | Unset | Server-only PostgreSQL URI; required by HTTP APIs, optional for the landing |
-| `AI_PROVIDER` | `mock` | Phase 1 supports `mock` only |
-| `OPENAI_API_KEY` | Unset | Reserved server-only key; remote provider arrives in Phase 5 |
+| `DATABASE_URL` | Unset | Server-only PostgreSQL URI; required by persistent plan APIs |
+| `AI_PROVIDER` | `mock` | `mock` for local templates or `openai` for optional remote assistance |
+| `OPENAI_API_KEY` | Unset | Server-only secret; a missing key uses local fallback |
+| `OPENAI_MODEL` | `gpt-4.1-mini` | Optional remote model identifier |
 | `ANALYTICS_ENABLED` | `false` | Opt into eight safe entry/result events in PostgreSQL |
 | `NODE_ENV` | Managed by Next.js | `development`, `test` or `production` |
 
@@ -177,14 +180,14 @@ src/
   app/                    Pages, invite route, styles, metadata, error/404 UI
   components/             Shared brand, icons and decorative artwork
   features/
-    intents/              Draft validation, examples, interactive composer
+    intents/              Draft validation, shared structured schema, interactive composer
     backend/              Validated services, guest authorization, safe views, HTTP
     entry/                Guest browser API, money/time helpers, invite/share/forms
     scheduling/           Pure overlap/ranking engine and focused results/voting UI
   lib/
     config/               Pure env parser and server-only accessor
     db/                   Typed SQL, transactions, migrations, demo seed
-    ai/                   Text-generation contract, mock, server factory
+    ai/                   Structured tasks, mock/OpenAI providers, validation and fallback
     analytics/            Typed contract, opt-in browser events and PostgreSQL adapter
 db/migrations/            Versioned domain schema and server-only RLS boundaries
 scripts/                  Local PostgreSQL and migration/seed CLI
@@ -197,10 +200,10 @@ tests/
 docs/superpowers/          Phase design and implementation record
 ```
 
-The mock AI adapter validates a 1–4000 character prompt and returns trimmed text
-without a network request. It is an explicit contract stub, not intent
-understanding. Phase 5 adds structured tasks, validated OpenAI output, timeouts
-and fallbacks. Scheduling runs without AI: its pure `suggest` function takes
+AI tasks parse intent details, suggest a meetup idea and explain existing proposals.
+The mock uses a small explicit English/Russian vocabulary and templates; it is not
+a language model. OpenAI output is validated and failures use local fallback.
+Scheduling runs without AI: its pure `suggest` function takes
 explicit bounds, duration and participant data and returns deterministic proposals.
 Analytics is disabled by default; enabled events store only
 event names, enumerated surfaces and timestamps, never personal text or tokens.
@@ -208,7 +211,10 @@ event names, enumerated surfaces and timestamps, never personal text or tokens.
 ## Create, invite and join
 
 1. Enter an idea on the landing. Add your name, collect replies for 3/7/14 days,
-   and optionally choose activities and a place. Create invite opens the saved plan.
+   and optionally choose a type, activities and a place. Help with details previews
+   suggestions; Apply details explicitly copies them into editable fields.
+   Manual creation remains available during assistance or after failure.
+   Create invite opens the saved plan.
 2. Copy its link, send it through Telegram, or use native sharing if available.
    Clipboard failure leaves a selectable URL for manual copying.
 3. Friends open the link and select Add yourself. The creator can also add their
@@ -270,9 +276,46 @@ private. Suggested activity labels come only from the public intent, while priva
 preferences affect ranking. Aggregate budget compatibility may appear in the
 group proposal; numerical budget ranges never appear.
 
+## Optional AI assistance
+
+The default `AI_PROVIDER=mock` needs no credentials or network. It recognizes a
+small English/Russian activity vocabulary, today/tomorrow/day after tomorrow,
+explicit ISO dates, this calendar week (today through Sunday), and literal place
+and budget hints. Unknown details stay empty. Relative dates use the browser's
+explicit local reference date; arithmetic beyond supported ISO dates stays unknown.
+
+For remote assistance set `AI_PROVIDER=openai` and `OPENAI_API_KEY` in the server
+environment, optionally choose `OPENAI_MODEL`, and restart. The host needs access
+to `api.openai.com` and a model supporting strict JSON-schema output. Never use a
+`NEXT_PUBLIC_` key. Parsing sends only the idea, reference date and IANA timezone.
+Apply details explicitly publishes reviewed details with the intent. Date and
+budget hints are advisory text, separate from expiry, participant budgets and
+scheduling constraints; they can be removed before creating the invite.
+
+Only the active organizer or a current member can request proposal assistance.
+The server sends public intent text/activities/place and aggregate proposal facts,
+never participant names, windows, notes, preferences, numerical budgets, IDs or
+votes. Ideas render as plain text in a separate panel. Factual explanations come
+from validated reason codes and server-owned phrases grounded in the proposal.
+Assistance does not change proposals, attendance, votes or confirmation. It is
+transient; refreshing clears it while saved votes remain.
+
+Calls happen only after explicit clicks. The remote transport uses the fixed
+OpenAI chat-completions endpoint, strict JSON schemas, 1000 output tokens,
+`store=false`, a 64 KiB response limit and an overall eight-second deadline.
+There are no retries or redirects. Parallel idea/explanation calls run outside
+transactions; access and proposal revision are checked again before returning.
+Missing keys, network/HTTP errors, refusals, malformed/truncated output and timeouts
+use local fallback. Invalid user input is rejected. The core planning flow does
+not wait for assistance; raw provider errors or prompts are not logged.
+
+Tests inject the remote transport and force mock/no key in browser tests. Live
+OpenAI access was not verified in this environment, which has no configured key
+or allowed OpenAI egress. Production rate/cost/load controls remain Phase 7 work.
+
 ## Backend API contract
 
-All responses use `Cache-Control: no-store`. Mutations require an Origin header
+All responses use `Cache-Control: no-store`. POST/PUT/DELETE require an Origin header
 matching `NEXT_PUBLIC_APP_URL`. POST/PUT bodies must be application/json and at
 most 16 KiB. Send cookies with requests; no user/guest/participant IDs are accepted
 from clients. Browser guest cookies are HttpOnly, SameSite=Lax, scoped to `/`,
@@ -283,6 +326,8 @@ and Secure when NODE_ENV=production. Use HTTPS outside localhost.
 | `POST /api/analytics` | Optional bounded browser event; no personal properties |
 | `POST /api/session` with `{}` | Reuse an active cookie or create a guest; returns no token in JSON |
 | `DELETE /api/session` | Revoke the current guest token and clear the cookie |
+| `POST /api/ai/intent` | Optional stateless parsing; no database or guest session required |
+| `POST /api/intents/[slug]/assist` | Optional proposal assistance for an active organizer/member |
 | `POST /api/intents` | Create an intent for the current guest |
 | `GET /api/intents/[slug]` | Public intent/count plus the current guest's own membership |
 | `DELETE /api/intents/[slug]` | Creator-only close; retains records, marks active plans expired and preserves decisions |
@@ -294,9 +339,18 @@ and Secure when NODE_ENV=production. Use HTTPS outside localhost.
 
 Create body: `rawText` (trimmed 1–500 chars), optional `title` (1–120),
 `creatorName` (defaults to “A friend”), optional structured intent `{type,
-activities, location}`, optional offset ISO `expiresAt` (future, within 30 days;
-defaults to 7 days). Structured type: general/meet/travel/game/study. No AI parsing
-occurs yet; the backend validates and persists the supplied structure.
+activities, location, dateHint?, budgetHint?}`, optional offset ISO `expiresAt` (future, within 30 days;
+defaults to 7 days). Structured type: general/meet/travel/game/study. Date hints
+are nullable `{startDate,endDate,text}` with ordered real ISO dates and text ≤80;
+budget hints are nullable text ≤80. Existing bodies without hints remain valid.
+Creation only validates and persists supplied details; it does not invoke AI.
+
+Parse body: `{text,referenceDate,timeZone}`; idea is 1–500 characters, referenceDate
+is a real `YYYY-MM-DD` and timezone is a valid IANA zone. Returns `{data,source}`
+with strict parsed fields and source `mock`/`openai`/`fallback`. Assist body:
+`{suggestionKey,revision}`. Returns those keys plus typed `idea` and `explanation`
+results. Missing/revoked sessions return 401, outsiders 403, stale selections 409;
+a session or revision change during generation is rejected too.
 
 Participant body: `displayName` (1–60), optional `availability` array of
 `{startAt,endAt}` offset ISO instants, `preferences` array of `{category,value}`
@@ -334,8 +388,8 @@ secrets in the host's server environment.
 
 Apply `NODE_ENV=production npm run db:migrate` with the trusted production
 DATABASE_URL before starting the backend. Supply migration files with the CLI
-checkout. Do not run the demo seed in production. API routes require a live
-database; the landing can still build without one. Rate limiting, retention
+checkout. Do not run the demo seed in production. Persistent plan APIs require a live
+database; the landing and stateless intent parser work without one. Rate limiting, retention
 policies and a full release audit remain Phase 7 work.
 
 The current application can be deployed as a preview. It is not yet the viral MVP or a
@@ -347,7 +401,7 @@ release candidate. No deployment is performed by the development phase run.
 2. Database and backend — complete.
 3. Create + invite + join — complete.
 4. Scheduling engine — complete: deterministic overlap, compromises, results, votes and confirmation.
-5. AI layer — optional structured enhancements and fallbacks.
+5. AI layer — complete: reviewed structured parsing, optional ideas/explanations and bounded provider fallback.
 6. Product quality + virality — mobile polish, previews and repeat creation.
 7. Hardening + release preparation — audit and release verification.
 

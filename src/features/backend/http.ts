@@ -24,7 +24,7 @@ export class HttpError extends Error {
 export const json = (body: unknown, status = 200) =>
   NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
-function tokenFrom(request: Request): string {
+export function tokenFrom(request: Request): string {
   for (const cookie of (request.headers.get("cookie") ?? "").split(";")) {
     const separator = cookie.indexOf("=");
     if (cookie.slice(0, separator).trim() === GUEST_COOKIE) {
@@ -91,35 +91,7 @@ export function createBackendHandlers(options: BackendHttpOptions) {
     try {
       return await work();
     } catch (error) {
-      if (error instanceof HttpError)
-        return json(
-          { error: { code: error.code, message: error.message } },
-          error.status,
-        );
-      if (error instanceof BackendError) {
-        const statuses = {
-          INVALID_INPUT: 400,
-          UNAUTHORIZED: 401,
-          FORBIDDEN: 403,
-          NOT_FOUND: 404,
-          INVITE_EXPIRED: 410,
-          INTENT_CLOSED: 409,
-          STALE_RESULTS: 409,
-        };
-        return json(
-          { error: { code: error.code, message: error.message } },
-          statuses[error.code],
-        );
-      }
-      return json(
-        {
-          error: {
-            code: "SERVICE_UNAVAILABLE",
-            message: "The service is temporarily unavailable.",
-          },
-        },
-        503,
-      );
+      return apiError(error);
     }
   }
 
@@ -233,4 +205,37 @@ export function createBackendHandlers(options: BackendHttpOptions) {
       });
     },
   };
+}
+
+/** Shared safe response boundary for core and optional APIs. */
+export function apiError(error: unknown): NextResponse {
+  if (error instanceof HttpError)
+    return json(
+      { error: { code: error.code, message: error.message } },
+      error.status,
+    );
+  if (error instanceof BackendError) {
+    const statuses = {
+      INVALID_INPUT: 400,
+      UNAUTHORIZED: 401,
+      FORBIDDEN: 403,
+      NOT_FOUND: 404,
+      INVITE_EXPIRED: 410,
+      INTENT_CLOSED: 409,
+      STALE_RESULTS: 409,
+    };
+    return json(
+      { error: { code: error.code, message: error.message } },
+      statuses[error.code],
+    );
+  }
+  return json(
+    {
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "The service is temporarily unavailable.",
+      },
+    },
+    503,
+  );
 }

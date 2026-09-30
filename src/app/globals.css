@@ -213,3 +213,15 @@ button:disabled { cursor: default; opacity: .5; transform: none; }
   .proposal-time { font-size: 18px; }
   .vote-buttons .choice-chip { flex: 1; min-width: 0; }
 }
+
+.intent-assistance { margin: 22px 0; }
+.assistance-preview { border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 16px 0; text-align: left; }
+.assistance-preview h3, .meetup-idea h3 { font-size: 16px; font-weight: 600; margin: 0 0 12px; }
+.assistance-preview p, .intent-hints p { font-size: 13px; line-height: 1.7; margin: 8px 0; overflow-wrap: anywhere; }
+.intent-hints { padding: 8px 0; }
+.applied-hints { margin-bottom: 20px; }
+.plan-assistance { border-top: 1px solid var(--line); padding-top: 18px; margin-top: 22px; }
+.plan-assistance > .button { min-height: 44px; font-size: 13px; }
+.meetup-idea { background: #f4f2e8; border-radius: 14px; padding: 18px; }
+.meetup-idea p { font-size: 14px; line-height: 1.7; margin: 8px 0; }
+.meetup-title { font-weight: 600; overflow-wrap: anywhere; }

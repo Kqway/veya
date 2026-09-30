@@ -1,10 +1,14 @@
 "use client";
+import { PlanAssistance } from "./plan-assistance";
 import type {
   ResultProposal,
   VoteValue,
 } from "@/features/backend/results-types";
 import { formatWindow } from "@/features/entry/components/availability-picker";
 export function ProposalCard({
+  slug,
+  revision,
+  canAssist,
   proposal,
   label,
   canVote,
@@ -13,6 +17,9 @@ export function ProposalCard({
   onVote,
   onChoose,
 }: {
+  slug: string;
+  revision: number;
+  canAssist: boolean;
   proposal: ResultProposal;
   label: string;
   canVote: boolean;
@@ -80,6 +87,14 @@ export function ProposalCard({
             </button>
           ))}
         </div>
+      )}
+      {canAssist && (
+        <PlanAssistance
+          slug={slug}
+          suggestionKey={proposal.suggestionKey}
+          revision={revision}
+          disabled={busy}
+        />
       )}
       {canDecide && (
         <button

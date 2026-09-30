@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import type { ParsedIntent } from "@/features/intents/structured";
+import { IntentAssistance } from "./intent-assistance";
+import { IntentHints } from "./intent-hints";
 import type { IntentView } from "@/features/backend/types";
 import { ensureGuest, requestApi } from "../client";
 const activities = ["Coffee", "Dinner", "Walk", "Games", "Study", "Adventure"];
@@ -20,6 +23,12 @@ export function CreateDetails({
   const [selected, setSelected] = useState<string[]>([]),
     [busy, setBusy] = useState(false),
     [error, setError] = useState<string | null>(null);
+  const [kind, setKind] = useState<ParsedIntent["type"]>("general"),
+    [hints, setHints] = useState<Pick<
+      ParsedIntent,
+      "dateHint" | "budgetHint"
+    > | null>(null);
+  const availableActivities = [...new Set([...activities, ...selected])];
   useEffect(() => heading.current?.focus(), []);
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -37,9 +46,10 @@ export function CreateDetails({
         rawText: idea,
         creatorName: name.trim(),
         structuredIntent: {
-          type: "general",
+          type: kind,
           activities: selected.map((a) => a.toLowerCase()),
           location: place.trim() || null,
+          ...(hints ?? {}),
         },
         expiresAt: new Date(Date.now() + Number(days) * 86400000).toISOString(),
       });
@@ -61,6 +71,24 @@ export function CreateDetails({
       <h2 className="draft-title" tabIndex={-1} ref={heading}>
         {idea}
       </h2>
+      <IntentAssistance
+        idea={idea}
+        disabled={busy}
+        onApply={(parsed) => {
+          setKind(parsed.type);
+          setSelected(
+            [...new Set(parsed.activities.map((a) => a.toLowerCase()))].map(
+              (a) => a.charAt(0).toUpperCase() + a.slice(1),
+            ),
+          );
+          setPlace(parsed.location ?? "");
+          setHints({
+            dateHint: parsed.dateHint,
+            budgetHint: parsed.budgetHint,
+          });
+          requestAnimationFrame(() => heading.current?.focus());
+        }}
+      />
       <fieldset disabled={busy} className="plain-fieldset">
         <label className="field">
           Your name
@@ -81,16 +109,30 @@ export function CreateDetails({
             <option value="14">14 days</option>
           </select>
         </label>
+        <label className="field">
+          Kind of plan (optional)
+          <select
+            value={kind}
+            onChange={(e) => setKind(e.target.value as ParsedIntent["type"])}
+          >
+            <option value="general">Anything together</option>
+            <option value="meet">Meet up</option>
+            <option value="travel">Travel</option>
+            <option value="game">Games</option>
+            <option value="study">Study</option>
+          </select>
+        </label>
         <fieldset className="tag-fieldset">
           <legend>
             What sounds good? <span>(optional)</span>
           </legend>
           <div className="tag-list">
-            {activities.map((a) => (
+            {availableActivities.map((a) => (
               <button
                 type="button"
                 className="choice-chip"
                 aria-pressed={selected.includes(a)}
+                disabled={!selected.includes(a) && selected.length >= 10}
                 key={a}
                 onClick={() =>
                   setSelected(
@@ -115,6 +157,22 @@ export function CreateDetails({
           />
         </label>
       </fieldset>
+      {hints && (
+        <div className="applied-hints">
+          <IntentHints
+            dateHint={hints.dateHint}
+            budgetHint={hints.budgetHint}
+          />
+          <button
+            type="button"
+            className="button button-secondary"
+            disabled={busy}
+            onClick={() => setHints(null)}
+          >
+            Remove date/budget hints
+          </button>
+        </div>
+      )}
       {error && (
         <p className="entry-error" role="alert" tabIndex={-1} ref={alert}>
           {error}

@@ -27,6 +27,8 @@ const server = spawn(
       DATABASE_URL: database.connectionString,
       NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3100",
       ANALYTICS_ENABLED: "true",
+      AI_PROVIDER: "mock",
+      OPENAI_API_KEY: "",
       NODE_ENV: "production",
     },
   },

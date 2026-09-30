@@ -211,7 +211,10 @@ export function ResultsScreen({ slug }: { slug: string }) {
       {proposals.length ? (
         proposals.map((p, index) => (
           <ProposalCard
-            key={p.suggestionKey}
+            key={`${p.suggestionKey}:${view.revision}`}
+            slug={slug}
+            revision={view.revision}
+            canAssist={view.isCreator || view.ownParticipant !== null}
             proposal={p}
             label={
               decided

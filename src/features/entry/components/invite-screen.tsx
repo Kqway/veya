@@ -1,4 +1,5 @@
 "use client";
+import { IntentHints } from "./intent-hints";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { IntentView } from "@/features/backend/types";
@@ -110,6 +111,10 @@ export function InviteScreen({ slug }: { slug: string }) {
             )}
           </div>
         )}
+        <IntentHints
+          dateHint={intent.structuredIntent.dateHint}
+          budgetHint={intent.structuredIntent.budgetHint}
+        />
         <p className="quiet-copy">
           <strong>{intent.participantCount}</strong>{" "}
           {intent.participantCount === 1 ? "person has" : "people have"} added
