@@ -6,13 +6,15 @@ export class ApiError extends Error {
     super(
       code === "UNAUTHORIZED"
         ? "Your session has ended. Reload this page to continue."
-        : code === "INVITE_EXPIRED"
-          ? "This invite has expired. Start a new plan together."
-          : code === "INTENT_CLOSED"
-            ? "This plan is closed to changes."
-            : code === "INVALID_INPUT"
-              ? "Check your details and future availability, then try again."
-              : "We couldn't save that right now. Your details are still here — please try again.",
+        : code === "STALE_RESULTS"
+          ? "These suggestions changed. Reload the latest results before choosing."
+          : code === "INVITE_EXPIRED"
+            ? "This invite has expired. Start a new plan together."
+            : code === "INTENT_CLOSED"
+              ? "This plan is closed to changes."
+              : code === "INVALID_INPUT"
+                ? "Check your details and future availability, then try again."
+                : "We couldn't save that right now. Your details are still here — please try again.",
     );
   }
 }

@@ -184,3 +184,32 @@ button:disabled { cursor: default; opacity: .5; transform: none; }
   .budget-fields { grid-template-columns: 1fr 1fr; gap: 10px; }
   .budget-fields .field:last-child { grid-column: 1 / -1; margin-top: 0; }
 }
+
+.results-entry { text-align: center; margin: 24px 0; }
+.results-nav { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 30px; }
+.results-nav > a { font-size: 13px; text-decoration: underline; min-height: 44px; display: inline-flex; align-items: center; }
+.results-nav .button { min-height: 44px; padding: 10px 16px; font-size: 12px; }
+.proposal-card { border-top: 4px solid #deded1; }
+.proposal-card[aria-label="Best match"], .proposal-card[aria-label="Confirmed plan"] { border-top-color: var(--accent); }
+.proposal-time { font-size: 20px; line-height: 1.6; letter-spacing: -.02em; }
+.attendance-count { font-size: 14px; color: var(--muted); }
+.attendance-count strong { color: var(--ink); }
+.proposal-explanation { line-height: 1.7; font-size: 14px; }
+.attendance-list { list-style: none; padding: 0; margin: 22px 0; }
+.attendance-list li { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; border-bottom: 1px solid var(--line); padding: 12px 0; font-size: 13px; }
+.attendance-list li > span:first-child { overflow-wrap: anywhere; min-width: 0; }
+.attendance-available { color: #396134; }
+.attendance-partial { color: #915220; }
+.attendance-unavailable { color: var(--muted); }
+.vote-counts { font-size: 12px; letter-spacing: .03em; color: var(--muted); margin: 22px 0 12px; }
+.vote-buttons { display: flex; gap: 8px; }
+.vote-buttons .choice-chip { min-width: 85px; font-weight: 600; }
+.choose-plan { margin-top: 20px; }
+.confirm-plan { border: 2px solid var(--accent); }
+.confirmed-message { background: #e8efdf; color: #396134; padding: 16px 20px; border-radius: 12px; line-height: 1.7; font-size: 14px; }
+.results-error { margin-bottom: 24px; }
+@media (max-width: 640px) {
+  .results-nav { flex-wrap: wrap; gap: 10px; }
+  .proposal-time { font-size: 18px; }
+  .vote-buttons .choice-chip { flex: 1; min-width: 0; }
+}

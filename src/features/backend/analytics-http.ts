@@ -4,6 +4,9 @@ import type { AnalyticsClient } from "@/lib/analytics/types";
 import { HttpError, json, readJson } from "./http";
 const eventSchema = z.discriminatedUnion("name", [
   z
+    .object({ name: z.literal("result_viewed"), surface: z.literal("result") })
+    .strict(),
+  z
     .object({ name: z.literal("landing_view"), surface: z.literal("landing") })
     .strict(),
   z

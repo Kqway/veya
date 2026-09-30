@@ -10,14 +10,16 @@ The MVP's priority is the viral loop:
 
 ## Current scope
 
-**Phases 1–3 — foundation, persistent backend and guest entry flow.** Turn an
+**Phases 1–4 — guest planning, deterministic scheduling and group decisions.** Turn an
 idea into a plan, share `/i/<slug>`, and let friends add availability, preferences
 and budgets without an account. Copy link, Telegram and native sharing are supported.
 Returning guests can refresh and edit their own details with the same browser.
+Open `/i/<slug>/results` for the best time and alternatives, vote YES/MAYBE/NO,
+and let the organizer explicitly confirm the group plan.
 
 PostgreSQL is required to create or load plans; the landing and build work without
 credentials. Start the local database and apply migrations using the workflow below.
-Scheduling/results/voting and AI enhancements are later phases. Read
+Optional AI enhancements begin in Phase 5. Read
 [CODEX_PROGRESS.md](CODEX_PROGRESS.md) before starting work.
 
 ## Local setup
@@ -86,7 +88,7 @@ guarded by `server-only`. Errors name invalid fields and omit their values.
 | `DATABASE_URL` | Unset | Server-only PostgreSQL URI; required by HTTP APIs, optional for the landing |
 | `AI_PROVIDER` | `mock` | Phase 1 supports `mock` only |
 | `OPENAI_API_KEY` | Unset | Reserved server-only key; remote provider arrives in Phase 5 |
-| `ANALYTICS_ENABLED` | `false` | Opt into six safe entry-flow events in PostgreSQL |
+| `ANALYTICS_ENABLED` | `false` | Opt into eight safe entry/result events in PostgreSQL |
 | `NODE_ENV` | Managed by Next.js | `development`, `test` or `production` |
 
 Never prefix secrets with `NEXT_PUBLIC_`. No intent text or display names are sent
@@ -178,7 +180,7 @@ src/
     intents/              Draft validation, examples, interactive composer
     backend/              Validated services, guest authorization, safe views, HTTP
     entry/                Guest browser API, money/time helpers, invite/share/forms
-    scheduling/           Domain-only engine contract for Phase 4
+    scheduling/           Pure overlap/ranking engine and focused results/voting UI
   lib/
     config/               Pure env parser and server-only accessor
     db/                   Typed SQL, transactions, migrations, demo seed
@@ -198,9 +200,9 @@ docs/superpowers/          Phase design and implementation record
 The mock AI adapter validates a 1–4000 character prompt and returns trimmed text
 without a network request. It is an explicit contract stub, not intent
 understanding. Phase 5 adds structured tasks, validated OpenAI output, timeouts
-and fallbacks. Scheduling currently has types only and must remain independent
-of UI, persistence and AI when implemented in Phase 4. date-fns is installed for
-that work. Analytics is disabled by default; enabled events store only
+and fallbacks. Scheduling runs without AI: its pure `suggest` function takes
+explicit bounds, duration and participant data and returns deterministic proposals.
+Analytics is disabled by default; enabled events store only
 event names, enumerated surfaces and timestamps, never personal text or tokens.
 
 ## Create, invite and join
@@ -216,20 +218,57 @@ event names, enumerated surfaces and timestamps, never personal text or tokens.
    preferences and a note. Times are shown in the browser's named timezone and
    saved as UTC instants; nonexistent local DST times and overlapping ranges fail.
 5. Refresh the same browser to see saved details and edit them. Only your own
-   private fields are visible. New availability choices cover seven days; valid
+   private fields are visible on the invite. Group members and the organizer see
+   names and derived attendance on results. New availability choices cover seven days; valid
    previously saved windows beyond that horizon are preserved when editing.
 
 A cookie identifies this browser for 30 days; clearing/revoking it loses access
 as that guest. Revoked edits explain the expired session instead of creating a new
-identity. Invalid/expired/decided invites have explicit states. Replies are collected;
-scheduling and voting are not implemented yet. Invite pages request no-store JSON
+identity. Invalid/expired/decided invites have explicit states. Invite/result pages request no-store JSON
 and have generic metadata with noindex; richer share previews are Phase 6.
 
 With ANALYTICS_ENABLED=true, backend mutations record intent_created and
-participant_joined once. The browser sends landing_view, intent_started,
-invite_opened and invite_link_copied through bounded same-origin `/api/analytics`.
+participant_joined once, and vote_submitted on a new or changed vote. The browser
+sends landing_view, intent_started, invite_opened, invite_link_copied and
+result_viewed through bounded same-origin `/api/analytics`.
 That endpoint accepts only fixed event/surface pairs and rejects extra fields.
 Analytics failures do not block the guest UI. Production rate limiting is Phase 7.
+
+## Find a time and decide
+
+The service seeks 60-minute meetups before the invite expires, within 30 days.
+The engine merges adjacent/overlapping windows and evaluates event boundaries,
+30-minute UTC starts and shorter spans across boundaries. Spans normally reach
+at least 15 minutes; if none can, even a shorter real window is offered. Full attendance ranks first, then
+availability quality, shared activity/food/location preferences, compatible budgets
+and deterministic time ordering. Budgets use integer minor units; different
+currencies are never compared or converted. Preference similarity does not assert
+dietary safety or venue suitability.
+
+Results contain a best match and up to three non-overlapping alternatives; fewer
+appear when availability is limited. If nobody shares a full hour, a shorter
+meetup or the largest available subgroup provides a compromise. Partial attendees
+are listed separately. Empty/past availability prompts friends to add future times.
+Times display in the current browser timezone, including the end date overnight.
+
+Suggestions are generated and stored on the first results read. Repeated reads
+preserve proposal keys and votes when inputs and outputs are unchanged. Participant
+changes or elapsed options regenerate the set and clear old votes. Old submissions
+return `STALE_RESULTS` (409); Reload results fetches the current proposals. Reads,
+recomputation, votes and confirmation serialize under the intent's transaction lock.
+
+Only a current member can vote; each can change one vote per proposal. The organizer
+chooses a proposal, then confirms in a separate step. A decided plan freezes its
+saved result and closes joining, editing and voting. Repeating the same confirmation
+is idempotent. The collection deadline or a creator close cannot erase a confirmed
+selection. Refresh results retrieves other people's latest votes or decision.
+
+Anonymous visitors see aggregate availability and votes. Active members and the
+organizer additionally see names with Available/Partly available/Unavailable for
+each proposal. Other people's raw windows, preferences, budgets and notes remain
+private. Suggested activity labels come only from the public intent, while private
+preferences affect ranking. Aggregate budget compatibility may appear in the
+group proposal; numerical budget ranges never appear.
 
 ## Backend API contract
 
@@ -246,9 +285,12 @@ and Secure when NODE_ENV=production. Use HTTPS outside localhost.
 | `DELETE /api/session` | Revoke the current guest token and clear the cookie |
 | `POST /api/intents` | Create an intent for the current guest |
 | `GET /api/intents/[slug]` | Public intent/count plus the current guest's own membership |
-| `DELETE /api/intents/[slug]` | Creator-only close; retains records and marks expired |
+| `DELETE /api/intents/[slug]` | Creator-only close; retains records, marks active plans expired and preserves decisions |
 | `POST /api/intents/[slug]/participants` | Join once; 201 on creation, 200 on duplicate without replacing data |
 | `PUT /api/intents/[slug]/participants/me` | Replace only the caller's existing participant data |
+| `GET /api/intents/[slug]/results` | Generate/read saved proposals and safe group/own vote projection |
+| `POST /api/intents/[slug]/votes` | Member-only upsert of YES/MAYBE/NO on a current proposal |
+| `POST /api/intents/[slug]/decision` | Creator-only explicit confirmation of a current proposal |
 
 Create body: `rawText` (trimmed 1–500 chars), optional `title` (1–120),
 `creatorName` (defaults to “A friend”), optional structured intent `{type,
@@ -264,12 +306,18 @@ ordered, and require a supported uppercase currency. Windows must be future,
 non-overlapping, ≤24 hours each, and inside the intent expiry/next 30 days.
 PUT replaces all fields; omitted optional fields return to their defaults.
 
+Vote body: `{suggestionKey,revision,value}`; decision body: `{suggestionKey,revision}`.
+`suggestionKey` is an opaque 32-character hexadecimal public key, separate from
+internal UUIDs; `revision` is the integer returned by results; `value` is
+`yes`/`maybe`/`no`. Extra identity fields are rejected. Results include aggregate
+counts, own vote and (for creator/members only) derived named attendance.
+
 Public views expose no internal IDs, emails, session hashes or other people's
 notes/budgets/windows/preferences. Only your own membership appears with your
-valid cookie. Expired invites return status expired and reject joins/updates
+valid cookie. Expired invites return status expired and reject joins/updates/votes
 (410); decided plans reject changes (409). Expired/revoked credentials cannot
-write (401). Suggestions/votes are invalidated on membership changes; automatic
-recomputation and voting endpoints are Phase 4.
+write (401). Suggestions/votes are invalidated on membership changes; result reads
+recompute active plans. Expired and decided plans retain their saved proposals.
 
 Stable error JSON is `{error:{code,message}}`; invalid input is 400, missing
 resources 404, forbidden actions/origins 403, oversized bodies 413, wrong content
@@ -298,7 +346,7 @@ release candidate. No deployment is performed by the development phase run.
 1. Foundation — complete.
 2. Database and backend — complete.
 3. Create + invite + join — complete.
-4. Scheduling engine — deterministic overlap, compromises, results and votes.
+4. Scheduling engine — complete: deterministic overlap, compromises, results, votes and confirmation.
 5. AI layer — optional structured enhancements and fallbacks.
 6. Product quality + virality — mobile polish, previews and repeat creation.
 7. Hardening + release preparation — audit and release verification.

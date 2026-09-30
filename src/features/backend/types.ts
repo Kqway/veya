@@ -22,6 +22,9 @@ export interface IntentView {
 
 export interface IntentRow {
   id: string;
+  scheduling_revision: string;
+  suggestions_fingerprint: string | null;
+  selected_suggestion_id: string | null;
   public_slug: string;
   creator_guest_id: string | null;
   creator_display_name: string;

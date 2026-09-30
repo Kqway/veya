@@ -125,6 +125,52 @@ export function validateEntryAvailability(
     previousEnd = w.end;
   }
 }
+export function parsePreferenceText(text: string): string[] {
+  const values: string[] = [];
+  let value = "",
+    quoted = false,
+    closed = false;
+  function commit() {
+    const clean = value.trim().toLowerCase();
+    if (clean) values.push(clean);
+    value = "";
+    closed = false;
+  }
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i]!;
+    if (quoted) {
+      if (char === '"') {
+        if (text[i + 1] === '"') {
+          value += '"';
+          i++;
+        } else {
+          quoted = false;
+          closed = true;
+        }
+      } else value += char;
+    } else if (char === ",") commit();
+    else if (char === '"') {
+      if (value.trim() || closed)
+        throw new Error(
+          "Put quotes around an entire preference containing commas.",
+        );
+      value = "";
+      quoted = true;
+    } else {
+      if (closed && char.trim())
+        throw new Error("Separate preferences with commas.");
+      value += char;
+    }
+  }
+  if (quoted) throw new Error("Close the quote around your preference.");
+  commit();
+  return [...new Set(values)];
+}
+function preferenceText(values: string[]): string {
+  return values
+    .map((v) => (/[,"]/.test(v) ? '"' + v.replaceAll('"', '""') + '"' : v))
+    .join(", ");
+}
 export function participantFromForm(
   fields: ParticipantFields,
   availability: Availability[],
@@ -139,14 +185,10 @@ export function participantFromForm(
     (category) => {
       if (own && fields[category] === originalFields![category])
         return own.preferences.filter((p) => p.category === category);
-      return [
-        ...new Set(
-          fields[category]
-            .split(",")
-            .map((value) => value.trim().toLowerCase())
-            .filter(Boolean),
-        ),
-      ].map((value) => ({ category, value }));
+      return parsePreferenceText(fields[category]).map((value) => ({
+        category,
+        value,
+      }));
     },
   );
   const parsed = participantSchema.safeParse({
@@ -176,10 +218,11 @@ export function fieldsFromParticipant(
     ...Object.fromEntries(
       (["activity", "dietary", "location"] as const).map((category) => [
         category,
-        own?.preferences
-          .filter((p) => p.category === category)
-          .map((p) => p.value)
-          .join(", ") ?? "",
+        preferenceText(
+          own?.preferences
+            .filter((p) => p.category === category)
+            .map((p) => p.value) ?? [],
+        ),
       ]),
     ),
   } as ParticipantFields;

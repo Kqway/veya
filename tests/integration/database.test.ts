@@ -28,7 +28,7 @@ describe("native PostgreSQL boundary", () => {
   });
 
   it("applies the domain schema once and preserves checksums", async () => {
-    expect(await applyMigrations(cluster.db)).toEqual(["0001_initial.sql", "0002_private_server_tables.sql"]);
+    expect(await applyMigrations(cluster.db)).toEqual(["0001_initial.sql", "0002_private_server_tables.sql", "0003_scheduling.sql"]);
     expect(await applyMigrations(cluster.db)).toEqual([]);
     const result = await cluster.db.query<{ count: string }>(
       "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('users','intents','participants','availability_windows','preferences','plan_suggestions','votes','analytics_events','guest_participant_sessions')",

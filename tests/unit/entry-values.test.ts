@@ -76,6 +76,27 @@ describe("participant form conversion", () => {
     ).toThrow();
     expect(() => validateEntryAvailability([a], a.startAt, now)).toThrow();
   });
+  it("preserves saved comma/quote values while adding another preference", () => {
+    const own = {
+      displayName: "Sam",
+      budgetMin: null,
+      budgetMax: null,
+      currency: null,
+      notes: "",
+      availability: [],
+      preferences: [
+        { category: "location" as const, value: "washington, dc" },
+        { category: "activity" as const, value: 'a "co-op" game' },
+      ],
+    };
+    const fields = fieldsFromParticipant(own);
+    fields.location += ", arlington";
+    expect(participantFromForm(fields, [], own).preferences).toEqual([
+      { category: "activity", value: 'a "co-op" game' },
+      { category: "location", value: "washington, dc" },
+      { category: "location", value: "arlington" },
+    ]);
+  });
   it("preserves unchanged saved preference values containing commas", () => {
     const own = {
       displayName: "Sam",

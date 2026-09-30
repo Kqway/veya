@@ -120,6 +120,19 @@ export function InviteScreen({ slug }: { slug: string }) {
           })}
         </p>
       </section>
+      <div className="results-entry">
+        <Link
+          className="button button-primary"
+          href={`/i/${intent.publicSlug}/results`}
+        >
+          {intent.status === "decided"
+            ? "See the confirmed plan"
+            : "Find a time together"}
+        </Link>
+        <p className="quiet-copy">
+          Shared times, useful compromises, and a say for everyone.
+        </p>
+      </div>
       {closed ? (
         <section className="entry-card closed-plan">
           <h2>

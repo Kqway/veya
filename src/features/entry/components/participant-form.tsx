@@ -135,7 +135,9 @@ export function ParticipantForm({
             />
           </label>
           <p className="quiet-copy">
-            Separate preferences with commas. Your details stay private.
+            Separate preferences with commas; quote values containing commas.
+            Your name and availability at suggested times are shared with this
+            group. Notes and detailed preferences stay private.
           </p>
           <label className="field">
             Optional note

@@ -12,7 +12,16 @@ const presets = [
   { name: "Evening", start: "17:00", end: "22:00" },
 ];
 export function formatWindow(window: Availability): string {
-  return `${new Date(window.startAt).toLocaleString("en", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} – ${new Date(window.endAt).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}`;
+  const start = new Date(window.startAt),
+    end = new Date(window.endAt);
+  const options = {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  } as const;
+  return `${start.toLocaleString("en", options)} – ${start.toDateString() === end.toDateString() ? end.toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" }) : end.toLocaleString("en", options)}`;
 }
 export function AvailabilityPicker({
   value,

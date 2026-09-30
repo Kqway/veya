@@ -25,7 +25,8 @@ type BrowserEvent =
   | "landing_view"
   | "intent_started"
   | "invite_opened"
-  | "invite_link_copied";
+  | "invite_link_copied"
+  | "result_viewed";
 export function useAnalytics() {
   const enabled = useContext(AnalyticsEnabled);
   return useCallback(
@@ -34,11 +35,13 @@ export function useAnalytics() {
         void requestApi("/api/analytics", "POST", {
           name,
           surface:
-            name === "landing_view"
-              ? "landing"
-              : name === "intent_started"
-                ? "create"
-                : "invite",
+            name === "result_viewed"
+              ? "result"
+              : name === "landing_view"
+                ? "landing"
+                : name === "intent_started"
+                  ? "create"
+                  : "invite",
         }).catch(() => {});
     },
     [enabled],
