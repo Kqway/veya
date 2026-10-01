@@ -6,7 +6,7 @@ import {
   validateWindows,
   participantSchema,
 } from "@/features/backend/validation";
-import { lockProfiles, requireProfile, reauthorize } from "./context";
+import { lockProfiles, requireProfile, reauthorize, requireCapability } from "./context";
 import { fail } from "./errors";
 import { seekingSchema, publicKeySchema, strongerMode } from "./seeking-schema";
 import { readPost, projectOwnPost, type PostRow } from "./post-repository";
@@ -33,6 +33,7 @@ export class SeekingService {
       let profile = await requireProfile(tx, token);
       await lockProfiles(tx, [profile.id]);
       profile = await reauthorize(tx, token, profile.id);
+      await requireCapability(tx,profile.id,'seek');
       if (
         data.privacyMode &&
         strongerMode(profile.privacy_mode, data.privacyMode) !==
