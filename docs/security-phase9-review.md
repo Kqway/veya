@@ -62,3 +62,13 @@ production build, 48/48 Playwright cases and dependency audit with zero known
 vulnerabilities. Node 24 non-root Docker build and liveness/readiness smoke passed.
 Remote CI, actual hosting/TLS/proxy behavior, real push delivery and backup restore
 remain operator verification; no production deployment was performed.
+
+### Container operational follow-up
+
+A subsequent controller smoke found operations-image source/package files retained
+owner-only root permissions from the checkout, so non-root migration/worker CLIs
+failed before configuration validation. The failure was reproduced with actual
+Docker execution. Builder COPY now assigns node ownership; actual non-root runner,
+migration and worker smoke passed, including generic no-DB failures. A separate CI
+container job deliberately uses restrictive checkout permissions and runs this
+regression. Application authorization/projection code was unchanged by this repair.

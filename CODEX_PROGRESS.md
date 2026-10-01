@@ -51,7 +51,11 @@ events, notifications, expired admin sessions and limiter buckets explicitly.
   denied/unsupported push, moderator suspension and 320px/reduced-motion cold start.
 - `npm audit --json`: PASS, **zero known vulnerabilities** at verification time.
 - Docker smoke: non-root UID1000, container healthy, `/api/health`200 and
-  `/api/ready`503 when no database is configured, as intended.
+  `/api/ready`503 when no database is configured, as intended. A subsequent real
+  operations smoke reproduced owner-only checkout files unreadable to node; builder
+  COPY now assigns ownership explicitly. Both migration and worker CLIs reach their
+  safe missing-DB failure as node. A separate CI job reproduces restrictive file
+  permissions and executes the actual runner/operations smoke script.
 - Separate read-only security/privacy review: six Important findings reproduced,
   fixed and re-reviewed, with regression tests; no unresolved Critical/Important
   finding in reviewed scope. See [review](docs/security-phase9-review.md) for evidence
@@ -91,7 +95,8 @@ bounded aggregate counts when analytics is enabled.
 - `f61495e` — phase-9j: deployment lifecycle and non-root container
 - `972d011` — phase-9l: launch UX and desktop/mobile journeys
 - `a93568f` — phase-9k: security review and release evidence.
-- CI follow-up: `phase-9a: enforce dependency audit in CI`.
+- `3204643` — phase-9a: enforce dependency audit in CI.
+- Container follow-up: `phase-9j: verify non-root operational images`.
 
 ## Historical Phase 8 baseline
 

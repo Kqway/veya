@@ -58,3 +58,14 @@ jobs:
             logs/
           if-no-files-found: ignore
           retention-days: 7
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      # Reproduce owner-only checkout permissions; COPY must preserve node access.
+      - run: chmod 600 package.json tsconfig.json scripts/database.ts
+      - run: docker build --target operations -t veya:operations-smoke .
+      - run: docker build --target runner -t veya:smoke .
+      - run: bash scripts/docker-smoke.sh

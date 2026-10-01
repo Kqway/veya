@@ -13,6 +13,7 @@ npx playwright install --with-deps chromium
 npm run test:e2e -- --project=desktop --project=mobile
 docker build --target runner -t veya:release .
 docker build --target operations -t veya:operations .
+bash scripts/docker-smoke.sh veya:release veya:operations
 ```
 
 In a managed environment whose HTTPS proxy uses a private root, add

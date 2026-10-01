@@ -8,7 +8,8 @@ RUN --mount=type=secret,id=proxy_ca \
 
 FROM dependencies AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
-COPY . .
+# Preserve non-root access even when checkout files have owner-only permissions.
+COPY --chown=node:node . .
 RUN npm run build
 
 # Run the same migration/worker CLI from an isolated release job, not the web startup.
