@@ -11,7 +11,7 @@ export async function readPublicPreview(
   db: DatabaseExecutor,
   slug: string,
 ): Promise<Pick<PublicIntent, "creatorName" | "status">> {
-  if (!runtimeLimiter.check("preview").allowed)
+  if (!(await runtimeLimiter.check("preview")).allowed)
     throw new Error("Preview temporarily limited.");
   const result = await db.query<Pick<PublicIntent, "creatorName" | "status">>(
     `SELECT creator_display_name AS "creatorName", CASE WHEN status IN ('collecting','ready') AND expires_at <= clock_timestamp() THEN 'expired' ELSE status END AS status FROM intents WHERE public_slug=$1`,

@@ -10,7 +10,7 @@ export default async function Image({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const limit = runtimeLimiter.check("image");
+  const limit = await runtimeLimiter.check("image");
   if (!limit.allowed)
     return new Response(null, {
       status: 429,

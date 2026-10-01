@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { RuntimeRequestLimiter } from "./runtime-limiter";
 export type RateAction =
   | "read"
   | "write"
@@ -17,7 +18,11 @@ export type RateAction =
   | "connection"
   | "message"
   | "report"
-  | "recovery";
+  | "recovery"
+  | "profileCreate"
+  | "push"
+  | "realtime"
+  | "moderation";
 export type RateDecision = { allowed: boolean; retryAfterSeconds: number };
 export interface RequestLimiter {
   check(
@@ -25,8 +30,8 @@ export interface RequestLimiter {
     token?: string,
   ): RateDecision | Promise<RateDecision>;
 }
-type Policy = { global: number; guest: number };
-const policies: Record<RateAction, Policy> = {
+export type Policy = { global: number; guest: number };
+export const ratePolicies: Record<RateAction, Policy> = {
   read: { global: 1200, guest: 120 },
   write: { global: 300, guest: 30 },
   session: { global: 300, guest: 30 },
@@ -44,6 +49,10 @@ const policies: Record<RateAction, Policy> = {
   message: { global: 600, guest: 60 },
   report: { global: 30, guest: 5 },
   recovery: { global: 60, guest: 5 },
+  profileCreate: { global: 60, guest: 2 },
+  push: { global: 100, guest: 10 },
+  realtime: { global: 120, guest: 6 },
+  moderation: { global: 60, guest: 10 },
 };
 type Bucket = { count: number; resetAt: number };
 /** Process-local guard. A multi-instance host must supply a shared adapter/gateway. */
@@ -63,7 +72,7 @@ export class FixedWindowLimiter implements RequestLimiter {
   ) {
     this.clock = options.clock ?? Date.now;
     this.maxEntries = options.maxEntries ?? 4096;
-    this.config = { ...policies, ...options.policies };
+    this.config = { ...ratePolicies, ...options.policies };
     if (
       !Number.isInteger(this.maxEntries) ||
       this.maxEntries < 1 ||
@@ -114,8 +123,8 @@ export class FixedWindowLimiter implements RequestLimiter {
   }
 }
 const scope = globalThis as typeof globalThis & {
-  veyaRequestLimiter?: FixedWindowLimiter;
+  veyaRequestLimiter?: RequestLimiter;
 };
 export const runtimeLimiter =
-  scope.veyaRequestLimiter ?? new FixedWindowLimiter();
+  scope.veyaRequestLimiter ?? new RuntimeRequestLimiter();
 scope.veyaRequestLimiter = runtimeLimiter;

@@ -3,8 +3,9 @@ import { shareImage } from "@/components/share-image";
 export const alt = "Veya — Less planning. More living.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export default function Image() {
-  const limit = runtimeLimiter.check("image");
+export const dynamic = "force-dynamic";
+export default async function Image() {
+  const limit = await runtimeLimiter.check("image");
   if (!limit.allowed)
     return new Response(null, {
       status: 429,
