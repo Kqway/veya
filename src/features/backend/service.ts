@@ -1,7 +1,7 @@
 import "server-only";
 import { assertPlanCapacity } from "./capacity";
-import { randomBytes } from "node:crypto";
 import type { Database } from "@/lib/db/types";
+import { createIntentInTransaction } from "./intent-creation";
 import { createDatabaseAnalyticsClient } from "@/lib/analytics/postgres";
 import { BackendError } from "./errors";
 import {
@@ -19,14 +19,13 @@ import {
   requireOpenIntent,
 } from "./repository";
 import {
-  createIntentSchema,
   participantSchema,
   slugSchema,
   validate,
   validateWindows,
 } from "./validation";
 import { ResultsService } from "./results-service";
-import type { IntentRow, IntentView } from "./types";
+import type { IntentView } from "./types";
 
 export class VeyaBackend {
   constructor(
@@ -57,37 +56,9 @@ export class VeyaBackend {
   }
 
   async createIntent(token: string, input: unknown): Promise<IntentView> {
-    const data = validate(createIntentSchema, input);
-    const now = Date.now();
-    const expiresAt = data.expiresAt
-      ? new Date(data.expiresAt)
-      : new Date(now + 7 * 86_400_000);
-    if (
-      expiresAt.getTime() <= now ||
-      expiresAt.getTime() > now + 30 * 86_400_000
-    )
-      throw new BackendError("INVALID_INPUT");
-    return this.db.transaction(async (tx) => {
-      const guestId = await requireSession(tx, token);
-      const result = await tx.query<IntentRow>(
-        "INSERT INTO intents(public_slug,creator_guest_id,creator_display_name,raw_text,title,structured_intent,expires_at) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *",
-        [
-          randomBytes(18).toString("base64url"),
-          guestId,
-          data.creatorName,
-          data.rawText,
-          data.title ?? data.rawText.slice(0, 120),
-          JSON.stringify(data.structuredIntent),
-          expiresAt,
-        ],
-      );
-      if (this.options.analyticsEnabled)
-        await createDatabaseAnalyticsClient(tx).track({
-          name: "intent_created",
-          surface: "create",
-        });
-      return projectIntent(tx, result.rows[0]!, guestId);
-    });
+    return this.db.transaction((tx) =>
+      createIntentInTransaction(tx, token, input, this.options),
+    );
   }
 
   async getIntent(slug: string, token?: string): Promise<IntentView> {
