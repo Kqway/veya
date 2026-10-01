@@ -45,7 +45,7 @@ describe("mutual match to ordinary coordination plan", () => {
     ]);
     expect(one).toEqual(two);
     expect(one.publicSlug).toMatch(/^[\w-]{24}$/);
-    const backend = new VeyaBackend(c.db);
+    const backend = new VeyaBackend(c.db,{analyticsEnabled:true});
     const view = await backend.getIntent(one.publicSlug, a.token);
     expect(JSON.stringify(view)).not.toMatch(
       /Global secret|PRIVATE-CONTACT|North|Moscow|Play chess in Moscow/,
@@ -64,6 +64,10 @@ describe("mutual match to ordinary coordination plan", () => {
     });
     const results = await backend.getResults(one.publicSlug, a.token);
     expect(results.suggestions[0]!.availableCount).toBe(2);
+    const selection={suggestionKey:results.suggestions[0]!.suggestionKey,revision:results.revision};
+    await backend.decide(view.isCreator?a.token:b.token,one.publicSlug,selection);
+    await backend.decide(view.isCreator?a.token:b.token,one.publicSlug,selection);
+    expect((await c.db.query("SELECT * FROM analytics_events WHERE event_name='plan_confirmed'")).rows).toHaveLength(1);
     const before = await c.db.query<{ id: string }>(
       "SELECT id FROM social_matches WHERE public_key=$1",
       [match],

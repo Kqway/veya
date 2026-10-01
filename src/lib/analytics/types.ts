@@ -7,12 +7,13 @@ export type AnalyticsEventName =
   | "participant_joined"
   | "result_viewed"
   | "vote_submitted"
-  | "new_intent_from_invite";
+  | "new_intent_from_invite"
+  | import("./funnel").FunnelEvent;
 
 export interface AnalyticsEvent {
   name: AnalyticsEventName;
   /** Enumerated surfaces only: do not send intent text, names or credentials. */
-  surface: "landing" | "create" | "invite" | "result";
+  surface: "landing" | "create" | "invite" | "result" | "social";
 }
 
 export interface AnalyticsClient {

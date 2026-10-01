@@ -1,3 +1,4 @@
+import { publishSocialEvent } from '@/features/realtime/events';
 import "server-only";
 import { z } from "zod";
 import type { Database, DatabaseExecutor } from "@/lib/db/types";
@@ -39,6 +40,9 @@ export class SafetyService {
       await tx.query("UPDATE connection_requests SET status='declined',updated_at=clock_timestamp() WHERE pair_id=$1 AND status='pending'",[context.pairId]);
       await tx.query("UPDATE social_matches SET status='closed',closed_at=COALESCE(closed_at,clock_timestamp()) WHERE pair_id=$1 AND status<>'closed'",[context.pairId]);
       await tx.query("UPDATE conversations SET status='closed' WHERE match_id IN(SELECT id FROM social_matches WHERE pair_id=$1) AND status<>'closed'",[context.pairId]);
+      await publishSocialEvent(tx,[context.ownId,context.peerId],{topic:'notifications'});
+      await publishSocialEvent(tx,[context.ownId,context.peerId],{topic:'connections'});
+      await publishSocialEvent(tx,[context.ownId,context.peerId],{topic:'match'});
       return {blocked:true};
     });
   }

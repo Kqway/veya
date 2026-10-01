@@ -1,3 +1,6 @@
+import { enqueueNotification } from '@/features/notifications/service';
+import { trackFunnel } from '@/lib/analytics/funnel';
+import { publishSocialEvent } from '@/features/realtime/events';
 import 'server-only';
 import { z } from 'zod';
 import type { Database, DatabaseExecutor } from '@/lib/db/types';
@@ -52,7 +55,7 @@ async function projectMessage(tx: DatabaseExecutor, context: ConversationContext
 }
 
 export class ConversationService {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: Database, private readonly options: {analyticsEnabled?: boolean} = {}) {}
   async get(token: string, matchKey: string): Promise<MatchDTO> {
     validate(publicKeySchema, matchKey);
     return this.db.transaction(async tx => projectMatch(tx, await authorizeMatch(tx, token, matchKey)));
@@ -83,7 +86,19 @@ export class ConversationService {
         ${before ? 'AND (created_at,id)<(SELECT created_at,id FROM messages WHERE conversation_id=$1 AND public_key=$3)' : ''} ORDER BY created_at DESC,id DESC LIMIT $2`, before ? [context.match.conversation_id,data.limit+1,before] : [context.match.conversation_id,data.limit+1]);
       const page = rows.rows.slice(0,data.limit).reverse();
       const result: MessageDTO[] = [];
-      for (const row of page) result.push(await projectMessage(tx, context, row));
+      // Request-local identities use the current, reauthorized profiles and pair
+      // privacy after locks. At most two senders exist in a conversation page.
+      const identities = new Map<string, Awaited<ReturnType<typeof pairIdentity>>>();
+      for (const row of page) {
+        const mine = row.sender_profile_id === context.own.id;
+        if (!mine && row.sender_profile_id !== context.peer.id) fail('NOT_FOUND');
+        let identity = identities.get(row.sender_profile_id);
+        if (!identity) {
+          identity = await pairIdentity(tx, context.pair, mine ? context.own : context.peer);
+          identities.set(row.sender_profile_id, identity);
+        }
+        result.push(messageSchema.parse({ publicKey: row.public_key, text: row.text, createdAt: row.created_at.toISOString(), isMine: mine, identity }));
+      }
       return { messages: result, nextBefore: rows.rows.length > data.limit ? page[0]!.public_key : null };
     });
   }
@@ -93,7 +108,11 @@ export class ConversationService {
     return this.db.transaction(async tx => {
       const context = await authorizeMatch(tx, token, matchKey);
       if (context.closed) fail('CONFLICT');
+      const prior = await tx.query('SELECT 1 FROM messages WHERE conversation_id=$1 LIMIT 1',[context.match.conversation_id]);
       const result = await tx.query<MessageRow>('INSERT INTO messages(public_key,conversation_id,sender_profile_id,text) VALUES($1,$2,$3,$4) RETURNING id,public_key,sender_profile_id,text,created_at', [opaqueKey(),context.match.conversation_id,context.own.id,data.text]);
+      await enqueueNotification(tx,{recipientProfileId:context.peer.id,peerProfileId:context.own.id,type:'NEW_MESSAGE',matchKey,dedupeKey:'message:'+result.rows[0]!.id});
+      if (!prior.rows.length) await trackFunnel(tx,'first_message_sent',this.options.analyticsEnabled ?? false);
+      await publishSocialEvent(tx,[context.own.id,context.peer.id],{topic:'match',matchKey});
       return projectMessage(tx, context, result.rows[0]!);
     });
   }
@@ -108,6 +127,7 @@ export class ConversationService {
         if (previous.rows[0].value !== data.value) fail('CONFLICT');
       } else {
         await tx.query('INSERT INTO match_disclosures(match_id,sender_profile_id,kind,value) VALUES($1,$2,$3,$4)', [context.match.id,context.own.id,data.kind,data.value]);
+        await publishSocialEvent(tx,[context.own.id,context.peer.id],{topic:'match',matchKey});
       }
       return { shared: true };
     });

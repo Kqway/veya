@@ -1,3 +1,4 @@
+import { trackFunnel } from '@/lib/analytics/funnel';
 import "server-only";
 import { z } from "zod";
 import type { Database, DatabaseExecutor } from "@/lib/db/types";
@@ -108,6 +109,7 @@ export class ResultsService {
         "UPDATE intents SET status='decided',selected_suggestion_id=$2 WHERE id=$1",
         [intent.id, proposal.id],
       );
+      if (this.options.analyticsEnabled && (await tx.query('SELECT 1 FROM social_matches WHERE plan_intent_id=$1',[intent.id])).rows.length) await trackFunnel(tx,'plan_confirmed',true);
       intent.status = "decided";
       intent.selected_suggestion_id = proposal.id;
       return projectResults(tx, intent, guest, people);

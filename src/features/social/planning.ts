@@ -1,3 +1,6 @@
+import { enqueueNotification } from '@/features/notifications/service';
+import { trackFunnel } from '@/lib/analytics/funnel';
+import { publishSocialEvent } from '@/features/realtime/events';
 import "server-only";
 import type { Database } from "@/lib/db/types";
 import { validate } from "@/features/backend/validation";
@@ -38,6 +41,9 @@ export class PlanningService {
         "UPDATE social_matches SET plan_intent_id=(SELECT id FROM intents WHERE public_slug=$2) WHERE id=$1",
         [ctx.match.id, view.intent.publicSlug],
       );
+      for (const [recipient,peer] of [[ctx.own.id,ctx.peer.id],[ctx.peer.id,ctx.own.id]]) await enqueueNotification(tx,{recipientProfileId:recipient!,peerProfileId:peer!,type:'PLAN_READY',matchKey,dedupeKey:'plan:'+ctx.match.id});
+      await trackFunnel(tx,'plan_created',this.options.analyticsEnabled ?? false);
+      await publishSocialEvent(tx,[ctx.own.id,ctx.peer.id],{topic:'match',matchKey});
       return { publicSlug: view.intent.publicSlug };
     });
   }

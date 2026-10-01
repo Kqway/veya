@@ -1,9 +1,12 @@
+import { enqueueNotification } from '@/features/notifications/service';
+import { trackFunnel } from '@/lib/analytics/funnel';
+import { publishSocialEvent } from '@/features/realtime/events';
 import "server-only";
 import { z } from "zod";
 import type { Database, DatabaseExecutor } from "@/lib/db/types";
 import { validate } from "@/features/backend/validation";
 import { rankCompatible } from "@/features/discovery/engine";
-import { lockProfiles, reauthorize, requireProfile } from "./context";
+import { lockProfiles, reauthorize, requireProfile, requireCapability } from "./context";
 import { readHandle, postById } from "./discovery";
 import { candidate, requireActivePost } from "./post-repository";
 import { publicKeySchema } from "./seeking-schema";
@@ -73,7 +76,7 @@ async function compatible(tx: DatabaseExecutor, r: RequestRow) {
   return { source, target };
 }
 export class ConnectionsService {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: Database, private readonly options: {analyticsEnabled?: boolean} = {}) {}
   async request(token: string, input: unknown) {
     const data = validate(
       z.object({ handle: publicKeySchema }).strict(),
@@ -88,6 +91,8 @@ export class ConnectionsService {
       await reauthorize(tx, token, a.id);
       const source = await postById(tx, h.source_post_id);
       const target = await postById(tx, h.target_post_id);
+      await requireCapability(tx,a.id,'connect');
+      await requireCapability(tx,target.profile_id,'connect');
       if (
         source.profile_id !== a.id ||
         (await isBlocked(tx, a.id, target.profile_id))
@@ -147,6 +152,10 @@ export class ConnectionsService {
           source.activity_label,
         ],
       );
+      await enqueueNotification(tx,{recipientProfileId:target.profile_id,peerProfileId:a.id,type:'INTEREST_RECEIVED',requestKey:inserted.rows[0]!.public_key,dedupeKey:'interest:'+inserted.rows[0]!.id});
+      await trackFunnel(tx,'interest_sent',this.options.analyticsEnabled ?? false);
+      await trackFunnel(tx,'interest_received',this.options.analyticsEnabled ?? false);
+      await publishSocialEvent(tx, [a.id, target.profile_id], {topic:'connections'});
       return result(tx, inserted.rows[0]!);
     });
   }
@@ -215,8 +224,11 @@ export class ConnectionsService {
           [r.id],
         );
         r.status = "declined";
+        await publishSocialEvent(tx, [r.sender_profile_id,r.recipient_profile_id], {topic:'connections'});
         return result(tx, r);
       }
+      await requireCapability(tx,r.sender_profile_id,'connect');
+      await requireCapability(tx,r.recipient_profile_id,'connect');
       const { source, target } = await compatible(tx, r);
       await reauthorize(tx, token, a.id);
       requireActivePost(source);
@@ -233,7 +245,12 @@ export class ConnectionsService {
       await tx.query("INSERT INTO conversations(match_id) VALUES($1)", [
         match.rows[0]!.id,
       ]);
-      return result(tx, r);
+      await trackFunnel(tx,'match_created',this.options.analyticsEnabled ?? false);
+      const outcome = await result(tx,r);
+      await enqueueNotification(tx,{recipientProfileId:r.sender_profile_id,peerProfileId:r.recipient_profile_id,type:'INTEREST_ACCEPTED',matchKey:outcome.matchKey!,dedupeKey:'accepted:'+r.id});
+      await publishSocialEvent(tx,[r.sender_profile_id,r.recipient_profile_id],{topic:'connections'});
+      await publishSocialEvent(tx,[r.sender_profile_id,r.recipient_profile_id],{topic:'match',matchKey:outcome.matchKey!});
+      return outcome;
     });
   }
 }

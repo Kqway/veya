@@ -47,6 +47,7 @@ export function createSocialHandler(options: {
         (request.method === "POST" || key === "key" || key === "recover")
       )
         action = "recovery";
+      if (resource === "profile" && path.length === 1 && request.method === "POST") action = "profileCreate";
       if (resource === "seeking" && request.method === "POST")
         action = "seekingCreate";
       if (resource === "connections" && mutation) action = "connection";
@@ -104,15 +105,15 @@ export function createSocialHandler(options: {
       }
       if (resource === "seeking") {
         if (path.length === 1 && method === "GET")
-          return json({ posts: await new SeekingService(db()).list(token) });
+          return json({ posts: await new SeekingService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).list(token) });
         if (path.length === 1 && method === "POST") {
           const input = await body();
-          return json(await new SeekingService(db()).create(token, input), 201);
+          return json(await new SeekingService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).create(token, input), 201);
         }
         if (path.length === 2 && key && method === "GET")
-          return json(await new SeekingService(db()).get(token, key));
+          return json(await new SeekingService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).get(token, key));
         if (path.length === 2 && key && method === "DELETE")
-          return json(await new SeekingService(db()).close(token, key));
+          return json(await new SeekingService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).close(token, key));
       }
       if (resource === "discover") {
         if (path.length === 1 && method === "GET") {
@@ -121,7 +122,7 @@ export function createSocialHandler(options: {
             Object.fromEntries(new URL(request.url).searchParams),
           );
           return json({
-            cards: await new DiscoveryService(db()).discover(
+            cards: await new DiscoveryService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).discover(
               token,
               params.source,
             ),
@@ -134,17 +135,17 @@ export function createSocialHandler(options: {
           method === "POST"
         ) {
           await empty();
-          return json(await new DiscoveryService(db()).pass(token, key));
+          return json(await new DiscoveryService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).pass(token, key));
         }
       }
       if (resource === "connections") {
         if (path.length === 1 && method === "GET")
           return json({
-            requests: await new ConnectionsService(db()).list(token),
+            requests: await new ConnectionsService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).list(token),
           });
         if (path.length === 1 && method === "POST") {
           const input = await body();
-          return json(await new ConnectionsService(db()).request(token, input));
+          return json(await new ConnectionsService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).request(token, input));
         }
         if (
           path.length === 3 &&
@@ -154,17 +155,17 @@ export function createSocialHandler(options: {
         ) {
           const input = await body();
           return json(
-            await new ConnectionsService(db()).respond(token, key, input),
+            await new ConnectionsService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).respond(token, key, input),
           );
         }
       }
       if (resource === "matches") {
         if (path.length === 1 && method === "GET")
           return json({
-            matches: await new ConversationService(db()).list(token),
+            matches: await new ConversationService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).list(token),
           });
         if (path.length === 2 && key && method === "GET")
-          return json(await new ConversationService(db()).get(token, key));
+          return json(await new ConversationService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).get(token, key));
         if (path.length === 3 && key && operation === "messages") {
           if (method === "GET") {
             const q = validate(
@@ -180,7 +181,7 @@ export function createSocialHandler(options: {
               Object.fromEntries(new URL(request.url).searchParams),
             );
             return json(
-              await new ConversationService(db()).messages(token, key, {
+              await new ConversationService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).messages(token, key, {
                 ...(q.before ? { before: q.before } : {}),
                 ...(q.limit ? { limit: Number(q.limit) } : {}),
               }),
@@ -189,7 +190,7 @@ export function createSocialHandler(options: {
           if (method === "POST") {
             const input = await body();
             return json(
-              await new ConversationService(db()).send(token, key, input),
+              await new ConversationService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).send(token, key, input),
               201,
             );
           }
@@ -202,7 +203,7 @@ export function createSocialHandler(options: {
         ) {
           const input = await body();
           return json(
-            await new ConversationService(db()).disclose(token, key, input),
+            await new ConversationService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).disclose(token, key, input),
           );
         }
         if (
