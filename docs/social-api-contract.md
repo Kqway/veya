@@ -28,7 +28,7 @@ GET /discover?source=OwnPost.publicKey → {cards:Card[]}
 Card {handle:string24,identity:{alias,avatarSeed},activityLabel,interactionMode,format,
 reasons:string[],timeHint:string}; no rawText/city/skill/windows/profile/post IDs.
 POST /discover/:handle/pass {} → {passed:true}
-POST /connections {handle} → {publicKey,status:pending|accepted|declined,matchKey:null|string}
+POST /connections {handle} → {publicKey,status:pending|accepted|declined|expired,matchKey:null|string}
 GET /connections → {requests:RequestDTO[]}
 RequestDTO {publicKey,direction:incoming|outgoing,status,identity:{alias,avatarSeed},
 activityLabel,matchKey:null|string}
