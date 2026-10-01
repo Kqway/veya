@@ -9,7 +9,15 @@ export type RateAction =
   | "ai"
   | "analytics"
   | "preview"
-  | "image";
+  | "image"
+  | "socialRead"
+  | "socialWrite"
+  | "discovery"
+  | "seekingCreate"
+  | "connection"
+  | "message"
+  | "report"
+  | "recovery";
 export type RateDecision = { allowed: boolean; retryAfterSeconds: number };
 export interface RequestLimiter {
   check(
@@ -28,6 +36,14 @@ const policies: Record<RateAction, Policy> = {
   analytics: { global: 600, guest: 60 },
   preview: { global: 300, guest: 30 },
   image: { global: 120, guest: 20 },
+  socialRead: { global: 600, guest: 120 },
+  socialWrite: { global: 200, guest: 30 },
+  discovery: { global: 120, guest: 20 },
+  seekingCreate: { global: 60, guest: 6 },
+  connection: { global: 100, guest: 10 },
+  message: { global: 600, guest: 60 },
+  report: { global: 30, guest: 5 },
+  recovery: { global: 60, guest: 5 },
 };
 type Bucket = { count: number; resetAt: number };
 /** Process-local guard. A multi-instance host must supply a shared adapter/gateway. */
