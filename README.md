@@ -1,28 +1,75 @@
 # Veya
 
-**Less planning. More living.** Veya is an intent network: start with what you
-want to do, bring your friends, and find what works for the group.
-
-The MVP's priority is the viral loop:
-
-> Create intent → share invite → friend joins without an account → add availability
-> and preferences → find the best overlap → get a group result → create another intent.
+**Tell Veya what you want to do. Veya finds compatible people. You decide what
+to reveal. Then Veya helps you actually meet.**
 
 ## Current scope
 
-**Phases 1–7 complete — a locally verified MVP release candidate.** Turn an
-idea into a plan, share `/i/<slug>`, and let friends add availability, preferences
-and budgets without an account. Copy link, Telegram and native sharing are supported.
-Returning guests can refresh and edit their own details with the same browser.
-Open `/i/<slug>/results` for the best time and alternatives, vote YES/MAYBE/NO,
-and let the organizer explicitly confirm the group plan. Help with details previews
-editable intent suggestions; Get a meetup idea adds an optional idea and grounded
-explanation. Both work locally without an AI key.
+**Phases 1–7 and Intent Network 8A–8G implemented.** Start with an activity,
+create a seeking post, discover compatible posts, send Interested, and open a
+private conversation after the recipient accepts. Plan it connects the match to
+the existing availability/results/voting/confirmation flow. The original no-account
+friend invitation flow remains available from Make it happen and `/i/<slug>`.
 
-PostgreSQL is required to create or load plans; the landing and build work without
-credentials. Start the local database and apply migrations using the workflow below.
-Read
-[CODEX_PROGRESS.md](CODEX_PROGRESS.md) before starting work.
+PostgreSQL is required for persistent social/plan APIs; the landing, build and
+stateless optional intent parsing work without credentials. AI is optional:
+manual social discovery, recovery, matching, chat and planning need no OpenAI key.
+Read [CODEX_PROGRESS.md](CODEX_PROGRESS.md) before development and
+[the design](docs/intent-network-design.md) for privacy/retention/operational limits.
+The [social API contract](docs/social-api-contract.md) documents exact bounded DTOs.
+
+## Find people through an activity
+
+1. Enter an idea such as “Play chess with someone” and choose Find compatible
+   people. Create an 18+ social profile with an alias and privacy mode. Save the
+   one-time Veya Key privately; anyone holding it can recover the social profile.
+2. Fill the activity, in-person/online mode, format, city/coarse area, languages,
+   skill and future availability. Optional Help structure parses **your own text**
+   into reviewed suggestions; manually filling every field also works.
+3. Open `/discover` for up to five compatible action cards. Interested sends a
+   visible request; Pass hides that candidate. `/connections` lets recipients
+   accept, decline, block or report. Acceptance alone creates a match.
+4. `/m/<key>` provides plain-text private chat, explicit refresh/pagination and
+   optional match-only first-name/contact disclosure with an irreversible warning.
+   Nothing is shared automatically. Blocking closes new messages/disclosures,
+   hides both profiles from discovery and prevents further requests.
+5. Choose Plan it, then both participants manually join the ordinary Veya invite
+   and add availability. The existing deterministic scheduler, votes and organizer
+   confirmation select the final time. A copied invite remains a bearer link;
+   blocking cannot retract it or erase an existing coordination plan.
+
+**Privacy modes:** OPEN uses your chosen alias. PRIVATE uses a stable pseudonym.
+INCOGNITO uses random persisted aliases/local avatars separately for each pair.
+Other pairs cannot join those identities through API profile IDs or global alias
+lookup. All candidate cards are minimal even in OPEN: activity, format, compatibility
+reasons and coarse time hints; raw text, exact location/windows and profile IDs are
+never sent to candidates. There is no profile directory, online status or last seen.
+People you meet through Veya only see what you choose to reveal. Incognito is not
+absolute anonymity: your behavior, disclosures and real-world meeting can identify
+you. Server operators still hold the internal relational identity.
+
+**Veya Key:** cryptographically random, hash-only at rest, shown only on explicit
+create/recover/rotate. The in-memory recovery banner survives client navigation,
+warns before full navigation and disappears after saved/discard acknowledgement.
+Recovery from a new active unbound guest rotates the key and detaches old social
+sessions. Rotation/revoke invalidate old keys. Recovery preserves social posts and
+matches, but does not transfer old guest ownership of coordination invitations.
+No email, SMS or home-grown password service is required.
+
+**Deterministic matching:** normalized activity, compatible interaction/format/city,
+at least 15 minutes of real future overlap, shared language and mutual optional
+age-band requirements are hard filters. Skill, coarse area and shared tags explain
+ranking. AI never sees candidate profiles or chooses people. There are at most
+three active posts/profile, ten pending outgoing requests and twenty new discovery
+contexts/profile/24h. Closed/expired/time-exhausted pending requests free their slots
+without pretending the recipient declined. Posts expire after seven days by
+default, at most thirty. The indexed candidate pool is bounded to 100; discovery
+is not an exhaustive search of every person in a city.
+
+First offline meetings should be in public places. Do not share your home address.
+Reports are retained server-side with bounded reasons/text; a moderation console
+and automated enforcement are not implemented. See the
+[release checklist](docs/RELEASE_CHECKLIST.md) before a hosted preview.
 
 ## Local setup
 
@@ -88,7 +135,7 @@ guarded by `server-only`. Errors name invalid fields and omit their values.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Public HTTP(S) origin for metadata; no paths, query, credentials or fragments |
-| `DATABASE_URL` | Unset | Server-only PostgreSQL URI; required by persistent plan APIs |
+| `DATABASE_URL` | Unset | Server-only PostgreSQL URI; required by persistent social/plan APIs |
 | `AI_PROVIDER` | `mock` | `mock` for local templates or `openai` for optional remote assistance |
 | `OPENAI_API_KEY` | Unset | Server-only secret; a missing key uses local fallback |
 | `OPENAI_MODEL` | `gpt-4.1-mini` | Optional remote model identifier |
@@ -185,6 +232,8 @@ src/
     backend/              Validated services, guest authorization, safe views, HTTP
     entry/                Guest browser API, money/time helpers, invite/share/forms
     scheduling/           Pure overlap/ranking engine and focused results/voting UI
+    social/               Guest-bound profiles, privacy DTOs, recovery, requests/chat/safety
+    discovery/            Pure social matching, bounded seeking parser
   lib/
     config/               Pure env parser and server-only accessor
     db/                   Typed SQL, transactions, migrations, demo seed
@@ -201,7 +250,7 @@ tests/
 docs/superpowers/          Phase design and implementation record
 ```
 
-AI tasks parse intent details, suggest a meetup idea and explain existing proposals.
+AI tasks parse own seeking text/intent details, suggest a meetup idea and explain existing proposals.
 The mock uses a small explicit English/Russian vocabulary and templates; it is not
 a language model. OpenAI output is validated and failures use local fallback.
 Scheduling runs without AI: its pure `suggest` function takes
@@ -426,6 +475,14 @@ not evicted. Limits return safe no-store 429 JSON with Retry-After. Budgets:
 | Analytics | 600 | 60 |
 | Preview | 300 | 30 |
 | Image | 120 | 20 |
+| Social read | 600 | 120 |
+| Social write | 200 | 30 |
+| Discovery | 120 | 20 |
+| Seeking creation | 60 | 6 |
+| Connection request | 100 | 10 |
+| Message | 600 | 60 |
+| Report | 30 | 5 |
+| Profile/key recovery | 60 | 5 |
 
 Preview/image requests use global budgets. This is a **per-process** safeguard,
 reset on restart; fixed-window boundaries permit bursts. Multiple instances need
@@ -458,6 +515,13 @@ run selects at most 100 rows per category (module maximum 500), oldest first:
 - Unreferenced guest sessions seven days after expiry or revocation; sessions
   still referenced by retained plans are preserved.
 - Analytics events older than 30 days.
+- Social reports older than 365 days; abandoned discovery handles/passes after
+  90 days; seeking posts 90 days after expiry.
+- Inactive pair histories after 180 days only when no active post/live request/open
+  conversation/recent chat or disclosure/retained report protects them. Pair deletion
+  cascades requests, matches, identities, messages and disclosures. Stable profiles,
+  bindings and blocks are retained; no self-service account-deletion endpoint exists.
+  Expired unreferenced guest cleanup can remove the associated session binding.
 
 Dry-run reports projected counts, including guest references removed by the
 selected intents; concurrent activity can change the subsequent apply result.
@@ -479,11 +543,12 @@ secrets in the host's server environment.
 Apply `NODE_ENV=production npm run db:migrate` with the trusted production
 DATABASE_URL before starting the backend. Supply migration files with the CLI
 checkout. Do not run the demo seed in production. Persistent plan APIs require a live
-database; the landing and stateless intent parser work without one. Migration
-0004 adds retention indexes. Complete the host checks in
+database; the landing and stateless intent parser work without one. Migrations
+0005–0010 add identity, seeking, connections, conversation, planning and safety;
+0001–0004 are unchanged. Complete the host checks in
 [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md).
 
-The MVP is a release candidate for a controlled preview. Local production-browser
+The Intent Network MVP is a release candidate for a controlled preview. Local production-browser
 verification is complete; live OpenAI, a hosted database and actual deployment
 remain host-specific checks. This development run performs no deployment.
 
@@ -496,8 +561,17 @@ remain host-specific checks. This development run performs no deployment.
 5. AI layer — complete: reviewed structured parsing, optional ideas/explanations and bounded provider fallback.
 6. Product quality + virality — complete: compact mobile creation, responsive availability feedback, resilient sharing, public-only previews and tracked repeat creation.
 7. Hardening + release preparation — complete: temporal authorization, bounded API/workload protection, security headers, explicit retention and release verification.
+8. Intent Network — complete: 8A identity/recovery/privacy, 8B seeking/matching/AI,
+   8C discovery/requests/pair identities, 8D conversation/disclosure, 8E ordinary plan
+   bridge, 8F safety/limits/retention, 8G social UX/E2E/privacy release review.
 
-All seven phases are complete. The latest user instruction authorized finishing
-the remaining phases together, with separate prescribed commits and GitHub pushes.
-Future work should choose one high-impact improvement per cycle and update
-`CODEX_PROGRESS.md`; do not restart completed phases.
+Core local flows need only this application and PostgreSQL. Email/SMS, external
+identity/chat/avatar providers, Redis, GPS, remote fonts and paid AI are not required.
+A public production launch still needs a configured HTTPS host, managed database,
+backups, shared/gateway abuse controls and human report handling. Real OpenAI,
+remote CI/deployment and actual device/browser compatibility are separate rollout
+checks. No production deployment was performed.
+
+Future improvements: hosted reliability/moderation operations, optional federated
+recovery and account-deletion policy, broader activity normalization and timezone-
+aware coarse hints. These are not implemented as part of this release.

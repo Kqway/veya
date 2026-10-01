@@ -1,0 +1,254 @@
+.social-shell {
+  width: min(760px, 100%);
+  margin: 20px auto 70px;
+  overflow-wrap: anywhere;
+}
+.social-shell h1 {
+  font-size: clamp(30px, 5vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  margin: 18px 0 30px;
+}
+.social-shell h2 {
+  font-size: 24px;
+  letter-spacing: -0.5px;
+}
+.social-shell h3 {
+  font-size: 18px;
+}
+.social-nav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+}
+.social-nav a {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+}
+.social-card {
+  margin: 18px 0;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #fffdf8;
+}
+.social-card h2:first-child {
+  margin-top: 0;
+}
+.social-card p {
+  line-height: 1.6;
+}
+.social-shell fieldset {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+.social-shell .field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 18px 0;
+  font-weight: 600;
+}
+.social-shell input:not([type="checkbox"]),
+.social-shell select,
+.social-shell textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  background: white;
+  color: var(--ink);
+}
+.social-shell textarea {
+  resize: vertical;
+}
+.social-shell input[readonly] {
+  font-family: monospace;
+  font-size: 14px;
+}
+.social-shell button,
+.social-shell summary,
+.social-shell .button,
+.social-shell .selected-times button {
+  min-height: 44px;
+}
+.social-shell button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.social-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.social-text-button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  text-decoration: underline;
+  padding: 10px 8px;
+  min-height: 44px;
+  font: inherit;
+}
+.social-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+.social-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 0;
+  line-height: 1.5;
+}
+.social-check input {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+.social-shell .social-age {
+  padding: 12px 0;
+  margin: 12px 0;
+}
+.social-age legend {
+  font-weight: 600;
+}
+.social-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.social-avatar {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  color: hsl(var(--avatar-hue) 35% 32%);
+  background: hsl(var(--avatar-hue) 40% 86%);
+}
+.social-preview,
+.social-warning,
+.social-key {
+  padding: 18px;
+  margin: 18px 0;
+  border-radius: 12px;
+  background: #f4eddf;
+}
+.social-preview dl div {
+  margin-bottom: 12px;
+}
+.social-shell dt {
+  font-weight: 600;
+  margin-top: 12px;
+}
+.social-shell dd {
+  margin: 4px 0 0;
+}
+.social-post-list {
+  list-style: none;
+  padding: 0;
+}
+.social-post-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.social-post-list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: underline;
+}
+.social-messages {
+  list-style: none;
+  padding: 0;
+}
+.social-message {
+  width: min(90%, 540px);
+  padding: 16px;
+  margin: 14px 0;
+  border-radius: 16px;
+  background: #f1eee4;
+}
+.social-message-mine {
+  margin-left: auto;
+  background: #f4d8ce;
+}
+.social-message p {
+  margin: 10px 0;
+}
+.social-message time {
+  font-size: 12px;
+  color: var(--muted);
+}
+.social-plain {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.social-safety {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 30px 0;
+}
+.social-safety-controls {
+  margin-top: 16px;
+}
+.social-composer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+.social-composer-actions .button {
+  min-height: 48px;
+}
+@media (max-width: 600px) {
+  .social-shell {
+    margin-top: 10px;
+  }
+  .social-card {
+    padding: 18px;
+    border-radius: 16px;
+  }
+  .social-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .social-actions .button {
+    flex: 1 1 auto;
+  }
+  .social-shell .day-row {
+    flex-wrap: wrap;
+  }
+  .social-shell .day-row > div {
+    flex-wrap: wrap;
+  }
+  .social-shell .button {
+    white-space: normal;
+    text-align: center;
+  }
+  .social-composer-actions {
+    width: 100%;
+  }
+}
+
+.social-recovery-banner { max-width: 760px; margin: 24px auto; }

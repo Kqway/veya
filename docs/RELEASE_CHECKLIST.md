@@ -1,6 +1,6 @@
-# Veya MVP release candidate
+# Veya Intent Network release candidate
 
-All seven development phases are implemented. This checklist separates local
+Phases 1–7 and Intent Network 8A–8G are implemented. This checklist separates local
 release evidence from host configuration; no production deployment is performed.
 See CODEX_PROGRESS.md for exact final test counts and published phase commits.
 
@@ -11,13 +11,18 @@ See CODEX_PROGRESS.md for exact final test counts and published phase commits.
 - Complete desktop/mobile Chromium journey via `npm run test:e2e`: create, share,
   join/edit/refresh, results, voting/confirmation, optional AI/manual fallback,
   repeat creation, privacy, responsive layouts and explicit overnight entry.
+  Social three-person discovery excludes football/other-city candidates, performs
+  request/accept/chat/disclosure/ordinary plan/results/block and Veya Key recovery.
 - Guest ownership, post-lock wall-clock expiry, stale/revoked completion, safe
   public/own/group projections, narrow preview SQL and offline image rendering.
 - Independent AI quota, bounded request body/deadline and plan capacity, limiter
   memory cap/retry response, and explicit dry-run retention against isolated data.
 - Dependencies audited, screenshots inspected, staged artifacts/credentials checked.
-- One fresh whole-change review per remaining phase, with reproduced important
-  findings fixed and final checks repeated where required.
+- Separate read-only whole-social-diff review; reproduced stale request capacity
+  and client-navigation/in-flight key loss fixed with regression tests.
+- Social recursive forbidden-key DTO tests, viewer-bound handles, pairwise
+  incognito identities, native authorization/recovery/block/race constraints and
+  no-store responses. Social pages use generic metadata, no profile/post text.
 
 ## Configure before a hosted preview
 
@@ -25,7 +30,7 @@ See CODEX_PROGRESS.md for exact final test counts and published phase commits.
   Build/start with the intended configuration; verify metadata, cookie security,
   same-origin writes and headers over the actual hostname. Synchronize app/DB time.
 - Server-only PostgreSQL URI, verified TLS, trusted owner/BYPASSRLS connection;
-  apply migrations 0001–0004 using `NODE_ENV=production npm run db:migrate`.
+  apply migrations 0001–0010 using `NODE_ENV=production npm run db:migrate`.
   Keep direct-client RLS closed. Never seed the production database.
 - Multiple instances require shared request limiting or configured gateway global
   limits. Built-in limits are process-local, reset on restart and allow boundary
@@ -42,6 +47,16 @@ See CODEX_PROGRESS.md for exact final test counts and published phase commits.
   decided, seven-day unreferenced sessions, 30-day analytics; 100-row batches).
   It is not an HTTP endpoint or automatic startup task. Inspect dry-run counts on
   the exact target before applying, and account for partial category completion.
+  Social cleanup: reports365d, abandoned handles/passes90d, expired posts90d,
+  inactive pair histories180d with recent/live interaction and report guards.
+  Profiles/bindings/blocks persist; no self-service account deletion is included.
+  Define account-deletion/evidence retention policy before adding deletion.
+- Assign a human owner for reports and establish response/escalation policy before
+  public launch. Server-side reporting exists; no moderation console or fake
+  automatic enforcement is supplied. Review offline meetup safety/support copy.
+- Do not log recovery credentials, JSON chat/disclosure bodies, private post text
+  or bearer/session parameters at proxies/error collectors. Test Veya Key create,
+  rotation, revoke and recovery on HTTPS; protect database backups/internal IDs.
 - Run the complete quality/browser commands in remote CI; local gates do not
   establish remote CI success. Smoke-test create/share/join/vote/confirm on host.
 - Exercise actual device native sharing/clipboard and social-platform preview
@@ -50,12 +65,31 @@ See CODEX_PROGRESS.md for exact final test counts and published phase commits.
 
 ## Preserved limitations
 
-Guest access is browser-cookie based, with no account recovery. Clearing/revoking
-it loses that identity. Results refresh explicitly; no live sync/background AI.
-Mock understands a narrow explicit vocabulary. Hints are advisory and reviewed;
-AI cannot alter scheduling or votes. Scheduling is deterministic and bounded to
-32 participants/128 windows; frozen decisions survive expiry until deliberate
-retention. Engine deterministic-v2 refreshes old active caches and their votes.
+Guest authorization remains browser-cookie based. Social profiles recover through
+Veya Key; recovery rotates the key and detaches old social sessions, preserving
+posts/matches while original guest coordination ownership is not transferred.
+A lost/revoked key plus lost cookie cannot recover the profile in v1. No email/SMS
+or federated account provider is required or implemented.
 
-Hosted PostgreSQL, live OpenAI, remote CI and deployment are not verified in this
-environment. These are external rollout checks, not unfinished development phases.
+Incognito provides pair-specific API identity, not absolute anonymity. Unique
+behavior, shared disclosures and real-world meetings can identify a person; the
+server still stores internal relationships. Closed conversations preserve readable
+history. Blocking prevents new social actions but cannot retract a received message,
+disclosure or copied ordinary invite. Privacy mode cannot erase previously seen data.
+
+Social discovery is bounded to 100 candidates/5 cards and twenty new contexts per
+profile/day; a motivated attacker can create separate guests/profiles, so durable
+profile quotas do not replace host-level abuse protection. Pair identities persist
+for the same pair, not a fresh pseudonym on every message. Group format matches
+compatible posts, but v1 connections/chats involve two profiles; ordinary invites
+can gather the rest of a group. Coarse time hints use UTC calendar days; exact
+availability editing/display uses the browser timezone. Activity normalization
+is exact/coarse and mock parsing understands a narrow EN/RU vocabulary.
+
+Results/chat/connections refresh explicitly; no realtime sync, presence/background
+AI. AI is reviewed advisory assistance; deterministic social/scheduling cores need
+no model. The old scheduler remains bounded to 32 participants/128 windows.
+
+Hosted PostgreSQL, live OpenAI, remote CI and deployment are not verified here.
+These are external rollout checks. Core local flow needs no external identity,
+email/SMS, chat service, Redis, tracking avatars, browser GPS, ads or payments.

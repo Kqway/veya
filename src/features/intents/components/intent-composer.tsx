@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowIcon } from "@/components/arrow-icon";
 import { intentExamples } from "../examples";
 import { draftIntentSchema } from "../schema";
@@ -9,6 +10,7 @@ import { useAnalytics, usePageEvent } from "@/lib/analytics/browser";
 import { ExampleIcon } from "./example-icon";
 
 export function IntentComposer() {
+  const router = useRouter();
   const [idea, setIdea] = useState("");
   const [draft, setDraft] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -78,9 +80,38 @@ export function IntentComposer() {
             <br />
             <span>No account needed.</span>
           </p>
-          <button className="button button-primary" type="submit">
-            Make it happen <ArrowIcon />
-          </button>
+          <div className="social-composer-actions">
+            <button
+              className="button button-primary"
+              type="button"
+              onClick={() => {
+                const result = draftIntentSchema.safeParse(idea);
+                if (!result.success) {
+                  setError(
+                    result.error.issues[0]?.message ?? "Try a different idea.",
+                  );
+                  inputRef.current?.focus();
+                  return;
+                }
+                try {
+                  sessionStorage.setItem("veya.social.draft", result.data);
+                } catch {
+                  setError(
+                    "Your browser could not save this draft. Try again.",
+                  );
+                  inputRef.current?.focus();
+                  return;
+                }
+                setError(null);
+                router.push("/seek/new");
+              }}
+            >
+              Find compatible people <ArrowIcon />
+            </button>
+            <button className="button button-secondary" type="submit">
+              Make it happen <ArrowIcon />
+            </button>
+          </div>
         </div>
       </form>
       <div className="examples" aria-label="Try an idea">

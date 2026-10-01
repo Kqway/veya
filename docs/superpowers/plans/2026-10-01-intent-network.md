@@ -29,9 +29,9 @@ tests/integration/social-identity.test.ts, tests/unit/social-privacy.test.ts.
 recover(token,{key}),rotate(token),revokeKey(token). requireProfile(tx,token) returns
 internal profile; reauthorize(tx,token,profileId) after waits. Privacy schemas export
 explicit own/discovery/incoming/matched DTOs, no row serialization.
-- [ ] Write/run RED creation,18+,session binding/recovery/rotation/revoke/privacy tests.
-- [ ] Implement bounded schemas/hash-only recovery, locks and projections; GREEN.
-- [ ] Run current suite/typecheck and commit `social: identity and privacy foundation`.
+- [x] Write/run RED creation,18+,session binding/recovery/rotation/revoke/privacy tests.
+- [x] Implement bounded schemas/hash-only recovery, locks and projections; GREEN.
+- [x] Run current suite/typecheck and commit `social: identity and privacy foundation`.
 
 ### Task 2: 8B seeking posts and pure engine
 **Files:** migration0006, social/{seeking,post-repository}.ts,
@@ -41,8 +41,8 @@ tests/unit/{discovery,seeking-ai}.test.ts, tests/integration/social-seeking.test
 close(token,key). rankCompatible(source,candidates,{now,blockedPairs?}) returns
 internal candidates/reasons only. AiTasks.parseSeeking(input) returns bounded
 suggestion, uses existing ParseInput/referenceDate/timeZone and provider deadline.
-- [ ] RED hard filtering/time/ranking/workload, seeking ownership/active3/caps/expiry.
-- [ ] Implement explicit schemas, relational persistence, pure engine, optional own
+- [x] RED hard filtering/time/ranking/workload, seeking ownership/active3/caps/expiry.
+- [x] Implement explicit schemas, relational persistence, pure engine, optional own
   text parsing/manual suggestions; GREEN. Commit `social: seeking and discovery engine`.
 
 ### Task 3: 8C private discovery and requests
@@ -50,23 +50,23 @@ suggestion, uses existing ParseInput/referenceDate/timeZone and provider deadlin
 **Interfaces:** DiscoveryService.discover(token,sourceKey),pass(token,handle);
 ConnectionsService.request(token,{handle}),list(token),respond(token,key,{action}).
 Opaque viewer handles; pair locks/identities shared with later conversation APIs.
-- [ ] RED self/blocked/expired/duplicate/outsider/incognito-unlinkability/accept races.
-- [ ] Implement bounded100/5 pool, remembered passes and≤10pending, safe cards,
+- [x] RED self/blocked/expired/duplicate/outsider/incognito-unlinkability/accept races.
+- [x] Implement bounded100/5 pool, remembered passes and≤10pending, safe cards,
   atomic mutual accept/match/conversation. GREEN; commit `social: private matching`.
 
 ### Task 4: 8D private conversation/disclosure
 **Files:** migration0008, social/conversations.ts and native tests.
 **Interfaces:** ConversationService.get(token,matchKey),messages(token,key,{before?,limit?}),
 send(token,key,{text}),disclose(token,key,{kind,value,consent:true}).
-- [ ] RED access/plaintext/pagination/closed/match-only disclosure/block races.
-- [ ] Implement DTO schema-checked plain text/pair identity, bounded cursors/consent;
+- [x] RED access/plaintext/pagination/closed/match-only disclosure/block races.
+- [x] Implement DTO schema-checked plain text/pair identity, bounded cursors/consent;
   GREEN. Commit `social: conversation and disclosure`.
 
 ### Task 5: 8E ordinary Veya plan bridge
 **Files:** migration0009, social/planning.ts and native plan bridge test.
 **Interfaces:** PlanningService.plan(token,matchKey)→{publicSlug}, idempotent one/match.
-- [ ] RED outsider/blocked/idempotent/private-copy/recovered-session cases.
-- [ ] Implement existing intent domain bridge, manually joined existing scheduler
+- [x] RED outsider/blocked/idempotent/private-copy/recovered-session cases.
+- [x] Implement existing intent domain bridge, manually joined existing scheduler
   flow, no raw fields/disclosures copied. GREEN; commit `social: planning integration`.
 
 ### Task 6: 8F safety and transport
@@ -74,19 +74,30 @@ send(token,key,{text}),disclose(token,key,{kind,value,consent:true}).
 security/rate-limit.ts, db social retention + CLI integration, native HTTP tests.
 **Interfaces:** SafetyService.block(token,{requestKey?|matchKey?}),report(token,input);
 social HTTP uses core readJson/tokenFrom/json/apiError and independent budgets.
-- [ ] RED block visibility/send/request/accept, reports authorization/caps, limiter
+- [x] RED block visibility/send/request/accept, reports authorization/caps, limiter
   before expensive work, safe transport errors, social retention dry-run tests.
-- [ ] Implement mutual block closure, reports, parameterized routes/no-store/origin,
+- [x] Implement mutual block closure, reports, parameterized routes/no-store/origin,
   explicit cleanup; GREEN. Commit `social: safety and privacy hardening`.
 
 ### Task 7: 8G complete social UX and release
 **Files:** social client/screens, /discover,/seek/new,/seek/[key],/connections,/m/[key],
 landing social entry + retained friend plan, CSS, UI/native/browser tests, docs.
-- [ ] RED profile/key UX, manual/AI review post, incognito/recovery, action-first entry;
+- [x] RED profile/key UX, manual/AI review post, incognito/recovery, action-first entry;
   desktop/mobile acceptance flow A/B/C, request/accept/chat/disclosure/plan/block/key.
-- [ ] Implement accessible mobile-first local-avatar screens, plain text/errors/
+- [x] Implement accessible mobile-first local-avatar screens, plain text/errors/
   empty/loading/safety copy, generic social metadata. Preserve existing scenarios.
-- [ ] Full check, full E2E, audit0, screenshots, immutable migration hash/staged secret
+- [x] Full check, full E2E, audit0, screenshots, immutable migration hash/staged secret
   checks. Independent read-only whole diff review; fix reproduced Critical/Important.
-- [ ] Update README/progress/release privacy/limitations and publish normal commits,
+- [x] Update README/progress/release privacy/limitations and publish normal commits,
   verify remote SHA and clean tree. Commit `social: intent network release`.
+
+## Release evidence (2026-10-01)
+
+All Tasks1–7 implemented. `npm run check`:398tests/43files,lint,typecheck,buildPASS;
+192new+206existing. Full Playwright38/38PASS (34old+4new desktop/mobile executions),
+audit0, old0001–0004hashesunchanged. Separate full read-only reviewer findings
+(stale pending capacity and one-time key route loss) reproduced and fixed with
+RED/GREEN regressions. In-flight issued-key presentation is also covered.
+No production deployment or real database maintenance was performed. Normal
+fast-forward GitHub publication follows existing user authorization. See
+CODEX_PROGRESS.md and RELEASE_CHECKLIST.md for architecture, limits and host work.

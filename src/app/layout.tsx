@@ -4,6 +4,7 @@ import { Brand } from "@/components/brand";
 import { ArrowIcon } from "@/components/arrow-icon";
 import { getServerEnv } from "@/lib/config/server";
 import { AnalyticsProvider } from "@/lib/analytics/browser";
+import { RecoveryKeyProvider } from "@/features/social/components/recovery-key-provider";
 import "./globals.css";
 
 // Read runtime analytics/origin configuration instead of freezing it at build time.
@@ -43,7 +44,7 @@ export default function RootLayout({
           </header>
           <main id="main-content" tabIndex={-1}>
             <AnalyticsProvider enabled={getServerEnv().ANALYTICS_ENABLED}>
-              {children}
+              <RecoveryKeyProvider>{children}</RecoveryKeyProvider>
             </AnalyticsProvider>
           </main>
           <footer className="site-footer">
