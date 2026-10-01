@@ -1,11 +1,13 @@
 # Veya Development Progress
 
 ## Current Phase
-7
+8A
 
-**Status: all seven MVP phases complete on 2026-09-30.** Locally verified release
-candidate; final prescribed commit is `phase-7: release hardening`. Development and
-GitHub publication were authorized; no production deployment was requested.
+**Status: Intent Network implementation in progress (2026-10-01).** Existing
+Phases1–7 remain complete (base f86dd52). User authorized full sequential8A–8G
+social extension and prior GitHub publication; no production deployment.
+8A social identity/recovery/projection foundation verified22 focused tests;
+8B–8G implementation and final full release gates continue in this run.
 
 ## Completed Phases
 - **Phase 1 — foundation** (`5766774`): responsive landing, strict Next.js/React/
@@ -148,7 +150,12 @@ GitHub publication were authorized; no production deployment was requested.
   no runtime data, .env secrets, screenshots, debug logs or test output committed.
 
 ## Next Phase
-**No unfinished MVP phase. Stop after publishing the Phase7 commit.** On a future
+**Intent Network Phases8B–8G are authorized and in progress.** Read
+docs/intent-network-design.md and docs/superpowers/plans/2026-10-01-intent-network.md.
+Finish seeking/matching, discovery/requests, chat/disclosure, plan bridge, safety
+and complete UX/release gates. Original coordination MVP remains complete.
+
+Previous post-MVP guidance (superseded for this authorized extension): On a future
 run choose one evidence-based improvement cycle from the original roadmap. Current
 highest-impact candidate is reliability: verify the selected hosted environment's
 DB/TLS/migrations, shared limiting and optional provider fallback using the release
