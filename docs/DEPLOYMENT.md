@@ -164,7 +164,7 @@ jobs pending. Schedule frequent small batches and observe backlog before scaling
 Run `npm run social:process` every minute using a protected cron/systemd timer or
 scheduled operations container. Candidate jobs use five-minute leases, at most five
 attempts and a 20-job batch. Without scheduling there are no background candidate
-notices or pushes. candidate discovery never sends Interested automatically.
+notices or pushes. Candidate discovery never sends Interested automatically.
 Retention defaults to dry run and limits each category to 100 records; schedule
 small batches rather than unbounded deletion. Notifications expire after 30 days, outbox events after 24 hours, terminal worker
 jobs and expired moderator sessions after seven days. Invalid push subscriptions

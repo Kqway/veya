@@ -45,6 +45,7 @@ jobs:
       - run: npm run typecheck 2>&1 | tee logs/typecheck.log
       - run: npm test 2>&1 | tee logs/tests.log
       - run: npm run build 2>&1 | tee logs/build.log
+      - run: npm audit --json | tee logs/audit.json
       - run: npx playwright install --with-deps chromium 2>&1 | tee logs/browser-install.log
       - run: npm run test:e2e -- --project=desktop --project=mobile 2>&1 | tee logs/e2e.log
       - uses: actions/upload-artifact@v4

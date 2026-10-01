@@ -56,10 +56,12 @@ events, notifications, expired admin sessions and limiter buckets explicitly.
   fixed and re-reviewed, with regression tests; no unresolved Critical/Important
   finding in reviewed scope. See [review](docs/security-phase9-review.md) for evidence
   and limits. This is not a claim of absolute anonymity or external penetration testing.
-- **Remote Phase 9 CI is pending publication/verification.** The GitHub connector can
+- **Remote Phase 9 CI is running, not yet a PASS.** The GitHub connector can
   read Actions even though shell API access is denied. Historical Phase 8 run
   `36864125409` was separately verified successful; that does not verify Phase 9.
-  The final pushed SHA must receive its own PASS. No production deployment occurred.
+  The initial Phase 9 publication `a93568f` started run `36919527003`; a CI follow-up
+  adds dependency-audit enforcement. The final pushed SHA must receive its own PASS.
+  No production deployment occurred.
 
 **Operator requirements:** configure an HTTPS origin/host and verified-TLS PostgreSQL,
 apply migrations with a server-only role, set a random moderator secret, configure
@@ -88,7 +90,8 @@ bounded aggregate counts when analytics is enabled.
 - `5efc80e` — phase-9f: live social actions and private funnel metrics
 - `f61495e` — phase-9j: deployment lifecycle and non-root container
 - `972d011` — phase-9l: launch UX and desktop/mobile journeys
-- Final release evidence commit: `phase-9k: security review and release evidence`.
+- `a93568f` — phase-9k: security review and release evidence.
+- CI follow-up: `phase-9a: enforce dependency audit in CI`.
 
 ## Historical Phase 8 baseline
 
