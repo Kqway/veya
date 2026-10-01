@@ -10,7 +10,7 @@ async function main() {
   if (config.NODE_ENV === "production" && (!config.DATABASE_URL || command === "seed")) {
     throw new Error("Production requires DATABASE_URL; demo seeding is disabled in production.");
   }
-  const database = createDatabase(config.DATABASE_URL ?? "postgresql://veya:veya-local-only@127.0.0.1:54322/veya");
+  const database = createDatabase(config.DATABASE_URL ?? "postgresql://veya:veya-local-only@127.0.0.1:54322/veya", { max:config.DB_POOL_MAX, ...(config.DATABASE_SSL_MODE ? {sslMode:config.DATABASE_SSL_MODE}: {}) });
   try {
     const applied = await applyMigrations(database);
     console.log(`Migrations applied: ${applied.length}.`);

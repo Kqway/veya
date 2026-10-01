@@ -1,0 +1,23 @@
+import {beforeAll,afterAll,expect,it} from 'vitest';
+import {startTestDatabase} from '../support/postgres';
+import {applyMigrations} from '@/lib/db/migrations';
+import {socialActor} from '../support/social';
+import {cleanupReleaseData} from '@/lib/db/release-retention';
+import {requireProfile} from '@/features/social/context';
+import {opaqueKey} from '@/features/social/pairs';
+let c:Awaited<ReturnType<typeof startTestDatabase>>;
+beforeAll(async()=>{c=await startTestDatabase();await applyMigrations(c.db);});afterAll(async()=>{if(c)await c.stop();});
+it('defaults to bounded dry-run and purges old event/notification data without deleting recent inbox or profiles',async()=>{
+ const a=await socialActor(c.db,'Retention release'),p=await c.db.transaction(tx=>requireProfile(tx,a.token));
+ for(let i=0;i<3;i++)await c.db.query("INSERT INTO social_events(public_key,recipient_profile_id,topic,created_at) VALUES($1,$2,'notifications',clock_timestamp()-interval '2 days')",[opaqueKey(),p.id]);
+ await c.db.query("INSERT INTO social_events(public_key,recipient_profile_id,topic) VALUES($1,$2,'connections')",[opaqueKey(),p.id]);
+ await c.db.query("INSERT INTO social_notifications(public_key,recipient_profile_id,type,dedupe_key,created_at) VALUES($1,$2,'CANDIDATE_FOUND','old',clock_timestamp()-interval '31 days'),($3,$2,'CANDIDATE_FOUND','recent',clock_timestamp())",[opaqueKey(),p.id,opaqueKey()]);
+ await c.db.query("INSERT INTO rate_limit_buckets(action,bucket_key,used,reset_at) VALUES('discovery','global',1,clock_timestamp()-interval '2 hours'),('message','global',1,clock_timestamp()+interval '1 minute')");
+ expect(await cleanupReleaseData(c.db,{batchSize:2})).toMatchObject({dryRun:true,events:2,notifications:1});
+ expect((await c.db.query('SELECT * FROM social_events')).rows).toHaveLength(4);
+ expect(await cleanupReleaseData(c.db,{apply:true,batchSize:2})).toMatchObject({dryRun:false,events:2,notifications:1,limiterBuckets:1});
+ expect((await c.db.query('SELECT * FROM social_events')).rows).toHaveLength(2);expect((await c.db.query('SELECT * FROM social_notifications')).rows).toHaveLength(1);
+ expect((await c.db.query('SELECT action FROM rate_limit_buckets')).rows).toEqual([{action:'message'}]);
+ expect((await c.db.query('SELECT * FROM social_profiles')).rows).toHaveLength(1);
+ await expect(cleanupReleaseData(c.db,{batchSize:501})).rejects.toThrow();
+});

@@ -30,7 +30,7 @@ export async function cleanupSocial(db: Database,options: {apply?:boolean;batchS
       return (await tx.query(`DELETE FROM ${table} t WHERE ${key}=ANY($1::text[])`,[ids])).rowCount;
     });
   }
-  const reports = await purge("social_reports","t.id::text","t.reporter_profile_id AS profile_a,t.target_profile_id AS profile_b","t.created_at<clock_timestamp()-interval '365 days'","t.created_at,t.id");
+  const reports = await purge("social_reports","t.id::text","t.reporter_profile_id AS profile_a,t.target_profile_id AS profile_b","t.created_at<clock_timestamp()-interval '365 days' AND t.status IN('resolved','dismissed')","t.created_at,t.id");
   const handles = await purge("discovery_handles","t.public_handle","t.viewer_profile_id AS profile_a,(SELECT p.profile_id FROM seeking_posts p WHERE p.id=t.target_post_id) AS profile_b","t.created_at<clock_timestamp()-interval '90 days' AND (NOT EXISTS(SELECT 1 FROM seeking_posts p WHERE p.id=t.source_post_id AND p.status='active' AND p.expires_at>clock_timestamp()) OR NOT EXISTS(SELECT 1 FROM seeking_posts p WHERE p.id=t.target_post_id AND p.status='active' AND p.expires_at>clock_timestamp()))","t.created_at,t.public_handle");
   const passes = await purge("discovery_passes","t.viewer_profile_id::text || ':' || t.target_profile_id::text","t.viewer_profile_id AS profile_a,t.target_profile_id AS profile_b","t.created_at<clock_timestamp()-interval '90 days'","t.created_at,t.viewer_profile_id,t.target_profile_id");
   const posts = await purge("seeking_posts","t.id::text","t.profile_id AS profile_a,NULL::uuid AS profile_b","t.expires_at<clock_timestamp()-interval '90 days'","t.expires_at,t.id");
@@ -45,7 +45,7 @@ export async function cleanupSocial(db: Database,options: {apply?:boolean;batchS
     AND NOT EXISTS(SELECT 1 FROM conversations c JOIN social_matches m ON m.id=c.match_id WHERE m.pair_id=t.id AND (c.status='active' OR c.created_at>=clock_timestamp()-interval '180 days'))
     AND NOT EXISTS(SELECT 1 FROM messages msg JOIN conversations c ON c.id=msg.conversation_id JOIN social_matches m ON m.id=c.match_id WHERE m.pair_id=t.id AND msg.created_at>=clock_timestamp()-interval '180 days')
     AND NOT EXISTS(SELECT 1 FROM match_disclosures d JOIN social_matches m ON m.id=d.match_id WHERE m.pair_id=t.id AND d.created_at>=clock_timestamp()-interval '180 days')
-    AND NOT EXISTS(SELECT 1 FROM social_reports report WHERE report.created_at>=clock_timestamp()-interval '365 days' AND (
+    AND NOT EXISTS(SELECT 1 FROM social_reports report WHERE (report.created_at>=clock_timestamp()-interval '365 days' OR report.status IN('open','reviewing')) AND (
       report.request_id IN(SELECT r.id FROM connection_requests r WHERE r.pair_id=t.id)
       OR report.match_id IN(SELECT m.id FROM social_matches m WHERE m.pair_id=t.id)))`,"t.created_at,t.id");
   return {dryRun:!apply,reports,handles,passes,posts,pairs};

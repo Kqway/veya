@@ -1,15 +1,28 @@
 import "server-only";
 import { Pool, type QueryResultRow } from "pg";
+import { logOperationalEvent } from "@/lib/logging/server";
 import type { Database, DatabaseExecutor, DatabaseResult } from "./types";
+
+export interface DatabaseOptions { max?: number; sslMode?: "verify-full"; }
 
 class PostgresDatabase implements Database {
   private readonly pool: Pool;
 
-  constructor(connectionString: string) {
+  private closing: Promise<void> | undefined;
+
+  constructor(connectionString: string, options: DatabaseOptions = {}) {
+    const max = options.max ?? 5;
+    if (!Number.isInteger(max) || max < 1 || max > 20) throw new Error("Invalid DB_POOL_MAX.");
+    if (options.sslMode) {
+      const url = new URL(connectionString);
+      for (const key of ["ssl", "sslmode", "sslcert", "sslkey", "sslrootcert", "uselibpqcompat"]) url.searchParams.delete(key);
+      connectionString = url.toString();
+    }
     // pg connects on the first query, not when the adapter is constructed.
     this.pool = new Pool({
       connectionString,
-      max: 5,
+      max,
+      ...(options.sslMode ? { ssl: { rejectUnauthorized: true } } : {}),
       connectionTimeoutMillis: 5_000,
       idleTimeoutMillis: 30_000,
       query_timeout: 10_000,
@@ -17,7 +30,7 @@ class PostgresDatabase implements Database {
     });
     this.pool.on("error", () => {
       // Deliberately omit driver error details, which can contain connection info.
-      console.error("PostgreSQL idle connection failed.");
+      logOperationalEvent("database_idle_error");
     });
   }
 
@@ -30,7 +43,8 @@ class PostgresDatabase implements Database {
   }
 
   async close(): Promise<void> {
-    await this.pool.end();
+    this.closing ??= this.pool.end();
+    await this.closing;
   }
 
   async transaction<T>(work: (tx: DatabaseExecutor) => Promise<T>): Promise<T> {
@@ -54,6 +68,6 @@ class PostgresDatabase implements Database {
   }
 }
 
-export function createDatabase(connectionString: string): Database {
-  return new PostgresDatabase(connectionString);
+export function createDatabase(connectionString: string, options: DatabaseOptions = {}): Database {
+  return new PostgresDatabase(connectionString, options);
 }

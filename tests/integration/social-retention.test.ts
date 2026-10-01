@@ -3,7 +3,6 @@ import { applyMigrations } from "@/lib/db/migrations";
 import { cleanupSocial } from "@/lib/db/social-retention";
 import { requireProfile, lockProfiles } from "@/features/social/context";
 import { ensurePair, opaqueKey } from "@/features/social/pairs";
-import { SafetyService } from "@/features/social/safety";
 import { startTestDatabase } from "../support/postgres";
 import { socialActor } from "../support/social";
 
@@ -35,13 +34,15 @@ describe("explicit bounded social retention", () => {
     for (const table of ["seeking_posts","seeking_availability","seeking_tags","social_pairs","connection_requests","pairwise_identities","discovery_handles","discovery_passes"]) expect((await c.db.query(`SELECT * FROM ${table}`)).rows).toEqual([]);
     expect((await c.db.query("SELECT * FROM social_profiles")).rows).toHaveLength(2); expect((await c.db.query("SELECT * FROM social_profile_bindings")).rows).toHaveLength(2);
   });
-  it("preserves report evidence for365 days and only then removes inactive pairs", async () => {
-    const f = await fixture(); await new SafetyService(c.db).report(f.a.token,{requestKey:f.key,reason:"unsafe_meeting",text:"retained evidence"});
-    await c.db.query("UPDATE social_reports SET created_at=clock_timestamp()-interval '200 days'");
+  it("preserves unresolved evidence indefinitely and resolved evidence for365 days", async () => {
+    const f = await fixture();
+    await c.db.query("INSERT INTO social_reports(reporter_profile_id,target_profile_id,request_id,reason,text,created_at) VALUES($1,$2,$3,'unsafe_meeting','retained evidence',clock_timestamp()-interval '366 days')",[f.own.id,f.peer.id,f.requestId]);
     const recent = await cleanupSocial(c.db,{apply:true}); expect(recent.pairs).toBe(0); expect(recent.reports).toBe(0);
     expect((await c.db.query("SELECT text FROM social_reports")).rows).toEqual([{text:"retained evidence"}]);
     expect((await c.db.query("SELECT source_post_id,target_post_id FROM connection_requests")).rows).toEqual([{source_post_id:null,target_post_id:null}]);
-    await c.db.query("UPDATE social_reports SET created_at=clock_timestamp()-interval '366 days'");
+    expect(await cleanupSocial(c.db,{apply:true})).toMatchObject({reports:0,pairs:0});
+    expect((await c.db.query("SELECT evidence FROM social_reports")).rows).toHaveLength(1);
+    await c.db.query("UPDATE social_reports SET status='resolved'");
     expect(await cleanupSocial(c.db,{apply:true})).toMatchObject({reports:1,pairs:1});
   });
   it("does not delete open matches or an inactive pair while either member has active seeking", async () => {

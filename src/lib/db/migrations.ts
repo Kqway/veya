@@ -4,13 +4,17 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { Database } from "./types";
 
-export async function applyMigrations(db: Database, directory = join(process.cwd(), "db/migrations")): Promise<string[]> {
+export async function loadMigrations(directory = join(process.cwd(), "db/migrations")) {
   const files = (await readdir(directory)).filter((file) => /^\d{4}_[a-z0-9_]+\.sql$/.test(file)).sort();
   if (!files.length) throw new Error("No SQL migrations found.");
-  const migrations = await Promise.all(files.map(async (version) => {
+  return Promise.all(files.map(async (version) => {
     const sql = await readFile(join(directory, version), "utf8");
     return { version, sql, checksum: createHash("sha256").update(sql).digest("hex") };
   }));
+}
+
+export async function applyMigrations(db: Database, directory = join(process.cwd(), "db/migrations")): Promise<string[]> {
+  const migrations = await loadMigrations(directory);
   return db.transaction(async (tx) => {
     await tx.query("SELECT pg_advisory_xact_lock(782014221)");
     await tx.query("CREATE TABLE IF NOT EXISTS veya_schema_migrations (version text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())");

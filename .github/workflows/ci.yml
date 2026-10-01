@@ -7,28 +7,53 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
+    # Hosted runner is non-root, as required by native embedded PostgreSQL.
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     env:
       NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3100
+      AI_PROVIDER: mock
+      OPENAI_API_KEY: ""
+      DATABASE_URL: ""
+      REALTIME_DATABASE_URL: ""
+      MODERATION_ADMIN_SECRET: ""
+      PUSH_VAPID_PUBLIC_KEY: ""
+      PUSH_VAPID_PRIVATE_KEY: ""
+      PUSH_VAPID_SUBJECT: ""
+      # Playwright config must use installed Chromium unless explicitly overridden.
+      PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: ""
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: mkdir -p logs
+      - run: npm ci 2>&1 | tee logs/npm-ci.log
+      - run: npm run lint 2>&1 | tee logs/lint.log
+      - run: npm run typecheck 2>&1 | tee logs/typecheck.log
+      - run: npm test 2>&1 | tee logs/tests.log
+      - run: npm run build 2>&1 | tee logs/build.log
+      - run: npx playwright install --with-deps chromium 2>&1 | tee logs/browser-install.log
+      - run: npm run test:e2e -- --project=desktop --project=mobile 2>&1 | tee logs/e2e.log
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: browser-test-results
-          path: test-results/
+          name: release-failure-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+            logs/
           if-no-files-found: ignore
+          retention-days: 7

@@ -1,3 +1,4 @@
+import { cleanupReleaseData } from '@/lib/db/release-retention';
 import { createDatabase } from "@/lib/db/postgres";
 import { cleanupSocial } from "@/lib/db/social-retention";
 import { cleanupExpired } from "@/lib/db/retention";
@@ -15,8 +16,11 @@ async function main() {
   const database = createDatabase(
     config.DATABASE_URL ??
       "postgresql://veya:veya-local-only@127.0.0.1:54322/veya",
+    { max:config.DB_POOL_MAX, ...(config.DATABASE_SSL_MODE ? {sslMode:config.DATABASE_SSL_MODE}: {}) },
   );
   try {
+    const release = await cleanupReleaseData(database,{apply:args.includes('--apply')});
+    console.log('Release data cleanup:',JSON.stringify(release));
     const social = await cleanupSocial(database, {
       apply: args.includes("--apply"),
     });

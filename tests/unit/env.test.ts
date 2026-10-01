@@ -6,6 +6,9 @@ describe("server environment", () => {
     expect(parseServerEnv({})).toEqual({
       NODE_ENV: "development",
       NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+      DB_POOL_MAX: 5,
+      REALTIME_ENABLED: true,
+      RATE_LIMIT_BACKEND: "memory",
       AI_PROVIDER: "mock",
       ANALYTICS_ENABLED: false,
     });
@@ -83,4 +86,60 @@ describe("server environment", () => {
       "ANALYTICS_ENABLED",
     );
   });
+});
+
+
+describe("deployment environment", () => {
+  it("defaults to shared limits in production without needing build-time secrets", () => {
+    expect(parseServerEnv({ NODE_ENV: "production" }).RATE_LIMIT_BACKEND).toBe("postgres");
+    expect(parseServerEnv({ NODE_ENV: "production" }).DATABASE_URL).toBeUndefined();
+    expect(parseServerEnv({ NODE_ENV: "production", RATE_LIMIT_BACKEND: "memory" }).RATE_LIMIT_BACKEND).toBe("memory");
+  });
+  it.each(["0", "21", "1.5", "NaN"])("rejects an unbounded database pool %s", (value) => {
+    expect(() => parseServerEnv({ DB_POOL_MAX: value })).toThrow("DB_POOL_MAX");
+  });
+  it("parses a dedicated session connection and explicit disabled realtime", () => {
+    expect(parseServerEnv({ DB_POOL_MAX: "20", REALTIME_DATABASE_URL: "postgres://u:p@localhost/db", REALTIME_ENABLED: "false" })).toMatchObject({ DB_POOL_MAX: 20, REALTIME_ENABLED: false, REALTIME_DATABASE_URL: "postgres://u:p@localhost/db" });
+  });
+  it("requires HTTPS for remote production origins but permits isolated loopback", () => {
+    expect(() => parseServerEnv({ NODE_ENV: "production", NEXT_PUBLIC_APP_URL: "http://veya.example" })).toThrow("NEXT_PUBLIC_APP_URL");
+    expect(parseServerEnv({ NODE_ENV: "production", NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3100" }).NEXT_PUBLIC_APP_URL).toBe("http://127.0.0.1:3100");
+  });
+  it("rejects TLS verification bypasses and accepts verified transport", () => {
+    expect(parseServerEnv({ DATABASE_SSL_MODE: "verify-full" }).DATABASE_SSL_MODE).toBe("verify-full");
+    for (const value of ["postgres://u:secret@db.example/db?sslmode=no-verify", "postgres://u:secret@db.example/db?sslmode=require", "postgres://u:secret@db.example/db?sslmode=disable"]) {
+      expect(() => parseServerEnv({ NODE_ENV: "production", DATABASE_URL: value })).toThrow("DATABASE_URL");
+    }
+    expect(() => parseServerEnv({ DATABASE_SSL_MODE: "no-verify" })).toThrow("DATABASE_SSL_MODE");
+  });
+  it("validates optional moderator credentials without reflecting their value", () => {
+    expect(parseServerEnv({ MODERATION_ADMIN_SECRET: "a".repeat(32) }).MODERATION_ADMIN_SECRET).toHaveLength(32);
+    expect(() => parseServerEnv({ MODERATION_ADMIN_SECRET: "private weak secret" })).toThrow("MODERATION_ADMIN_SECRET");
+  });
+  it("disables absent push and rejects partially configured keys", () => {
+    expect(parseServerEnv({ PUSH_VAPID_PUBLIC_KEY: "", PUSH_VAPID_PRIVATE_KEY: "", PUSH_VAPID_SUBJECT: "" }).PUSH_VAPID_PUBLIC_KEY).toBeUndefined();
+    expect(() => parseServerEnv({ PUSH_VAPID_PUBLIC_KEY: "a".repeat(87) })).toThrow("PUSH_VAPID_PRIVATE_KEY");
+    expect(parseServerEnv({ PUSH_VAPID_PUBLIC_KEY: "a".repeat(87), PUSH_VAPID_PRIVATE_KEY: "b".repeat(43), PUSH_VAPID_SUBJECT: "mailto:admin@example.com" }).PUSH_VAPID_SUBJECT).toBe("mailto:admin@example.com");
+  });
+});
+
+
+describe("production database transport", () => {
+  it.each(["ssl=0", "ssl=false", "sslmode=no-verify", "sslmode=verify-ca&uselibpqcompat=true", "host=db.example&sslmode=disable"])("rejects remote verification bypass %s", (query) => {
+    expect(() => parseServerEnv({ NODE_ENV: "production", DATABASE_URL: `postgres://u:private@db.example/db?${query}` })).toThrow("DATABASE_URL");
+  });
+});
+
+describe('production remote transport defaults',()=>{
+ it.each(['DATABASE_URL','REALTIME_DATABASE_URL'])('forces verified TLS for remote %s without flags',field=>{
+  const config=parseServerEnv({NODE_ENV:'production',NEXT_PUBLIC_APP_URL:'https://veya.example',[field]:'postgresql://veya:secret@db.example/veya'});
+  expect(config.DATABASE_SSL_MODE).toBe('verify-full');
+ });
+ it.each(['sslmode=verify-full&sslmode=require','ssl=false&ssl=true'])('rejects conflicting transport options %s',query=>{
+  expect(()=>parseServerEnv({NODE_ENV:'production',NEXT_PUBLIC_APP_URL:'https://veya.example',DATABASE_URL:`postgresql://veya:secret@db.example/veya?${query}`})).toThrow();
+ });
+});
+it('forces verifiedTLS when repeated host parameters point the driver at a remote server',()=>{
+ expect(parseServerEnv({NODE_ENV:'production',DATABASE_URL:'postgresql://user:pass@localhost/db?host=localhost&host=db.example.com'}).DATABASE_SSL_MODE).toBe('verify-full');
+ expect(()=>parseServerEnv({NODE_ENV:'production',DATABASE_URL:'postgresql://user:pass@localhost/db?host=localhost&host=db.example.com&sslmode=require'})).toThrow();
 });
