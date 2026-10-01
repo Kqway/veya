@@ -6,11 +6,12 @@ import type {
   explanationReasonsSchema,
 } from "./schemas";
 export type { ParsedIntent } from "@/features/intents/structured";
+export type { SeekingSuggestion } from "@/features/discovery/seeking-suggestion";
 export type ParseInput = z.infer<typeof parseInputSchema>;
 export type PlanContext = z.infer<typeof planContextSchema>;
 export type PlanIdea = z.infer<typeof planIdeaSchema>;
 export type ExplanationReasons = z.infer<typeof explanationReasonsSchema>;
-export type AiTask = "parse_intent" | "suggest_plan" | "explain_plan";
+export type AiTask = "parse_intent" | "parse_seeking" | "suggest_plan" | "explain_plan";
 export interface AiRequest {
   task: AiTask;
   input: ParseInput | PlanContext;

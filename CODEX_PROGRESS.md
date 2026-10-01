@@ -1,13 +1,14 @@
 # Veya Development Progress
 
 ## Current Phase
-8A
+8B
 
 **Status: Intent Network implementation in progress (2026-10-01).** Existing
 Phases1–7 remain complete (base f86dd52). User authorized full sequential8A–8G
 social extension and prior GitHub publication; no production deployment.
-8A social identity/recovery/projection foundation verified22 focused tests;
-8B–8G implementation and final full release gates continue in this run.
+8A–8B identity/recovery, seeking, pure matching and optional own-text parser complete.
+Full integrated current working-tree check passes398tests/typecheck/lint/build;
+remaining phase commits and complete browser release gates continue.
 
 ## Completed Phases
 - **Phase 1 — foundation** (`5766774`): responsive landing, strict Next.js/React/

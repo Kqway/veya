@@ -4,6 +4,10 @@ import {
   parsedIntentSchema,
   type ParsedIntent,
 } from "@/features/intents/structured";
+import {
+  seekingSuggestionSchema,
+  type SeekingSuggestion,
+} from "@/features/discovery/seeking-suggestion";
 import { MockAiProvider } from "./mock-provider";
 import {
   parseInputSchema,
@@ -68,6 +72,10 @@ export class AiTasks {
   async parseIntent(input: unknown): Promise<TaskResult<ParsedIntent>> {
     const data = parseInputSchema.parse(input);
     return this.run({ task: "parse_intent", input: data }, parsedIntentSchema);
+  }
+  async parseSeeking(input: unknown): Promise<TaskResult<SeekingSuggestion>> {
+    const data = parseInputSchema.parse(input);
+    return this.run({ task: "parse_seeking", input: data }, seekingSuggestionSchema);
   }
   async suggestPlan(input: unknown): Promise<TaskResult<PlanIdea>> {
     const data = planContextSchema.parse(input);

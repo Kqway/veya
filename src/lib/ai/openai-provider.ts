@@ -59,7 +59,7 @@ export class OpenAiProvider implements AiProvider {
   }
   async complete(request: AiRequest, signal: AbortSignal): Promise<unknown> {
     const input =
-      request.task === "parse_intent"
+      request.task === "parse_intent" || request.task === "parse_seeking"
         ? parseInputSchema.parse(request.input)
         : planContextSchema.parse(request.input);
     const definition = taskDefinitions[request.task];
