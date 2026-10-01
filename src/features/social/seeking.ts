@@ -1,4 +1,6 @@
+import { enqueueCandidateJob } from '@/features/discovery/candidate-jobs';
 import { normalizeActivityKey } from '@/features/discovery/activity-normalization';
+import { trackFunnel } from '@/lib/analytics/funnel';
 import "server-only";
 import { randomBytes } from "node:crypto";
 import type { Database } from "@/lib/db/types";
@@ -12,7 +14,7 @@ import { fail } from "./errors";
 import { seekingSchema, publicKeySchema, strongerMode } from "./seeking-schema";
 import { readPost, projectOwnPost, type PostRow } from "./post-repository";
 export class SeekingService {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: Database, private readonly options: {analyticsEnabled?: boolean} = {}) {}
   async create(token: string, input: unknown) {
     const data = validate(seekingSchema, input);
     const expiry = data.expiresAt
@@ -92,6 +94,8 @@ export class SeekingService {
           "INSERT INTO seeking_tags(post_id,slot,value) VALUES($1,$2,$3)",
           [row.id, i + 1, t],
         );
+      await enqueueCandidateJob(tx,row.id);
+      await trackFunnel(tx,'seeking_created',this.options.analyticsEnabled ?? false);
       return projectOwnPost(tx, row, profile);
     });
   }

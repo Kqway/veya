@@ -21,7 +21,8 @@
     "db:seed": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/database.ts seed",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "db:cleanup": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/retention.ts",
-    "notifications:process": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/notifications.ts"
+    "notifications:process": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/notifications.ts",
+    "social:process": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/social-worker.ts"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
