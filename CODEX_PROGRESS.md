@@ -1,9 +1,98 @@
 # Veya Development Progress
 
-## Current Phase
-8G
+## Current release: Phase 9A–9L
 
-**Status: Intent Network v1 implemented (2026-10-01).** Original Phases1–7
+**Status: production release candidate implemented and locally verified, 2026-10-01.**
+Baseline was independently checked at `d5f3b30`: 398 tests/43 files and 38/38
+Playwright cases. Phase 9 preserves that coordination/Intent Network flow and adds:
+
+- Recipient-authenticated SSE through PostgreSQL transactional events and LISTEN;
+  bounded subscriptions/retries, offline/reconnect recovery from persistent APIs.
+  Requests, accept/decline, matches, chat, blocks, notifications and linked plans update
+  without Refresh. Events contain safe hints only, never internal identities.
+- Private notification inbox/unread count, transactional dedupe, explicit opt-in Web
+  Push with generic encrypted payloads, durable bounded delivery/retry jobs and
+  reminders for confirmed linked plans. Push is optional; denied/unsupported browsers
+  keep the core flow. Explicit worker scheduling is required for delivery/reminders.
+- Secret-protected human moderation queue, immutable minimal report-time evidence,
+  open/reviewing/resolved/dismissed states, append-only audit and server-enforced
+  seeking/connection restrictions/suspension. Recovery does not remove restrictions.
+- Atomic PostgreSQL multi-instance rate budgets, hashed credential buckets, a global
+  profile-creation budget, bounded storage and fail-closed admission. No IP headers or
+  browser fingerprinting. The existing twenty discovery contexts/day limit remains.
+- Eight optional fixed server funnel events and aggregate cohort reporting without
+  raw text, names, location, messages, contacts or client-supplied identities.
+- EN/RU extensible activity normalization, batched indexed discovery/message reads,
+  durable bounded future-candidate jobs and honest cold-start UX. Candidate notices
+  require a scheduled worker and never send Interested or create matches automatically.
+- Node 24 CI with native isolated PostgreSQL, production build, desktop/mobile
+  Playwright and failure artifacts; E2E explicitly overrides inherited DB/AI/push
+  settings. HTTPS/TLS validation, pool limits, liveness/readiness, safe structured
+  logging, bounded shutdown and non-root standalone/operations Docker targets.
+
+**New migrations:** `0011_social_events.sql`, `0012_social_notifications.sql`,
+`0013_social_moderation.sql`, `0014_shared_rate_limits.sql`,
+`0015_social_query_indexes.sql`, `0016_social_funnel.sql`, `0017_candidate_jobs.sql`.
+All original 0001–0010 SHA256 checksums were independently compared with the clean
+baseline and are unchanged. New tables retain server-only RLS, constraints and indexes.
+Retention now preserves open/reviewing evidence and cleans bounded release queues,
+events, notifications, expired admin sessions and limiter buckets explicitly.
+
+**Final local evidence (2026-10-01):**
+
+- `npm ci`: PASS at the verified baseline; updated dependency lock also installed
+  successfully by the final clean Docker build.
+- `npm run lint`: PASS, zero warnings. `npm run typecheck`: PASS.
+- `npm test`: **586 tests / 68 files PASS** (+188 tests / +25 files over baseline).
+- `npm run build`: PASS on final application sources; non-root Node 24 Docker build
+  also PASS, final runner image `sha256:15c8563e4a7984a1c3a52462e2fefe26a07d7de1a1dde676dd91bc3704b4c6dc`.
+- `npm run test:e2e`: **48/48 PASS**, 24 desktop +24 mobile (+10 cases), including
+  simultaneous users, live Interested/accept/chat/plan/block/inbox, offline reconnect,
+  denied/unsupported push, moderator suspension and 320px/reduced-motion cold start.
+- `npm audit --json`: PASS, **zero known vulnerabilities** at verification time.
+- Docker smoke: non-root UID1000, container healthy, `/api/health`200 and
+  `/api/ready`503 when no database is configured, as intended.
+- Separate read-only security/privacy review: six Important findings reproduced,
+  fixed and re-reviewed, with regression tests; no unresolved Critical/Important
+  finding in reviewed scope. See [review](docs/security-phase9-review.md) for evidence
+  and limits. This is not a claim of absolute anonymity or external penetration testing.
+- **Remote Phase 9 CI is pending publication/verification.** The GitHub connector can
+  read Actions even though shell API access is denied. Historical Phase 8 run
+  `36864125409` was separately verified successful; that does not verify Phase 9.
+  The final pushed SHA must receive its own PASS. No production deployment occurred.
+
+**Operator requirements:** configure an HTTPS origin/host and verified-TLS PostgreSQL,
+apply migrations with a server-only role, set a random moderator secret, configure
+session-mode LISTEN and proxy streaming, schedule `social:process` and reviewed
+retention, verify backup/restore and readiness, and obtain remote CI PASS. Real HTTPS
+push-provider delivery requires optional VAPID configuration/browser opt-in and has
+not been exercised locally. OpenAI, Web Push and aggregate analytics are optional;
+Redis, an external realtime provider, email/SMS and paid AI are not required.
+See [deployment](docs/DEPLOYMENT.md) and [checklist](docs/RELEASE_CHECKLIST.md).
+
+**First launch metrics:** seeking→candidate rate; seeking→Interested rate;
+Interested→accepted match rate; match→first conversation rate; match→confirmed plan
+rate. Measure these cohort transitions, not page views; a confirmed plan alone does
+not establish that a real-world meetup occurred. `npm run analytics:funnel` emits
+bounded aggregate counts when analytics is enabled.
+
+## Phase 9 commits
+
+- `ba5f4ef` — phase-9a: release configuration and database foundations
+- `0ce1c56` — phase-9e: shared abuse protection
+- `90b4891` — phase-9b: authenticated realtime delivery
+- `9a5e89d` — phase-9c: notification inbox and opt-in push
+- `ca228bb` — phase-9d: protected human moderation
+- `4d95f0e` — phase-9h: activity normalization and bounded discovery
+- `9a2e364` — phase-9g: durable future-candidate matching
+- `5efc80e` — phase-9f: live social actions and private funnel metrics
+- `f61495e` — phase-9j: deployment lifecycle and non-root container
+- `972d011` — phase-9l: launch UX and desktop/mobile journeys
+- Final release evidence commit: `phase-9k: security review and release evidence`.
+
+## Historical Phase 8 baseline
+
+**Historical Phase 8 status: Intent Network v1 implemented (2026-10-01).** Original Phases1–7
 remain intact (base `f86dd52`). Authorized work covers all8A–8G, separate social
 commits and normal fast-forward GitHub main publication. No production deployment.
 Verify actual HEAD/remote before continuing; this document describes the release.
@@ -49,7 +138,7 @@ Verify actual HEAD/remote before continuing; this document describes the release
   post editor, discovery/requests/chat/disclosure/safety/plan screens, desktop/mobile
   acceptance and recovery tests, full privacy review and updated release docs.
 
-## Current Architecture
+## Historical Phase 8 Architecture
 
 - Next.js16.3.8/React19.3, strict TypeScript, Node24 LTS recommended (22.12 minimum),
   native PostgreSQL through parameterized server-only pg. No new dependencies.
@@ -114,7 +203,7 @@ Verify actual HEAD/remote before continuing; this document describes the release
   database/production Next server, desktop/mobile Chromium. No tests/cleanup reset
   development/production databases, no paid provider calls or deployment performed.
 
-## Important Decisions and Privacy Limits
+## Phase 8 Decisions and Privacy Limits
 
 - Intent → Discovery → Connection request → Mutual match → Private chat → existing
   Veya plan → activity. Search is action-first, no users endpoint/profile directory.
@@ -146,7 +235,7 @@ Verify actual HEAD/remote before continuing; this document describes the release
   profile retention/account-deletion/evidence policy must be set for public launch.
   Explicit profile deletion cascades reports; no account deletion UI/API is exposed.
 
-## Tests Status
+## Historical Phase 8 Test Evidence
 
 - Final `npm run check`: zero-warning lint, generated route types/strict TypeScript,
   **398 tests in43 files — PASS**, optimized production build — PASS.

@@ -146,3 +146,18 @@ the only recovery credential, implemented persistent memory-only key presentatio
 and added route-unmount/in-flight response regression tests. No confirmed Critical
 or cross-viewer incognito identifier leakage was found. Final check/browser/audit
 evidence and production limits are recorded in CODEX_PROGRESS.md.
+
+## Phase 9 release extension
+
+The production architecture is documented in [production-release-design.md](production-release-design.md).
+SSE supplements PostgreSQL and the existing projected APIs; reconnect repairs state,
+without online status or last seen. Notifications/push reveal only generic updates.
+The server-protected human moderation console enforces seek/connect restrictions
+and suspension; report evidence snapshots contain only required bounded context,
+without disclosures or private availability/location. Active cases outlive routine
+cleanup. Shared PostgreSQL limiting includes global profile-creation budgets and
+survives application restarts; guest-based quotas are not a guarantee against Sybil
+attacks. Future compatible posts produce notices only through the scheduled durable
+worker, never automatic requests. Activity aliases are an extensible local EN/RU
+vocabulary; unknown text stays manual. Incognito guarantees remain pair-specific API
+pseudonymity, not anonymity from operators, push providers or real-world behavior.

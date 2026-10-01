@@ -49,3 +49,36 @@ POST /reports {requestKey:...|matchKey:...,reason:spam|harassment|unsafe_meeting
 Screens /discover, /seek/new, /seek/[key], /connections, /m/[key]; profile create/
 recovery inline at /discover and /seek/new; profile controls at /discover. No social
 metadata uses records; generic noindex only. Generated SVG/CSS avatar seed local.
+
+## Phase 9 live delivery and notifications
+
+`GET /api/social/events` authenticates the current guest/profile only; query strings
+cannot select another profile or match. SSE `sync` has `{}`; `invalidate` has
+`{topic, matchKey?}` with topic connections/match/notifications/discovery and only a
+currently authorized active match key. Event IDs are random per-recipient cursors,
+never numeric database sequences. No profile IDs, identity aliases, private content,
+recovery/session material or presence is streamed. Backfill caps at 100; expired
+cursors/overflow trigger persistent API reload. Heartbeats reauthorize access;
+streams last at most five minutes. One browser provider shares subscriptions,
+cleans them up and uses six bounded reconnect attempts plus manual retry.
+
+`GET /api/notifications?before=<own-key>&limit=1..50` returns
+`{notifications:[{publicKey,type,createdAt,readAt,href}],nextBefore}`.
+`GET /api/notifications/unread` returns `{unreadCount,capped}` (maximum 1000).
+`POST /api/notifications/<own-key>/read` accepts `{}`. Blocked/suspended/closed
+contexts are hidden from reads and push. Types: INTEREST_RECEIVED,
+INTEREST_ACCEPTED, NEW_MESSAGE, PLAN_READY, MEETUP_REMINDER, CANDIDATE_FOUND.
+
+`GET /api/notifications/push` returns `{enabled,publicKey}`;
+POST/DELETE accept a strict browser subscription/endpoint respectively. Registration
+is opt-in, requires current server-owned profile membership, caps at five and accepts
+only HTTPS endpoints of supported browser push providers. The generic encrypted
+payload is `{title:'Veya',body:'You have a new update in Veya',url:'/notifications'}`.
+It contains no aliases, activity, match key, location or message. Push is best effort,
+not read acknowledgement. Unsupported/denied browsers keep the inbox usable.
+
+`/api/moderation/*` uses a separate hash-only eight-hour moderator cookie issued by
+an environment-secret login, not guest identity/client roles. Case queue/evidence
+and actions are authenticated, no-store and audited. Mutations require the trusted
+origin. Suspended profiles cannot use social APIs even after Veya Key recovery;
+capability restrictions independently prevent new posts/connections.

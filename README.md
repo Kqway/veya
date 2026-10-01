@@ -5,7 +5,7 @@ to reveal. Then Veya helps you actually meet.**
 
 ## Current scope
 
-**Phases 1–7 and Intent Network 8A–8G implemented.** Start with an activity,
+**Phases 1–9: Intent Network production release candidate.** Start with an activity,
 create a seeking post, discover compatible posts, send Interested, and open a
 private conversation after the recipient accepts. Plan it connects the match to
 the existing availability/results/voting/confirmation flow. The original no-account
@@ -29,7 +29,7 @@ The [social API contract](docs/social-api-contract.md) documents exact bounded D
 3. Open `/discover` for up to five compatible action cards. Interested sends a
    visible request; Pass hides that candidate. `/connections` lets recipients
    accept, decline, block or report. Acceptance alone creates a match.
-4. `/m/<key>` provides plain-text private chat, explicit refresh/pagination and
+4. `/m/<key>` provides plain-text private chat with live updates, refresh/pagination and
    optional match-only first-name/contact disclosure with an irreversible warning.
    Nothing is shared automatically. Blocking closes new messages/disclosures,
    hides both profiles from discovery and prevents further requests.
@@ -67,9 +67,26 @@ default, at most thirty. The indexed candidate pool is bounded to 100; discovery
 is not an exhaustive search of every person in a city.
 
 First offline meetings should be in public places. Do not share your home address.
-Reports are retained server-side with bounded reasons/text; a moderation console
-and automated enforcement are not implemented. See the
-[release checklist](docs/RELEASE_CHECKLIST.md) before a hosted preview.
+Reports have a protected human moderation console with immutable bounded evidence,
+case states, audit history and backend restrictions/suspension. No AI bans are used.
+See the [release checklist](docs/RELEASE_CHECKLIST.md),
+[production architecture](docs/production-release-design.md) and
+[deployment guide](docs/DEPLOYMENT.md) before inviting real users.
+
+Live updates use authenticated SSE and a PostgreSQL outbox; reconnect reloads the
+persistent APIs. Notifications have a private inbox/unread count and optional,
+explicitly enabled Web Push with generic lock-screen text. Saved posts queue actual
+deterministic future-candidate work, run by an **operator-scheduled** bounded worker;
+Veya never sends Interested automatically. Run `npm run social:process` periodically
+for candidate notices, confirmed-plan reminders and opted-in push delivery.
+Production limits are shared through PostgreSQL and fail closed; no Redis, IP
+fingerprinting or additional realtime/chat provider is required.
+
+Optional aggregate analytics measure seeking → candidates → interest → match →
+conversation → plan → confirmed time. Only fixed server events are stored, without
+identifiers or personal content. `npm run analytics:funnel -- 7` reports a seven-day
+seeking cohort when analytics is enabled. Confirmation measures a selected plan,
+not proof that a real-world meetup occurred.
 
 ## Local setup
 
@@ -106,6 +123,9 @@ npm start
 | `npm run db:migrate` | Apply checked SQL migrations atomically |
 | `npm run db:seed` | Apply migrations and create an idempotent demo |
 | `npm run db:cleanup` | Preview bounded expired-data cleanup; explicit `-- --apply` to delete |
+| `npm run social:process` | One bounded candidate/reminder/push worker batch |
+| `npm run notifications:process` | One bounded notification worker batch |
+| `npm run analytics:funnel -- 7` | Aggregate seven-day seeking cohort; opt-in analytics |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build |
 | `npm run test:e2e` | Desktop/mobile Chromium checks against the production server |
@@ -113,7 +133,7 @@ npm start
 
 Run `npm run build` before `npm run test:e2e`. Playwright starts an isolated native PostgreSQL cluster, applies migrations and
 serves `next start` on port 3100 with a matching origin. It stops both afterward.
-It never uses DATABASE_URL or an already-running development server. It uses `/usr/bin/chromium` if present;
+It overrides all external database, realtime, push, AI and moderator settings with isolated test configuration. It never uses an already-running development server. Local runs use `/usr/bin/chromium` if present; CI uses the installed Playwright browser;
 otherwise install its browser once:
 
 ```bash
