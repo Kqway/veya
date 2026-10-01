@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSocialRefresh } from "@/features/realtime/client";
+import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "@/features/entry/client";
 import {
   socialApi,
@@ -9,7 +10,7 @@ import {
   type OwnPost,
   type Profile,
 } from "../client";
-import { Person, SocialError, SocialShell } from "./common";
+import { Person, SocialError, SocialShell, SocialLiveStatus } from "./common";
 import { ProfilePanel } from "./profile-panel";
 const reasonCopy: Record<string, string> = {
   SAME_ACTIVITY: "You want to do the same activity",
@@ -51,6 +52,12 @@ export function DiscoverScreen() {
       }
     });
   }, [run]);
+  const reloadCandidates = useCallback(() => run(async (alive) => {
+    if (!source) return;
+    const data = await socialApi<{ cards: Card[] }>(`/discover?source=${encodeURIComponent(source)}`);
+    if (alive()) setCards(data.cards);
+  }), [source, run]);
+  const live = useSocialRefresh(["discovery", "connections"], reloadCandidates, { enabled: !!profile && !!source && cards !== null && !action.busy });
   function onProfile(value: Profile) {
     setProfile(value);
     if (!profile)
@@ -68,6 +75,7 @@ export function DiscoverScreen() {
     <SocialShell title="Find compatible people">
       {!loaded && <p role="status">Loading your profile…</p>}
       <SocialError message={action.error} focusRef={action.errorRef} />
+      {profile && <SocialLiveStatus {...live} />}
       {loaded && (
         <>
           <ProfilePanel profile={profile} onProfile={onProfile} />
@@ -176,7 +184,7 @@ export function DiscoverScreen() {
                 {cards?.length === 0 && (
                   <p className="social-card">
                     No compatible people found for this activity yet. Try
-                    another activity or availability.
+                    another activity or availability. Your activity is saved until it expires. New compatible posts can appear here; check again later. Veya never sends Interested for you.
                   </p>
                 )}
                 {cards?.map((card) => (

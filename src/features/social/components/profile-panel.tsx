@@ -58,6 +58,7 @@ export function ProfilePanel({
           ...(!profile ? { adultConfirmed: true } : {}),
         },
       );
+      if (!profile) window.dispatchEvent(new Event("veya:social-profile-changed"));
       if (data.recoveryKey) setOneTimeKey(data.recoveryKey);
       if (alive()) onProfile(data.profile);
     });
@@ -153,6 +154,7 @@ export function ProfilePanel({
                         profile: Profile;
                         recoveryKey: string;
                       }>("/profile/recover", "POST", { key: recovery.trim() });
+                      window.dispatchEvent(new Event("veya:social-profile-changed"));
                       setOneTimeKey(data.recoveryKey);
                       if (alive()) {
                         setRecovery("");

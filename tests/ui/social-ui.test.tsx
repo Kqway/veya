@@ -10,6 +10,8 @@ import { SeekingForm } from "@/features/social/components/seeking-form";
 import { MatchScreen } from "@/features/social/components/match-screen";
 import { IntentComposer } from "@/features/intents/components/intent-composer";
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("@/features/realtime/client", () => ({ useSocialRefresh: () => ({status: "inactive", reconnect: vi.fn()}) }));
+vi.mock("@/features/notifications/components", () => ({ NotificationBadge: () => null }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 const json = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), { status });
@@ -24,6 +26,7 @@ const profile = {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   sessionStorage.clear();
   localStorage.clear();
   push.mockClear();
@@ -370,7 +373,8 @@ it("keeps an unsaved recovery key visible after a client route unmounts the prof
   await user.click(screen.getByRole("button", {name: "I saved my key"}));
   expect(screen.queryByLabelText("Veya Key")).not.toBeInTheDocument();
 });
-it("delivers an issued key to the persistent recovery banner after the initiating screen unmounts", async () => {
+it("delivers an issued key and activates live social after the initiating screen unmounts", async () => {
+  const dispatch = vi.spyOn(window, "dispatchEvent");
   let finish!: (response: Response) => void;
   const response = new Promise<Response>((resolve) => { finish = resolve; });
   const fetcher = vi.fn().mockResolvedValueOnce(json({ authenticated: true })).mockReturnValueOnce(response);
@@ -388,4 +392,5 @@ it("delivers an issued key to the persistent recovery banner after the initiatin
   await user.click(screen.getByRole("button", { name: "Next route" }));
   finish(json({ profile, recoveryKey: "L".repeat(43) }));
   expect(await screen.findByLabelText("Veya Key")).toHaveValue("L".repeat(43));
+  expect(dispatch.mock.calls.filter(([event]) => event.type === "veya:social-profile-changed")).toHaveLength(1);
 });

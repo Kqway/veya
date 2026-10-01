@@ -1,9 +1,12 @@
+import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
+process.env.VEYA_TEST_ADMIN_SECRET ??= randomBytes(32).toString("base64url");
+
 const systemChromium =
-  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ??
-  (existsSync("/usr/bin/chromium") ? "/usr/bin/chromium" : undefined);
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
+  (!process.env.CI && existsSync("/usr/bin/chromium") ? "/usr/bin/chromium" : undefined);
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -15,6 +18,7 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:3100",
     trace: "retain-on-failure",
+    screenshot: "only-on-failure",
     timezoneId: "Europe/Moscow",
     launchOptions: systemChromium ? { executablePath: systemChromium } : {},
   },

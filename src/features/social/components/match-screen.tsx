@@ -1,13 +1,14 @@
 "use client";
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useSocialRefresh } from "@/features/realtime/client";
 import {
   socialApi,
   useSocialAction,
   type Match,
   type Message,
 } from "../client";
-import { Person, SocialError, SocialShell } from "./common";
+import { Person, SocialError, SocialShell, SocialLiveStatus } from "./common";
 import { SafetyControls } from "./safety-controls";
 type MessagePage = { messages: Message[]; nextBefore: string | null };
 export function MatchScreen({ matchKey }: { matchKey: string }) {
@@ -23,30 +24,43 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
   const action = useSocialAction();
   const { run } = action;
   const path = `/matches/${encodeURIComponent(matchKey)}`;
+  const olderLoaded = useRef(false);
+  const latestLoadedKeys = useRef(new Set<string>());
   useEffect(() => {
+    olderLoaded.current = false;
     void run(async (alive) => {
       const data = await socialApi<Match>(path);
       if (!alive()) return;
       setMatch(data);
       const page = await socialApi<MessagePage>(`${path}/messages?limit=30`);
       if (alive()) {
+        latestLoadedKeys.current=new Set(page.messages.map(message=>message.publicKey));
         setMessages(page.messages);
         setNextBefore(page.nextBefore);
       }
     });
   }, [path, run]);
-  function refresh() {
-    void run(async (alive) => {
-      const data = await socialApi<Match>(path);
-      if (!alive()) return;
-      setMatch(data);
-      const page = await socialApi<MessagePage>(`${path}/messages?limit=30`);
-      if (alive()) {
+  const reload = useCallback(() => run(async (alive) => {
+    const data = await socialApi<Match>(path);
+    if (!alive()) return;
+    setMatch(data);
+    const page = await socialApi<MessagePage>(`${path}/messages?limit=30`);
+    if (alive()) {
+      const contiguous=page.messages.some(message=>latestLoadedKeys.current.has(message.publicKey)) || latestLoadedKeys.current.size===0;
+      latestLoadedKeys.current=new Set(page.messages.map(message=>message.publicKey));
+      if(!contiguous){
+        olderLoaded.current=false;
         setMessages(page.messages);
         setNextBefore(page.nextBefore);
+        setNotice("New messages arrived while you were away. Load older to read earlier history.");
+      }else{
+        setMessages((values) => mergeMessages(values, page.messages));
+        if (!olderLoaded.current) setNextBefore(page.nextBefore);
       }
-    });
-  }
+    }
+  }), [path, run]);
+  const live = useSocialRefresh(["match", "connections"], reload, { enabled: !!match && !action.busy });
+  function refresh() { void reload(); }
   function send(e: FormEvent) {
     e.preventDefault();
     void run(async (alive) => {
@@ -56,7 +70,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
         text: text.trim(),
       });
       if (alive()) {
-        setMessages((values) => [...values, data].slice(-300));
+        setMessages((values) => mergeMessages(values, [data]));
         setText("");
         setNotice("Message sent.");
       }
@@ -103,6 +117,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
   return (
     <SocialShell title="Your conversation">
       <SocialError message={action.error} focusRef={action.errorRef} />
+      <SocialLiveStatus {...live} />
       {!match && !action.error && (
         <p role="status">Loading your conversation…</p>
       )}
@@ -144,6 +159,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                       `${path}/messages?before=${encodeURIComponent(nextBefore)}&limit=30`,
                     );
                     if (alive()) {
+                      olderLoaded.current = true;
                       setMessages((values) => {
                         const known = new Set(values.map((m) => m.publicKey));
                         return [
@@ -163,8 +179,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
             )}
             {messages.length >= 300 && nextBefore && (
               <p>
-                Showing up to 300 messages. Refresh to return to the latest
-                conversation.
+                Showing the loaded conversation history. New messages still appear here.
               </p>
             )}
             <ol className="social-messages" aria-label="Conversation messages">
@@ -361,4 +376,10 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
       )}
     </SocialShell>
   );
+}
+
+function mergeMessages(previous: Message[], incoming: Message[]): Message[] {
+  const known = new Map(previous.map((message) => [message.publicKey, message]));
+  for (const message of incoming) known.set(message.publicKey, message);
+  return [...known.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.publicKey.localeCompare(b.publicKey));
 }

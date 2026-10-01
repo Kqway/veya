@@ -1,3 +1,4 @@
+import { isolatedBrowserEnvironment } from '../support/e2e-environment';
 import { spawn } from "node:child_process";
 import { startTestDatabase } from "../support/postgres";
 import { applyMigrations } from "@/lib/db/migrations";
@@ -22,15 +23,7 @@ const server = spawn(
   ],
   {
     stdio: ["ignore", "inherit", "inherit"],
-    env: {
-      ...process.env,
-      DATABASE_URL: database.connectionString,
-      NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3100",
-      ANALYTICS_ENABLED: "true",
-      AI_PROVIDER: "mock",
-      OPENAI_API_KEY: "",
-      NODE_ENV: "production",
-    },
+    env: isolatedBrowserEnvironment(process.env,database.connectionString),
   },
 );
 async function stop(code: number) {

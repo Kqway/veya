@@ -47,28 +47,27 @@ function projection(value: unknown, own = false, oneTime = false, path = "") {
 
 // Inspect real browser responses, including UI requests. Owner input/one-time key
 // endpoints have separate allowances; discovery and pair DTOs never get them.
-function observe(page: Page, errors: string[]) {
+async function observe(page: Page, errors: string[]) {
   const payloads: { path: string; method: string; body: unknown }[] = [];
   const pending: Promise<void>[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  page.on("response", (response) => {
-    const path = new URL(response.url()).pathname;
-    if (!path.startsWith("/api/social/")) return;
-    const method = response.request().method();
-    pending.push(
-      (async () => {
-        const body: unknown = await response.json();
-        const own = /^\/api\/social\/(?:profile|seeking)(?:\/|$)/.test(path);
-        const oneTime =
-          method === "POST" &&
-          /^\/api\/social\/profile(?:\/recover|\/key)?$/.test(path);
-        projection(body, own, oneTime);
-        expect(response.headers()["cache-control"]).toContain("no-store");
-        payloads.push({ path, method, body });
-      })().catch((error: unknown) => {
-        errors.push(error instanceof Error ? error.message : String(error));
-      }),
-    );
+  // Read each real upstream JSON body before releasing it to the browser. Live
+  // background requests can otherwise navigate away before CDP retains the body.
+  await page.route("**/api/social/**",async route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==="/api/social/events"){await route.continue();return;}
+    const method=route.request().method();
+    const work=(async()=>{
+      const response=await route.fetch();
+      const body:unknown=await response.json();
+      const own=/^\/api\/social\/(?:profile|seeking)(?:\/|$)/.test(path);
+      const oneTime=method==="POST"&&/^\/api\/social\/profile(?:\/recover|\/key)?$/.test(path);
+      projection(body,own,oneTime);
+      expect(response.headers()["cache-control"]).toContain("no-store");
+      payloads.push({path,method,body});
+      await route.fulfill({response});
+    })().catch(async(error:unknown)=>{errors.push(error instanceof Error?error.message:String(error));await route.abort().catch(()=>{});});
+    pending.push(work);await work;
   });
   return {
     async check(secrets: string[] = [], privateValues: string[] = []) {
@@ -247,13 +246,13 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
 }, testInfo) => {
   test.setTimeout(90_000);
   const errors: string[] = [];
-  const auditA = observe(page, errors);
+  const auditA = await observe(page, errors);
   const b = await actor(browser, testInfo),
     c = await actor(browser, testInfo),
     anonymous = await actor(browser, testInfo);
-  const auditB = observe(b.page, errors),
-    auditC = observe(c.page, errors),
-    auditAnonymous = observe(anonymous.page, errors);
+  const auditB = await observe(b.page, errors),
+    auditC = await observe(c.page, errors),
+    auditAnonymous = await observe(anonymous.page, errors);
   // The projects share a DB. Different languages keep the true chess/Moscow
   // fixture isolated without inventing an activity key or mocking discovery.
   const language = testInfo.project.name === "desktop" ? "ru" : "en";
@@ -727,11 +726,11 @@ test("Veya Key recovery rotates secrets, detaches social sessions and preserves 
 }, testInfo) => {
   test.setTimeout(90_000);
   const errors: string[] = [];
-  const originalAudit = observe(page, errors);
+  const originalAudit = await observe(page, errors);
   const recovered = await actor(browser, testInfo),
     probe = await actor(browser, testInfo);
-  const recoveredAudit = observe(recovered.page, errors),
-    probeAudit = observe(probe.page, errors);
+  const recoveredAudit = await observe(recovered.page, errors),
+    probeAudit = await observe(probe.page, errors);
   try {
     const language = testInfo.project.name === "desktop" ? "ru" : "en";
     const alias = `Recovery ${testInfo.project.name}`;

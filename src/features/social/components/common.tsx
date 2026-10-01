@@ -74,3 +74,11 @@ export function PrivacyCopy() {
     </p>
   );
 }
+
+export function SocialLiveStatus({ status, reconnect }: { status: string; reconnect: () => void }) {
+  if (status !== "offline" && status !== "reconnecting" && status !== "retrying") return null;
+  return <aside className="social-live-status" aria-label="Live update status">
+    <p role="status">{status === "offline" ? "Live updates are unavailable. You can still refresh and use Veya." : "Reconnecting live updates. You can still refresh manually."}</p>
+    <button className="social-text-button" onClick={reconnect}>Retry live updates</button>
+  </aside>;
+}

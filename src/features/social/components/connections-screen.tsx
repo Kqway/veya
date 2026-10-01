@@ -1,19 +1,20 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSocialRefresh } from "@/features/realtime/client";
 import { socialApi, useSocialAction, type Connection } from "../client";
-import { Person, SocialError, SocialShell } from "./common";
+import { Person, SocialError, SocialShell, SocialLiveStatus } from "./common";
 import { SafetyControls } from "./safety-controls";
 export function ConnectionsScreen() {
   const [requests, setRequests] = useState<Connection[] | null>(null);
   const action = useSocialAction();
   const { run } = action;
-  useEffect(() => {
-    void run(async (alive) => {
-      const data = await socialApi<{ requests: Connection[] }>("/connections");
-      if (alive()) setRequests(data.requests);
-    });
-  }, [run]);
+  const reload = useCallback(() => run(async (alive) => {
+    const data = await socialApi<{ requests: Connection[] }>("/connections");
+    if (alive()) setRequests(data.requests);
+  }), [run]);
+  useEffect(() => { void reload(); }, [reload]);
+  const live = useSocialRefresh(["connections", "match"], reload, { enabled: !action.busy });
   function respond(key: string, response: "accept" | "decline") {
     void run(async (alive) => {
       const data = await socialApi<{
@@ -34,17 +35,11 @@ export function ConnectionsScreen() {
   return (
     <SocialShell title="Connections">
       <SocialError message={action.error} focusRef={action.errorRef} />
+      <SocialLiveStatus {...live} />
       <button
         className="button button-secondary"
         disabled={action.busy}
-        onClick={() => {
-          void run(async (alive) => {
-            const data = await socialApi<{ requests: Connection[] }>(
-              "/connections",
-            );
-            if (alive()) setRequests(data.requests);
-          });
-        }}
+        onClick={() => { void reload(); }}
       >
         Refresh connections
       </button>

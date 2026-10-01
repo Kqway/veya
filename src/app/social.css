@@ -252,3 +252,30 @@
 }
 
 .social-recovery-banner { max-width: 760px; margin: 24px auto; }
+
+.social-live-status {
+  margin: 16px 0;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f4eddf;
+}
+.social-live-status p { margin: 0; line-height: 1.5; }
+.social-nav a:focus-visible,
+.social-shell button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .social-shell *, .social-recovery-banner * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.social-root-nav {
+  max-width: 760px;
+  margin: 18px auto;
+  justify-content: flex-end;
+}
+.social-root-nav a { gap: 8px; }
