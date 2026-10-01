@@ -4,7 +4,7 @@ import { validate } from "@/features/backend/validation";
 import { rankCompatible } from "@/features/discovery/engine";
 import { lockProfiles, reauthorize, requireProfile } from "./context";
 import {
-  candidate,
+  loadCandidateBatch,
   readPost,
   requireActivePost,
   type PostRow,
@@ -12,13 +12,12 @@ import {
 import { publicKeySchema } from "./seeking-schema";
 import { cardSchema, type DiscoveryCard } from "./network-projections";
 import {
-  readProfile,
   ensurePair,
   opaqueKey,
   pairIdentity,
-  isBlocked,
 } from "./pairs";
 import { fail } from "./errors";
+import { trackFunnel } from "@/lib/analytics/funnel";
 export type HandleRow = {
   public_handle: string;
   viewer_profile_id: string;
@@ -47,7 +46,7 @@ export async function postById(
   return r.rows[0] ?? fail("NOT_FOUND");
 }
 export class DiscoveryService {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: Database, private readonly options: { analyticsEnabled?: boolean } = {}) {}
   async discover(token: string, sourceKey: string): Promise<DiscoveryCard[]> {
     validate(publicKeySchema, sourceKey);
     return this.db.transaction(async (tx) => {
@@ -55,45 +54,35 @@ export class DiscoveryService {
       let source = await readPost(tx, sourceKey, actor.id);
       requireActivePost(source);
       const pool = await tx.query<{ id: string; profile_id: string }>(
-        `SELECT s.id,s.profile_id FROM seeking_posts s WHERE s.profile_id<>$1 AND s.activity_key=$2 AND s.status='active' AND s.expires_at>clock_timestamp()
- AND NOT EXISTS(SELECT 1 FROM social_blocks b WHERE (b.blocker_profile_id=$1 AND b.blocked_profile_id=s.profile_id) OR (b.blocked_profile_id=$1 AND b.blocker_profile_id=s.profile_id))
+        `SELECT s.id,s.profile_id FROM seeking_posts s JOIN social_profiles profile ON profile.id=s.profile_id WHERE s.profile_id<>$1 AND s.activity_key=$2 AND s.status='active' AND s.expires_at>clock_timestamp() AND profile.moderation_status='active'
+ AND NOT EXISTS(SELECT 1 FROM social_blocks b WHERE b.blocker_profile_id=$1 AND b.blocked_profile_id=s.profile_id)
+ AND NOT EXISTS(SELECT 1 FROM social_blocks b WHERE b.blocked_profile_id=$1 AND b.blocker_profile_id=s.profile_id)
  AND NOT EXISTS(SELECT 1 FROM discovery_passes p WHERE p.viewer_profile_id=$1 AND p.target_profile_id=s.profile_id)
- AND NOT EXISTS(SELECT 1 FROM connection_requests r WHERE r.status<>'expired' AND ((r.sender_profile_id=$1 AND r.recipient_profile_id=s.profile_id) OR (r.recipient_profile_id=$1 AND r.sender_profile_id=s.profile_id))) ORDER BY s.created_at DESC,s.id LIMIT 100`,
+ AND NOT EXISTS(SELECT 1 FROM connection_requests r WHERE r.status<>'expired' AND r.sender_profile_id=$1 AND r.recipient_profile_id=s.profile_id)
+ AND NOT EXISTS(SELECT 1 FROM connection_requests r WHERE r.status<>'expired' AND r.recipient_profile_id=$1 AND r.sender_profile_id=s.profile_id) ORDER BY s.created_at DESC,s.id LIMIT 100`,
         [actor.id, source.activity_key],
       );
       await lockProfiles(tx, [actor.id, ...pool.rows.map((p) => p.profile_id)]);
       actor = await reauthorize(tx, token, actor.id);
       source = await readPost(tx, sourceKey, actor.id);
       requireActivePost(source);
-      const candidates = [];
-      const rows = new Map<string, PostRow>();
-      const profiles = new Map<
-        string,
-        Awaited<ReturnType<typeof readProfile>>
-      >();
-      for (const selected of pool.rows) {
-        const row = await postById(tx, selected.id);
-        if (
-          row.status !== "active" ||
-          row.expires_at.getTime() <= Date.now() ||
-          (await isBlocked(tx, actor.id, row.profile_id))
-        )
-          continue;
-        const hidden = await tx.query(
-          `SELECT 1 FROM discovery_passes WHERE viewer_profile_id=$1 AND target_profile_id=$2 UNION ALL SELECT 1 FROM connection_requests WHERE status<>'expired' AND ((sender_profile_id=$1 AND recipient_profile_id=$2) OR (recipient_profile_id=$1 AND sender_profile_id=$2)) LIMIT 1`,
-          [actor.id, row.profile_id],
-        );
-        if (hidden.rows.length) continue;
-        const profile = await readProfile(tx, row.profile_id);
-        rows.set(row.id, row);
-        profiles.set(row.profile_id, profile);
-        candidates.push(await candidate(tx, row, profile));
-      }
-      const ranked = rankCompatible(
-        await candidate(tx, source, actor),
-        candidates,
-        { now: new Date().toISOString(), limit: 5 },
+      const { rows, profiles, candidates } = await loadCandidateBatch(
+        tx, actor.id, pool.rows.map((row) => row.id), { row: source, profile: actor },
       );
+      const sourceCandidate = candidates.get(source.id)!;
+      const now = new Date().toISOString();
+      // Pick the best compatible post per profile before enforcing the five-card limit.
+      const grouped = new Map<string, (typeof sourceCandidate)[]>();
+      for (const selected of candidates.values()) {
+        if (selected.id === source.id) continue;
+        const group = grouped.get(selected.profileId) ?? [];
+        group.push(selected);
+        grouped.set(selected.profileId, group);
+      }
+      const best = [...grouped.values()].flatMap((group) =>
+        rankCompatible(sourceCandidate, group, { now, limit: 1 }).map((ranked) => ranked.candidate),
+      );
+      const ranked = rankCompatible(sourceCandidate, best, { now, limit: 5 });
       const issued = await tx.query<{ count: string }>(
         "SELECT count(*) FROM discovery_handles WHERE viewer_profile_id=$1 AND created_at>clock_timestamp()-interval '24 hours'",
         [actor.id],
@@ -137,6 +126,12 @@ export class DiscoveryService {
       }
       await reauthorize(tx, token, actor.id);
       requireActivePost(source);
+      if (cards.length && this.options.analyticsEnabled) {
+        const transition = await tx.query(
+          "UPDATE seeking_posts SET discovery_found_at=clock_timestamp() WHERE id=$1 AND discovery_found_at IS NULL RETURNING id", [source.id],
+        );
+        if (transition.rows.length) await trackFunnel(tx, "discovery_results_seen", true);
+      }
       return cards;
     });
   }

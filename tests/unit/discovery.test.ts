@@ -35,6 +35,14 @@ describe("deterministic discovery compatibility", () => {
     expect(ids([post("yes", { activityKey: "  CHESS  ", activityLabel: "Another label" }),
       post("no", { activityKey: "chess-club", activityLabel: "Chess" })])).toEqual(["yes"]);
   });
+  it("matches explicit catalogue aliases without consulting labels or private fields", () => {
+    expect(ids([post("ru", { activityKey: "шахматишки" }),
+      post("phrase", { activityKey: "поиграть в шахматы" }),
+      post("football", { activityKey: "football", activityLabel: "Chess" }),
+      post("club", { activityKey: "chess-club" })])).toEqual(["phrase", "ru"]);
+    expect(ranked(post("ru", { activityKey: "шахматы", languages: ["en"] }))).toEqual([]);
+    expect(ranked(post("ru", { activityKey: "шахматы", availability: [window("10:00", "11:00")] }))).toEqual([]);
+  });
   it("excludes self posts, own profiles, blocked, closed, and expired candidates", () => {
     const candidates = [source(), post("own", { profileId: source().profileId }),
       post("blocked"), post("closed", { status: "closed" }),

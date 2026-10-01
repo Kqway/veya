@@ -1,3 +1,4 @@
+import { normalizeActivityKey } from '@/features/discovery/activity-normalization';
 import "server-only";
 import { randomBytes } from "node:crypto";
 import type { Database } from "@/lib/db/types";
@@ -66,7 +67,7 @@ export class SeekingService {
           profile.id,
           slot,
           data.rawText,
-          data.activityKey,
+          normalizeActivityKey(data.activityKey),
           data.activityLabel,
           data.interactionMode,
           data.format,

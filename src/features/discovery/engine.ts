@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { DiscoveryOptions, RankedCandidate, ReasonCode, SeekingCandidate } from "./types";
+import { normalizeActivityKey } from "./activity-normalization";
 
 const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
@@ -129,7 +130,7 @@ export function rankCompatible(
     if (candidate.id === sourcePost.id || candidate.profileId === sourcePost.profileId ||
       blocked.has(candidate.profileId) || candidate.status !== "active" ||
       Date.parse(candidate.expiresAt) <= now ||
-      normalize(candidate.activityKey) !== normalize(sourcePost.activityKey) ||
+      normalizeActivityKey(candidate.activityKey) !== normalizeActivityKey(sourcePost.activityKey) ||
       !modeCompatible(sourcePost, candidate) || !formatCompatible(sourcePost, candidate) ||
       !shared(sourcePost.languages, candidate.languages) ||
       !ageCompatible(sourcePost, candidate) || !ageCompatible(candidate, sourcePost)) continue;
