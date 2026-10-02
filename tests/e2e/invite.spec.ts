@@ -202,6 +202,9 @@ test("custom local ranges save UTC instants and reject overlapping selections", 
   await page.getByLabel("Start time", { exact: true }).fill("09:30");
   await page.getByLabel("End time", { exact: true }).fill("11:00");
   await page.getByRole("button", { name: "Add time", exact: true }).click();
+  await expect(
+    page.getByRole("list", { name: "Selected availability" }).getByRole("listitem"),
+  ).toHaveCount(1);
   await page
     .getByRole("button", { name: /Morning / })
     .nth(1)

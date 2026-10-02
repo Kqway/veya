@@ -832,7 +832,7 @@ test("Veya Key recovery rotates secrets, detaches social sessions and preserves 
       projection(body);
       await expect(
         probe.page.locator(".social-shell").getByRole("alert"),
-      ).toContainText("This item is unavailable to this session.");
+      ).toContainText("This Veya Key is invalid or no longer active.");
       expect(
         (
           await api<{ profile: Profile | null }>(

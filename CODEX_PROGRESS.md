@@ -1,6 +1,76 @@
 # Veya Development Progress
 
-## Current release: Phase 9A–9L
+## Current release: Closed Beta Readiness
+
+The independently verified starting HEAD is `b3b2dcd8dffc6ab8a9276774532343a55df47673`.
+Clean baseline: npm ci/check/build passed, **586 tests / 68 files**, **48/48 desktop/mobile
+Playwright**, audit zero vulnerabilities. The current pass preserves Phases 1–9 and adds:
+
+- Transactional typed-confirmation profile deletion, minimized irreversible tombstones,
+  invalidated recovery/session/delivery access, own-content erasure, peer closed history
+  and immutable moderation evidence; linked-plan participation erased for each owner.
+- Migration **0018_social_profile_deletion.sql**; applied 0001–0017 remain unchanged.
+- Centrally validated server-only signup/seeking/read-only controls. Maintenance stops
+  stateful discovery and workers; existing results/connections read without domain writes;
+  explicit safety/deletion/revocation and liveness/readiness remain available.
+- Bounded signal-aware worker/CLI lifecycle, concurrent lease ownership, safe failure logs,
+  operator-only aggregate queue status, checksum verification and protected PostgreSQL
+  service-based backup/empty-database transactional restore scripts.
+- Clearer action-first onboarding, memory-only Veya Key copy/acknowledgement/recovery,
+  explicit deletion UI and extensible deterministic RU/EN normalization for beta activities.
+- New real-UI two-user chess→live chat→linked plan→availability→votes→confirmation/inbox
+  journey, recovery/deletion and two-pair incognito privacy journeys on desktop/mobile.
+- Practical deployment, scheduler, backup/disaster-recovery, readiness and host/device
+  verification documentation. No production deployment was performed.
+
+Independent review found two Important issues: maintenance GET mutations and a lost
+linked-plan reference after first-owner deletion. Both were reproduced with native
+regression tests, fixed and independently re-reviewed. See
+[closed-beta review](docs/security-closed-beta-review.md) for evidence and limits.
+No additional Critical/Important issue remains in that reviewed scope.
+
+**Final local application evidence, 2026-10-02 (Node 24.19.0):**
+
+- Clean `npm ci`: PASS. `npm run check`: zero-warning lint, strict TypeScript,
+  **673 tests / 76 files** (+87 tests / +8 files over the independently checked
+  Phase 9 baseline), production build PASS.
+- Full `npm run test:e2e`: **54/54 PASS**, 27 desktop +27 mobile, no retries,
+  including the complete voted plan, recovery/deletion and two-pair privacy journey.
+- `npm audit --json`: PASS, **zero known vulnerabilities** at verification time.
+- The 320px normal-click journey reproduced a touch hover-transform oscillation;
+  fine-pointer-only hover transforms corrected it. Full gates also exposed missed
+  clicks during global smooth form scrolling; immediate scrolling and an explicit
+  selected-interval readiness assertion preserve overlap/UTC checks and normal clicks.
+- Independent review: two Important findings reproduced, corrected and re-reviewed;
+  targeted independent verification **24 tests / 4 files PASS**. No unresolved
+  Critical/Important finding in the reviewed scope; see the separate report.
+- Applied migrations 0001–0017: all original SHA256 checksums unchanged. Actual
+  isolated PostgreSQL smoke applied all 18 migrations, reran idempotently, verified
+  schema, concurrent candidate processing/dedupe and no automatic Interested,
+  worker/retention previews, ready/unavailable states and protected backup/restore.
+- Final runner and operations image builds: PASS; fresh UID1000 health/missing-DB
+  migration/worker smoke PASS. Runner `sha256:d138b6e6b905c5e52a72957690a5fe8ce5d0342e3432676a95e0eeffbdf7fe7f`;
+  operations `sha256:7c3a5b0927470932aebf148a929baed9b02d93ed8dc0e7acf93d79354da71249`.
+  Docker Hub exhausted the workspace's anonymous pull budget; local builds used
+  the identical cached official Node24 base digest `0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6`
+  through a temporary pinned Dockerfile. The repository Dockerfile remains unchanged.
+  Preliminary runs interrupted by disk exhaustion were discarded; task-owned stale
+  vfs image/cache artifacts were removed and complete gates repeated successfully.
+  Actual PostgreSQL/backup smoke is isolated and uses no development/production DB.
+
+**Hosted CI evidence is separate.** Verified Phase 9 starting HEAD `b3b2dcd` passed
+[run 36990321453](https://github.com/Kqway/veya/actions/runs/36990321453).
+The beta commits are published only after local gates. Their workflow must be
+checked against the exact source SHA in [Actions](https://github.com/Kqway/veya/actions);
+no beta hosted result is assumed or implied by the local results in this record.
+No production HTTPS/database/scheduler/device verification has occurred.
+
+Owner work remains HTTPS hosting/domain, verified PostgreSQL, moderator credential and
+human response policy, worker/backup scheduling, encrypted off-host backups and a real
+restore rehearsal, retention policy, actual iPhone/Android checks and optional VAPID/AI.
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for variables and the sequential rollout.
+
+## Historical baseline: Phase 9A–9L
 
 **Status: production release candidate implemented; locally and remotely verified, 2026-10-02.**
 Baseline was independently checked at `d5f3b30`: 398 tests/43 files and 38/38

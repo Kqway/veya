@@ -118,11 +118,14 @@ discovery handles/passes90d, resolved/dismissed reports365d. Open/reviewing case
 protect evidence/context indefinitely; release events24h, notifications30d and terminal
 worker jobs/expired moderator sessions7d use bounded cleanup. Recent messages/disclosures, open matches,
 active posts/live requests and retained reports protect interaction histories from
-cleanup. Profiles/bindings/blocks persist; self-service account deletion is not
-implemented. Guest cleanup may remove expired unreferenced sessions and their
-bindings. Each category is bounded and separately transactional; partial completion
-is possible, reruns safe. Profile deletion cascades reports too: production account
-deletion/legal evidence retention needs a defined policy before enabling deletion. No automatic destructive cleanup.
+cleanup. Explicit self-service deletion transactionally removes personal profile fields,
+seeking content, own messages/disclosures, keys, bindings, delivery jobs and discovery
+handles. It closes pair contexts and retains minimized internal profile tombstones,
+other participants' own history, frozen reports/evidence and moderator audit records.
+Closed matches retain a private internal plan reference so later peer deletion can
+remove that peer's attributable coordination data; public closed projections hide it.
+Separate bearer invitations and previously detached guest identities have the limits
+explained in [closed-beta-design.md](closed-beta-design.md). No automatic destructive cleanup.
 Veya Key recovery leaves old guest sessions usable for original plans but removes
 old social bindings. Blocking does not purge received history; reports may retain
 bounded evidence. Public meetup safety copy recommends public places, no home address.

@@ -1,4 +1,4 @@
-# Veya production release candidate
+# Veya closed beta release candidate
 
 Phases 1–9 retain the action-first Intent Network and original invitation/scheduling
 flow. Local verification and hosted rollout evidence are separate. Exact local
@@ -16,10 +16,15 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
   reconnect repair, notification inbox, unsupported/denied push, protected moderator
   suspension, honest cold-start empty state, reduced motion and 320px layouts.
 - Independent read-only security/privacy review of the Phase 9 diff, followed by
-  reproducible regression tests and fixes; see security-phase9-review.md. Verify
+  reproducible regression tests and fixes; see security-phase9-review.md and security-closed-beta-review.md. Verify
   there are no known unresolved Critical/Important issues and no committed secrets.
-- Migrations 0001–0010 remain unchanged. Additions 0011–0017 are checksum-tracked,
+- Applied migrations 0001–0017 remain unchanged. Addition 0018 and the existing set are checksum-tracked,
   transaction-safe, indexed and server-only/RLS protected. Never edit applied SQL.
+- Typed-confirmation profile deletion invalidates keys/bindings and delivery, erases
+  personal social content, closes conversations and preserves frozen moderation
+  evidence. Verify sequential deletion of both linked-plan participants.
+- Signup/seeking/read-only flags are enforced before expensive work. Stateful discovery
+  pauses in maintenance; result/connection reads do not persist domain changes.
 - Sensitive APIs are no-store; server-owned sessions authorize every action and
   SSE subscription. Explicit DTOs omit database/profile/session identities, private
   candidate windows/location, contacts and global incognito identity.
@@ -53,6 +58,10 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
   expired admin sessions7d; original post/history/guest retention still applies.
   Open/reviewing reports protect evidence/context indefinitely; resolved/dismissed
   reports365d. Moderator audits and stable profiles need an explicit owner policy.
+- Run both non-root container smokes, including disposable real PostgreSQL migrations/
+  concurrent workers and logical backup/restore; read-only controls preserve safety
+  actions and skip background mutations. Check `ops:status` plus timer/worker exit logs: an
+  empty queue does not establish that the scheduler is healthy.
 - Protect runtime secrets, backups and proxy logs. Never log cookies/recovery keys,
   private intent/chat/disclosure bodies or exact availability. Regularly restore an
   encrypted backup into an isolated environment and measure recovery time.
@@ -80,3 +89,7 @@ push is the source of truth. Worker checks are bounded and need an actual schedu
 Shared limits and global creation quotas mitigate abuse but do not establish verified
 human identity or eliminate multi-guest Sybil attacks. There is no public user
 catalogue, dating/swipe mechanic, followers, ads, GPS, presence or last seen.
+
+Browser failure traces can contain synthetic recovery keys and private test messages.
+Restrict artifact access and retention; never collect equivalent real-user traces
+without an explicit privacy policy.

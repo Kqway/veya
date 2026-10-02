@@ -5,7 +5,7 @@ to reveal. Then Veya helps you actually meet.**
 
 ## Current scope
 
-**Phases 1–9: Intent Network production release candidate.** Start with an activity,
+**Closed beta release candidate, built on Phases 1–9.** Start with an activity,
 create a seeking post, discover compatible posts, send Interested, and open a
 private conversation after the recipient accepts. Plan it connects the match to
 the existing availability/results/voting/confirmation flow. The original no-account
@@ -55,6 +55,8 @@ Recovery from a new active unbound guest rotates the key and detaches old social
 sessions. Rotation/revoke invalidate old keys. Recovery preserves social posts and
 matches, but does not transfer old guest ownership of coordination invitations.
 No email, SMS or home-grown password service is required.
+
+Profile controls include typed-confirmation deletion. It removes personal social content, recovery keys and session bindings, closes conversations and stops delivery. Other participants keep their own messages; frozen reports and moderation evidence remain under the documented retention policy. Separate coordination invitations remain bearer links. See [closed-beta-design.md](docs/closed-beta-design.md).
 
 **Deterministic matching:** normalized activity, compatible interaction/format/city,
 at least 15 minutes of real future overlap, shared language and mutual optional
@@ -121,6 +123,10 @@ npm start
 | `npm run test:integration` | Native PostgreSQL backend/HTTP/schema/seed tests |
 | `npm run db:local` | Persistent local PostgreSQL on 127.0.0.1:54322 |
 | `npm run db:migrate` | Apply checked SQL migrations atomically |
+| `npm run db:verify` | Verify database connectivity and migration checksums without applying changes |
+| `npm run ops:status` | Operator-only aggregate job queue and readiness snapshot |
+| `npm run db:backup -- /absolute/path/backup.dump` | Protected PostgreSQL service-based backup |
+| `npm run db:restore -- /absolute/path/backup.dump` | Restore into an explicitly configured empty database |
 | `npm run db:seed` | Apply migrations and create an idempotent demo |
 | `npm run db:cleanup` | Preview bounded expired-data cleanup; explicit `-- --apply` to delete |
 | `npm run social:process` | One bounded candidate/reminder/push worker batch |
@@ -540,7 +546,8 @@ run selects at most 100 rows per category (module maximum 500), oldest first:
 - Inactive pair histories after 180 days only when no active post/live request/open
   conversation/recent chat or disclosure/retained report protects them. Pair deletion
   cascades requests, matches, identities, messages and disclosures. Stable profiles,
-  bindings and blocks are retained; no self-service account-deletion endpoint exists.
+  bindings and blocks persist unless their owner explicitly deletes the social profile.
+  Deletion retains minimized internal tombstones and protected moderation evidence.
   Expired unreferenced guest cleanup can remove the associated session binding.
 
 Dry-run reports projected counts, including guest references removed by the
@@ -566,7 +573,8 @@ checkout. Do not run the demo seed in production. Persistent plan APIs require a
 database; the landing and stateless intent parser work without one. Migrations
 0005–0010 add identity, seeking, connections, conversation, planning and safety;
 0011–0017 add live events, notifications, moderation, shared limits, query indexes,
-funnel transitions and future-candidate jobs. Applied0001–0010 are unchanged. Complete the host checks in
+funnel transitions and future-candidate jobs. Migration 0018 adds irreversible profile
+deletion invariants. Applied 0001–0017 are unchanged. Complete the host checks in
 [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md).
 
 The Intent Network MVP is a release candidate for a controlled preview. Local production-browser
@@ -594,10 +602,14 @@ Core local flows need only this application and PostgreSQL. Email/SMS, external
 identity/chat/avatar providers, Redis, GPS, remote fonts and paid AI are not required.
 A public production launch still needs a configured HTTPS host, managed database,
 backups, host/gateway connection controls, scheduled workers and human report
-handling. Shared PostgreSQL limits are implemented. Remote Node24 release CI is
-separately verified (see CODEX_PROGRESS.md); actual deployment, optional live OpenAI/
+handling. Shared PostgreSQL limits are implemented. Remote Node24 CI is separately verified for the
+Phase 9 baseline (see CODEX_PROGRESS.md); beta hosted CI is checked on its published SHA.
+Actual deployment, optional live OpenAI/
 push and device/browser compatibility remain host checks. No deployment occurred.
 
-Future improvements: hosted operational monitoring, optional federated
-recovery and account-deletion policy, broader activity normalization and timezone-
-aware coarse hints. These are not implemented as part of this release.
+Closed-beta operations include bounded workers, aggregate diagnostics, guarded backup/restore,
+and server-only signup/seeking/read-only controls. Follow [DEPLOYMENT.md](docs/DEPLOYMENT.md)
+for the minimum environment, scheduler, recovery procedure and first-host smoke test.
+See [security-closed-beta-review.md](docs/security-closed-beta-review.md) for the independent review.
+Future improvements include optional federated recovery, a broader activity lexicon and
+timezone-aware coarse hints; they are outside this readiness pass.

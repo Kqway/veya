@@ -10,6 +10,13 @@ PATCH /profile same fields exceptadultConfirmedoptional (strict update schema)
 POST /profile/recover {key} → {profile,recoveryKey} (rotated; save once)
 POST /profile/key {} → {recoveryKey} rotate
 DELETE /profile/key → {revoked:true}
+DELETE /profile {confirmation:"DELETE"} → {deleted:true}
+
+Deletion requires an active current guest and server-owned binding, accepts no profile
+identifier, and remains available to suspended owners. Repeated deletion by an active
+unbound guest succeeds safely. It invalidates keys/bindings, removes own personal
+content, closes conversations and cancels delivery. Frozen moderation evidence and
+peer-authored closed history remain; see closed-beta-design.md.
 
 GET /seeking → {posts:OwnPost[]}
 POST /seeking → OwnPost with publicKey
@@ -82,3 +89,13 @@ an environment-secret login, not guest identity/client roles. Case queue/evidenc
 and actions are authenticated, no-store and audited. Mutations require the trusted
 origin. Suspended profiles cannot use social APIs even after Veya Key recovery;
 capability restrictions independently prevent new posts/connections.
+
+## Closed beta operational policy
+
+Server-only centrally validated BETA_SIGNUPS_ENABLED, BETA_SEEKING_ENABLED and
+BETA_READ_ONLY flags return safe 503 errors before budgets or domain work. Read-only
+pauses discovery because it allocates handles/pair identities. Existing connections
+are readable without expiring rows, and coordination results read persisted caches
+without creating new suggestions. Health/readiness, deletion, revocation, push opt-out
+and explicit human safety actions remain available. Operational quota writes can
+continue; the flag is an application maintenance policy, not PostgreSQL read-only.
