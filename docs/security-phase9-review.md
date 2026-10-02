@@ -60,8 +60,9 @@ Both received RED→GREEN DOM regression tests and passed desktop/mobile browser
 journeys. Final source gates: zero-warning lint, strict types, 586 tests/68 files,
 production build, 48/48 Playwright cases and dependency audit with zero known
 vulnerabilities. Node 24 non-root Docker build and liveness/readiness smoke passed.
-Remote CI, actual hosting/TLS/proxy behavior, real push delivery and backup restore
-remain operator verification; no production deployment was performed.
+Remote CI was subsequently verified separately as recorded below. Actual
+hosting/TLS/proxy behavior, real push delivery and backup restore remain operator
+verification; no production deployment was performed.
 
 ### Container operational follow-up
 
@@ -84,3 +85,13 @@ real clipboard permission and asserts copied contents, and navigation waits for 
 visible persisted-action acknowledgement. Existing assertions remain. All four
 affected desktop/mobile cases and non-root Docker smoke passed locally. These are
 test-harness corrections; application authorization/privacy behavior is unchanged.
+
+### Verified hosted release gates
+
+On 2026-10-02, Actions run [36988674863](https://github.com/Kqway/veya/actions/runs/36988674863)
+for `b7e5d98f9f23136e0652c6619329fca95e0f5a22` completed successfully in both quality
+and container jobs: native isolated PostgreSQL tests (586/68), lint, strict types,
+production build, audit with zero known vulnerabilities, 48/48 desktop/mobile cases
+without flaky results, both images and non-root operational smoke. This confirms
+hosted test execution, not actual public HTTPS rollout/push/backup operations. The
+final evidence follow-up edits documentation only and receives its own CI run.

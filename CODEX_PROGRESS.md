@@ -2,7 +2,7 @@
 
 ## Current release: Phase 9A–9L
 
-**Status: production release candidate implemented and locally verified, 2026-10-01.**
+**Status: production release candidate implemented and locally and remotely verified, 2026-10-02.**
 Baseline was independently checked at `d5f3b30`: 398 tests/43 files and 38/38
 Playwright cases. Phase 9 preserves that coordination/Intent Network flow and adds:
 
@@ -38,14 +38,14 @@ baseline and are unchanged. New tables retain server-only RLS, constraints and i
 Retention now preserves open/reviewing evidence and cleans bounded release queues,
 events, notifications, expired admin sessions and limiter buckets explicitly.
 
-**Final local evidence (2026-10-01):**
+**Final local evidence (2026-10-01–02):**
 
 - `npm ci`: PASS at the verified baseline; updated dependency lock also installed
   successfully by the final clean Docker build.
 - `npm run lint`: PASS, zero warnings. `npm run typecheck`: PASS.
 - `npm test`: **586 tests / 68 files PASS** (+188 tests / +25 files over baseline).
 - `npm run build`: PASS on final application sources; non-root Node 24 Docker build
-  also PASS, final runner image `sha256:15c8563e4a7984a1c3a52462e2fefe26a07d7de1a1dde676dd91bc3704b4c6dc`.
+  also PASS, final runner image `sha256:18ba726388d42793dceaddae137fb5f2ea9fbb8812a8f09dce853c47ec4bac4e`.
 - `npm run test:e2e`: **48/48 PASS**, 24 desktop +24 mobile (+10 cases), including
   simultaneous users, live Interested/accept/chat/plan/block/inbox, offline reconnect,
   denied/unsupported push, moderator suspension and 320px/reduced-motion cold start.
@@ -60,23 +60,27 @@ events, notifications, expired admin sessions and limiter buckets explicitly.
   fixed and re-reviewed, with regression tests; no unresolved Critical/Important
   finding in reviewed scope. See [review](docs/security-phase9-review.md) for evidence
   and limits. This is not a claim of absolute anonymity or external penetration testing.
-- **Remote Phase 9 CI requires final rerun verification.** Historical Phase 8 run
-  `36864125409` was separately verified successful. Phase 9 run `36920188548`
-  passed install/lint/types/586 tests/build/audit and both Docker builds, but failed
-  the smoke script because hosted Ubuntu lacked rg, and browser copy analytics
-  because Chromium denied clipboard permission; its Interested setup also exposed
-  navigation before the mutation acknowledgement. Artifact/trace review reproduced
-  these causes. The smoke uses portable grep; the successful-copy journey grants
-  real clipboard permission and verifies contents; Interested waits for its saved
-  acknowledgement. Affected desktop/mobile cases (4/4), lint/types and actual
-  non-root Docker smoke passed locally on 2026-10-02. No assertions were removed.
-  The final pushed SHA must receive its own remote PASS. No production deployment
-  occurred. Read Actions through the connector, not inaccessible shell GitHub API.
+- **Remote Phase 9 CI: PASS**, separately observed on 2026-10-02 at 09:21 UTC.
+  [Run 36988674863](https://github.com/Kqway/veya/actions/runs/36988674863), source
+  SHA `b7e5d98f9f23136e0652c6619329fca95e0f5a22`: both quality/container jobs succeeded.
+  Hosted Node 24 npmci/lint/types/**586 tests /68 files**/build/audit and
+  **48/48 desktop/mobile E2E** passed, with no flaky/retry result. Both Docker
+  images built and restrictive-permission non-root smoke passed. This is remote
+  evidence for that exact source SHA, not evidence of a production deployment.
+  This documentation-only follow-up changes no application, migrations or tests;
+  its own pushed SHA is checked again by CI and the final engineering report.
+
+**Hosted portability corrections:** run `36920188548` exposed missing rg,
+headless clipboard denial and setup navigation before Interested acknowledgement.
+Actual artifact/trace review confirmed these causes; portable grep, explicit native
+clipboard permission/content assertions and acknowledgement-before-navigation fixed
+all cases without removing assertions. Local affected cases4/4 and full48/48 passed
+on 2026-10-02 before the successful hosted rerun above.
 
 **Operator requirements:** configure an HTTPS origin/host and verified-TLS PostgreSQL,
 apply migrations with a server-only role, set a random moderator secret, configure
 session-mode LISTEN and proxy streaming, schedule `social:process` and reviewed
-retention, verify backup/restore and readiness, and obtain remote CI PASS. Real HTTPS
+retention, verify backup/restore and readiness, and check the target release CI. Real HTTPS
 push-provider delivery requires optional VAPID configuration/browser opt-in and has
 not been exercised locally. OpenAI, Web Push and aggregate analytics are optional;
 Redis, an external realtime provider, email/SMS and paid AI are not required.
@@ -103,7 +107,8 @@ bounded aggregate counts when analytics is enabled.
 - `a93568f` — phase-9k: security review and release evidence.
 - `3204643` — phase-9a: enforce dependency audit in CI.
 - `ecff806` — phase-9j: verify non-root operational images.
-- CI portability follow-up: `phase-9a: make browser and container gates portable`.
+- `b7e5d98` — phase-9a: make browser and container gates portable.
+- Documentation-only final evidence commit: `docs: record verified Phase 9 release candidate`.
 
 ## Historical Phase 8 baseline
 
