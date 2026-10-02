@@ -10,8 +10,8 @@ import { SeekingForm } from "@/features/social/components/seeking-form";
 import { MatchScreen } from "@/features/social/components/match-screen";
 import { IntentComposer } from "@/features/intents/components/intent-composer";
 import type { Profile } from "@/features/social/client";
-const { push } = vi.hoisted(() => ({ push: vi.fn() }));
-vi.mock("@/features/realtime/client", () => ({ useSocialRefresh: () => ({status: "inactive", reconnect: vi.fn()}) }));
+const { push, refresh } = vi.hoisted(() => ({ push: vi.fn(), refresh: { reload: undefined as undefined | (() => Promise<void>) } }));
+vi.mock("@/features/realtime/client", () => ({ useSocialRefresh: (_topics: unknown, reload: () => Promise<void>) => { refresh.reload = reload; return {status: "inactive", reconnect: vi.fn()}; } }));
 vi.mock("@/features/notifications/components", () => ({ NotificationBadge: () => null }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 const json = (value: unknown, status = 200) =>
@@ -31,6 +31,7 @@ afterEach(() => {
   sessionStorage.clear();
   localStorage.clear();
   push.mockClear();
+  refresh.reload = undefined;
 });
 it.each([429, 503])("keeps failed activity loading distinct from an empty list and retries explicitly (%s)", async (status) => {
   const { DiscoverScreen } = await import("@/features/social/components/discover-screen");
@@ -334,6 +335,36 @@ it("uses discovery handles and readable compatibility reasons to send interest",
   expect(JSON.parse(interest![1].body as string)).toEqual({
     handle: "H".repeat(24),
   });
+});
+
+it("keeps interest actionable during background discovery and ignores stale candidate results", async () => {
+  const { DiscoverScreen } = await import("@/features/social/components/discover-screen");
+  const post = { publicKey: "P".repeat(24), activityLabel: "Chess", status: "active" };
+  const card = { handle: "H".repeat(24), identity: { alias: "Pine", avatarSeed: "random" }, activityLabel: "Chess", interactionMode: "online", format: "one_to_one", reasons: ["SAME_ACTIVITY"], timeHint: "Compatible tomorrow" };
+  let release!: (response: Response) => void;
+  const deferred = new Promise<Response>(resolve => { release = resolve; });
+  let reads = 0;
+  const fetcher = vi.fn((path: string): Promise<Response> => {
+    if (path.endsWith("/profile")) return Promise.resolve(json({ profile }));
+    if (path.endsWith("/seeking")) return Promise.resolve(json({ posts: [post] }));
+    if (path.includes("/discover?")) return ++reads === 1 ? Promise.resolve(json({ cards: [card] })) : deferred;
+    return Promise.resolve(json({ publicKey: "request", status: "pending", matchKey: null }));
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const user = userEvent.setup();
+  render(<DiscoverScreen />);
+  await user.click(await screen.findByRole("button", { name: "Find people" }));
+  await screen.findByRole("button", { name: "Interested" });
+  let background!: Promise<void>;
+  await act(async () => { background = refresh.reload!(); });
+  expect(reads).toBe(2);
+  expect(screen.getByRole("button", { name: "Interested" })).toBeEnabled();
+  expect(screen.queryByText("Working…")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Interested" }));
+  await screen.findByText(/Interest sent\./);
+  await act(async () => { release(json({ cards: [card] })); await background; });
+  expect(screen.queryByRole("button", { name: "Interested" })).not.toBeInTheDocument();
+  expect(fetcher.mock.calls.filter(([path]) => path.endsWith("/connections"))).toHaveLength(1);
 });
 
 it("offers inline onboarding for a new guest without creating a profile on mount", async () => {

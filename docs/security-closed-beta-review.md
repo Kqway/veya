@@ -192,3 +192,16 @@ previously deleted content or revoked credentials. There is no external automati
 deletion/revocation journal. Reconciliation or verified point-in-time recovery is an
 operator requirement before promotion; uncertain restored data must stay isolated.
 Encrypted backups retain old content until their documented bounded expiry.
+
+A subsequent full local browser run reproduced a separate foreground/background
+race: the realtime discovery read toggled the foreground busy/Working state while
+Interested was being clicked. The trace contained the GET but no connection POST.
+The failed run was preserved, not accepted as a release pass. A deferred-background
+UI regression reproduced disabled Interested before correction. Live discovery now
+uses a separate bounded read lock, leaving foreground controls stable; manual work
+and selection changes invalidate older background generations. The test verifies
+exactly one explicit request and no resurrection from a stale candidate response.
+Targeted UI verification passed27/27; independent read-only re-review confirmed
+bounded refresh scheduling, mounted guards and unchanged authorization/privacy/quota
+boundaries, with no new Important/Critical issue. Final full-gate evidence follows
+in CODEX_PROGRESS.md.

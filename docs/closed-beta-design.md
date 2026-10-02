@@ -34,6 +34,10 @@ the existing 30-day policy rather than attempting an impossible per-profile look
 Deleted seeking posts no longer contribute their live cohort state.
 Old detached coordination sessions cannot be attributed to a social
 profile without retaining additional identity history; document this limit.
+Encrypted historical backups retain their earlier contents until the owner's
+bounded backup expiry. Restoring an older snapshot requires reconciliation of
+subsequent deletions, revocations and moderation state before public promotion;
+no automatic external deletion/revocation journal is provided. See DEPLOYMENT.md.
 
 ## Operations
 

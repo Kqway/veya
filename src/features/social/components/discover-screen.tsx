@@ -32,10 +32,12 @@ export function DiscoverScreen() {
     [notice, setNotice] = useState("");
   const action = useSocialAction();
   const { run } = action;
+  // Live reads must not disable or move controls during a user click.
+  const { run: runBackground } = useSocialAction();
   const loadGeneration = useRef(0);
   const runCurrent = useCallback((work: (current: () => boolean) => Promise<void>) =>
     run(async (alive) => {
-      const generation = loadGeneration.current;
+      const generation = ++loadGeneration.current;
       const current = () => alive() && generation === loadGeneration.current;
       try { await work(current); }
       catch (error) { if (current()) throw error; }
@@ -70,11 +72,12 @@ export function DiscoverScreen() {
       }
     }), [run]);
   useEffect(() => { void loadActivities(); }, [loadActivities]);
-  const reloadCandidates = useCallback(() => runCurrent(async (alive) => {
+  const reloadCandidates = useCallback(() => runBackground(async (alive) => {
     if (!source) return;
+    const generation = loadGeneration.current;
     const data = await socialApi<{ cards: Card[] }>(`/discover?source=${encodeURIComponent(source)}`);
-    if (alive()) setCards(data.cards);
-  }), [source, runCurrent]);
+    if (alive() && generation === loadGeneration.current) setCards(data.cards);
+  }), [source, runBackground]);
   const live = useSocialRefresh(["discovery", "connections"], reloadCandidates, { enabled: !!profile && !!source && cards !== null && !action.busy });
   function onProfile(value: Profile | null) {
     ++loadGeneration.current;
@@ -136,6 +139,7 @@ export function DiscoverScreen() {
                       <select
                         value={source}
                         onChange={(e) => {
+                          ++loadGeneration.current;
                           setSource(e.target.value);
                           setCards(null);
                           setNotice("");

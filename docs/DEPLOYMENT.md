@@ -305,7 +305,7 @@ metrics. Restrict log access; do not add request bodies/cookies, URL paths conta
 bearer keys, connection strings, profile identifiers or raw driver/provider errors.
 These are suggested closed-beta thresholds, to adjust after measuring real traffic.
 
-## Backup, restore and verification
+## Backup and disaster recovery
 
 Use provider snapshots plus encrypted off-host logical backups with a retention
 policy, named recovery owner, recovery point objective and measured recovery time.
@@ -339,6 +339,35 @@ untrusted archive. The scripts omit raw tool diagnostics from shared output;
 operators diagnose PostgreSQL errors through their protected database tooling.
 Database backups contain private content/recovery hashes and need encryption and
 access controls. Protect signing/moderation secrets separately.
+Record archive checksum, backup timestamp, release/schema version and expected
+aggregate counts in a protected operator manifest; the scripts do not generate
+that record or provision off-host storage automatically.
+
+Before switching to a restored database:
+
+1. Keep it isolated from public traffic and stop its workers. Disable AI/push and
+   destructive retention during the rehearsal; do not deliver recovered queued
+   notifications to real users as a test.
+2. Run `db:verify` using the destination's secret environment. Compare schema,
+   expected record counts and restore time with the backup manifest; check the
+   release's readiness and two-user smoke using isolated test identities.
+3. Reconcile deletions, revoked sessions/keys, blocks and moderation actions after
+   the backup timestamp against surviving current data, WAL/PITR or a verified
+   operator recovery record. A snapshot predating those changes restores old rows;
+   there is no automatic external deletion/revocation journal in this release.
+   If current safety state cannot be established, keep the recovery isolated for
+   operator review instead of automatically reopening traffic.
+4. With web/workers stopped, update both secret environments to the verified
+   destination (including the LISTEN URL), restart the release and check health,
+   readiness, secure cookies, chat access, blocks and moderator enforcement.
+5. Inspect pending/failed jobs and scheduler logs before enabling delivery,
+   candidate processing and the reviewed retention policy. Take a new protected
+   backup and record the actual recovery point/time and any lost recent changes.
+
+Deleted personal content can remain in encrypted historical backups until their
+explicit expiry (the beta minimum below retains seven daily archives). Restrict
+access, expire old copies consistently and follow the reconciliation procedure
+above; profile deletion cannot retroactively rewrite an offline archive.
 
 The disposable Docker smoke applies all release migrations twice, verifies checksums,
 runs concurrent candidate workers against real PostgreSQL, checks notification dedupe

@@ -101,6 +101,19 @@ sources passed: **678 tests /76 files**, zero-warning lint/types/build, audit0.
 The corrected full browser and exact-SHA hosted gates are still pending; earlier
 local/hosted results are not claimed as verification of this correction.
 
+At `10da84f`, [run 37060563837](https://github.com/Kqway/veya/actions/runs/37060563837)
+passed both hosted jobs:678 tests/76 files,56/56 browser cases on their first attempt,
+both Docker targets and the non-root/actual-PG/worker/backup-restore gates. A parallel
+local full browser run nevertheless reproduced a separate realtime/Interested race
+(29 passed,1 failed,1 interrupted,25 not run after stopping to diagnose). Its trace
+showed a background GET changing the foreground busy/layout state during the click,
+with no connection POST. That failed run is not accepted as local release evidence.
+A deterministic deferred-background UI regression reproduced RED before the fix.
+Background reads now use a separate bounded lock; manual actions/selection changes
+invalidate their stale results. UI27/27 and independent read-only re-review passed.
+Fresh corrected check passed **679 tests/76 files**, lint/types/build and audit0;
+its full local browser and exact corrected-SHA hosted gates are pending.
+
 No production HTTPS/database/scheduler/device verification has occurred.
 
 Owner work remains HTTPS hosting/domain, verified PostgreSQL, moderator credential and
