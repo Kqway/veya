@@ -15,6 +15,7 @@ import {
 import { BackendError } from "./errors";
 import { validate, slugSchema } from "./validation";
 import type { VeyaBackend } from "./service";
+import { assertBetaOperationAllowed, getBetaControls, type BetaControls } from "@/lib/config/beta-policy";
 const selectionSchema = z
   .object({
     suggestionKey: z.string().regex(/^[a-f0-9]{32}$/),
@@ -26,6 +27,7 @@ export function createAiHandlers(options: {
   tasks: () => AiTasks;
   backend: () => VeyaBackend;
   limiter?: RequestLimiter;
+  getBetaControls?: () => BetaControls;
 }) {
   const origin = new URL(options.origin).origin;
   function requireOrigin(request: Request) {
@@ -35,6 +37,7 @@ export function createAiHandlers(options: {
         "ORIGIN_REJECTED",
         "Use the application's origin for this request.",
       );
+    assertBetaOperationAllowed("mutation", options.getBetaControls?.() ?? getBetaControls());
   }
   async function context(
     backend: VeyaBackend,

@@ -8,6 +8,9 @@ describe("server environment", () => {
       NEXT_PUBLIC_APP_URL: "http://localhost:3000",
       DB_POOL_MAX: 5,
       REALTIME_ENABLED: true,
+      BETA_SIGNUPS_ENABLED: true,
+      BETA_SEEKING_ENABLED: true,
+      BETA_READ_ONLY: false,
       RATE_LIMIT_BACKEND: "memory",
       AI_PROVIDER: "mock",
       ANALYTICS_ENABLED: false,
@@ -142,4 +145,19 @@ describe('production remote transport defaults',()=>{
 it('forces verifiedTLS when repeated host parameters point the driver at a remote server',()=>{
  expect(parseServerEnv({NODE_ENV:'production',DATABASE_URL:'postgresql://user:pass@localhost/db?host=localhost&host=db.example.com'}).DATABASE_SSL_MODE).toBe('verify-full');
  expect(()=>parseServerEnv({NODE_ENV:'production',DATABASE_URL:'postgresql://user:pass@localhost/db?host=localhost&host=db.example.com&sslmode=require'})).toThrow();
+});
+
+describe("closed beta environment controls", () => {
+  it("defaults to enabled signup/seeking and writable application", () => {
+    expect(parseServerEnv({})).toMatchObject({ BETA_SIGNUPS_ENABLED: true, BETA_SEEKING_ENABLED: true, BETA_READ_ONLY: false });
+  });
+  it("parses operator switches as strict booleans", () => {
+    expect(parseServerEnv({ BETA_SIGNUPS_ENABLED: "false", BETA_SEEKING_ENABLED: "false", BETA_READ_ONLY: "true" })).toMatchObject({ BETA_SIGNUPS_ENABLED: false, BETA_SEEKING_ENABLED: false, BETA_READ_ONLY: true });
+  });
+  it.each(["BETA_SIGNUPS_ENABLED", "BETA_SEEKING_ENABLED", "BETA_READ_ONLY"])("rejects malformed %s without reflecting the supplied value", field => {
+    for (const value of ["", "1", "TRUE", "private-operator-value"]) {
+      expect(() => parseServerEnv({ [field]: value })).toThrow(field);
+      expect(() => parseServerEnv({ [field]: value })).not.toThrow(value || "private-operator-value");
+    }
+  });
 });

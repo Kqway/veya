@@ -8,3 +8,7 @@ it('overrides every external social service and preserves only random test moder
  expect(env.MODERATION_ADMIN_SECRET).toBe('test-admin');expect(env.AI_PROVIDER).toBe('mock');
  expect(JSON.stringify(env)).not.toContain('production-');
 });
+it('resets inherited maintenance controls for isolated beta journeys',()=>{
+ const env=isolatedBrowserEnvironment({NODE_ENV:'test',BETA_SIGNUPS_ENABLED:'false',BETA_SEEKING_ENABLED:'false',BETA_READ_ONLY:'true'},'postgresql://test@127.0.0.1/isolated');
+ expect(env).toMatchObject({BETA_SIGNUPS_ENABLED:'true',BETA_SEEKING_ENABLED:'true',BETA_READ_ONLY:'false'});
+});

@@ -76,7 +76,7 @@ async function compatible(tx: DatabaseExecutor, r: RequestRow) {
   return { source, target };
 }
 export class ConnectionsService {
-  constructor(private readonly db: Database, private readonly options: {analyticsEnabled?: boolean} = {}) {}
+  constructor(private readonly db: Database, private readonly options: {analyticsEnabled?: boolean;readOnly?:boolean} = {}) {}
   async request(token: string, input: unknown) {
     const data = validate(
       z.object({ handle: publicKeySchema }).strict(),
@@ -174,8 +174,10 @@ export class ConnectionsService {
         ]),
       ]);
       a = await reauthorize(tx, token, a.id);
-      await retireOutgoing(tx, a.id);
-      await retireRequests(tx, selected.rows.filter((r) => r.status === "pending"));
+      if (!this.options.readOnly) {
+        await retireOutgoing(tx, a.id);
+        await retireRequests(tx, selected.rows.filter((r) => r.status === "pending"));
+      }
       const out: RequestDTO[] = [];
       for (const initial of selected.rows) {
         const r = await requestByKey(tx, initial.public_key, a.id);

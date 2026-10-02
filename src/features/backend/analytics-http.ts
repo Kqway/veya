@@ -3,6 +3,7 @@ import type { RequestLimiter } from "@/lib/security/rate-limit";
 import { z } from "zod";
 import type { AnalyticsClient } from "@/lib/analytics/types";
 import { HttpError, json, readJson, enforceRateLimit, apiError } from "./http";
+import { assertBetaOperationAllowed, getBetaControls, type BetaControls } from "@/lib/config/beta-policy";
 const eventSchema = z.discriminatedUnion("name", [
   z
     .object({
@@ -33,6 +34,7 @@ export function createAnalyticsHandler(options: {
   origin: string;
   client: () => AnalyticsClient | null;
   limiter?: RequestLimiter;
+  getBetaControls?: () => BetaControls;
 }) {
   return async (request: Request) => {
     try {
@@ -42,6 +44,7 @@ export function createAnalyticsHandler(options: {
           "ORIGIN_REJECTED",
           "Use the application's origin.",
         );
+      assertBetaOperationAllowed("mutation", options.getBetaControls?.() ?? getBetaControls());
       await enforceRateLimit(options.limiter, "analytics", request);
       const parsed = eventSchema.safeParse(await readJson(request));
       if (!parsed.success)

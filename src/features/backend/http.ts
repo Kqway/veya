@@ -6,12 +6,15 @@ import type { VeyaBackend } from "./service";
 import { BackendError } from "./errors";
 import { GUEST_COOKIE } from "./sessions";
 import { validate } from "./validation";
+import { logOperationalEvent } from "@/lib/logging/server";
+import { assertBetaOperationAllowed, BetaPolicyError, getBetaControls, type BetaControls, type BetaOperation } from "@/lib/config/beta-policy";
 
 export interface BackendHttpOptions {
   backend: () => VeyaBackend;
   origin: string;
   secureCookie: boolean;
   limiter?: RequestLimiter;
+  getBetaControls?: () => BetaControls;
 }
 export class HttpError extends Error {
   constructor(
@@ -137,13 +140,14 @@ export function createBackendHandlers(options: BackendHttpOptions) {
     }
   }
 
-  async function requireOrigin(request: Request, action: RateAction = "write") {
+  async function requireOrigin(request: Request, action: RateAction = "write", operation: BetaOperation = "mutation") {
     if (request.headers.get("origin") !== allowedOrigin)
       throw new HttpError(
         403,
         "ORIGIN_REJECTED",
         "Use the application's origin for this request.",
       );
+    assertBetaOperationAllowed(operation, options.getBetaControls?.() ?? getBetaControls());
     await enforceRateLimit(options.limiter, action, request);
   }
 
@@ -152,7 +156,7 @@ export function createBackendHandlers(options: BackendHttpOptions) {
       return handle(async () => {
         await enforceRateLimit(options.limiter, "read", request);
         return json(
-          await options.backend().getResults(slug, tokenFrom(request)),
+          await options.backend().getResults(slug, tokenFrom(request), {readOnly: (options.getBetaControls?.() ?? getBetaControls()).readOnly}),
         );
       });
     },
@@ -196,7 +200,7 @@ export function createBackendHandlers(options: BackendHttpOptions) {
     },
     revokeSession(request: Request) {
       return handle(async () => {
-        await requireOrigin(request, "session");
+        await requireOrigin(request, "session", "safety");
         await options.backend().revokeSession(tokenFrom(request));
         const response = json({ authenticated: false });
         response.cookies.set(GUEST_COOKIE, "", {
@@ -258,6 +262,8 @@ export function createBackendHandlers(options: BackendHttpOptions) {
 
 /** Shared safe response boundary for core and optional APIs. */
 export function apiError(error: unknown): NextResponse {
+  if (error instanceof BetaPolicyError)
+    return json({ error: { code: error.code, message: error.message } }, error.status);
   if (error instanceof HttpError) {
     const response = json(
       { error: { code: error.code, message: error.message } },
@@ -286,6 +292,7 @@ export function apiError(error: unknown): NextResponse {
       statuses[error.code],
     );
   }
+  logOperationalEvent("api_unavailable");
   return json(
     {
       error: {

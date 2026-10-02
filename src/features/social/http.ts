@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { assertBetaOperationAllowed, getBetaControls, type BetaControls, type BetaOperation } from "@/lib/config/beta-policy";
 import type { Database } from "@/lib/db/types";
 import type { AiTasks } from "@/lib/ai/tasks";
 import { parseInputSchema } from "@/lib/ai/schemas";
@@ -14,6 +15,7 @@ import {
 } from "@/features/backend/http";
 import { validate } from "@/features/backend/validation";
 import { IdentityService } from "./identity";
+import { ProfileDeletionService } from "./deletion";
 import { SeekingService } from "./seeking";
 import { DiscoveryService } from "./discovery";
 import { ConnectionsService } from "./connections";
@@ -28,6 +30,7 @@ export function createSocialHandler(options: {
   tasks: () => AiTasks;
   limiter?: RequestLimiter;
   analyticsEnabled?: boolean;
+  getBetaControls?: () => BetaControls;
 }) {
   const origin = new URL(options.origin).origin;
   return async (request: Request, path: string[]) => {
@@ -41,6 +44,14 @@ export function createSocialHandler(options: {
         );
       let action: RateAction = mutation ? "socialWrite" : "socialRead";
       const [resource, key, operation] = path;
+      let betaOperation: BetaOperation = mutation ? "mutation" : "read";
+      if (path.length === 1 && resource === "profile" && request.method === "POST") betaOperation = "signup";
+      if (path.length === 1 && resource === "seeking" && request.method === "POST") betaOperation = "seeking";
+      // Discovery GET allocates pair identities/handles; it is a stateful action.
+      if (resource === "discover") betaOperation = "mutation";
+      if ((resource === "profile" && request.method === "DELETE") || resource === "block" || resource === "reports") betaOperation = "safety";
+      const betaControls = options.getBetaControls?.() ?? getBetaControls();
+      assertBetaOperationAllowed(betaOperation, betaControls);
       if (resource === "discover") action = "discovery";
       if (
         resource === "profile" &&
@@ -75,6 +86,10 @@ export function createSocialHandler(options: {
       // Construct the database boundary only after rate/origin checks and validated route dispatch.
       const db = () => options.db();
       if (resource === "profile" && path.length === 1) {
+        if (method === "DELETE") {
+          const input = await body();
+          return json(await new ProfileDeletionService(db()).delete(token, input));
+        }
         if (method === "GET")
           return json({ profile: await new IdentityService(db()).get(token) });
         if (method === "POST") {
@@ -141,7 +156,7 @@ export function createSocialHandler(options: {
       if (resource === "connections") {
         if (path.length === 1 && method === "GET")
           return json({
-            requests: await new ConnectionsService(db(), {analyticsEnabled: options.analyticsEnabled ?? false}).list(token),
+            requests: await new ConnectionsService(db(), {analyticsEnabled: options.analyticsEnabled ?? false, readOnly: betaControls.readOnly}).list(token),
           });
         if (path.length === 1 && method === "POST") {
           const input = await body();

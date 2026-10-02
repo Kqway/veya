@@ -8,11 +8,13 @@ import { SocialError } from '@/features/social/errors';
 import { publicKeySchema } from '@/features/social/seeking-schema';
 import { NotificationService } from './service';
 import type { PushConfig } from './schema';
-export function createNotificationHandler(options:{origin:string;db:()=>Database;limiter?:RequestLimiter;push?:PushConfig}){
+import { assertBetaOperationAllowed, getBetaControls, type BetaControls } from '@/lib/config/beta-policy';
+export function createNotificationHandler(options:{origin:string;db:()=>Database;limiter?:RequestLimiter;push?:PushConfig;getBetaControls?:()=>BetaControls}){
   const origin=new URL(options.origin).origin;
   return async(request:Request,path:string[]=[])=>{
     try{
       if(request.method!=='GET'&&request.headers.get('origin')!==origin)throw new HttpError(403,'ORIGIN_REJECTED','Use the application origin.');
+      if(request.method!=='GET')assertBetaOperationAllowed(request.method==='DELETE'&&path.length===1&&path[0]==='push'?'safety':'mutation',options.getBetaControls?.()??getBetaControls());
       await enforceRateLimit(options.limiter,path[0]==='push'&&request.method!=='GET'?'push':request.method==='GET'?'socialRead':'socialWrite',request);
       const token=tokenFrom(request),method=request.method;
       const service=()=>new NotificationService(options.db(),{origin:options.origin,...(options.push?{push:options.push}:{})});

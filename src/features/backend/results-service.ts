@@ -12,6 +12,7 @@ import {
   ensureResults,
   projectResults,
   readProposals,
+  loadPeople,
 } from "./results-repository";
 import type { ResultsView } from "./results-types";
 const selection = z
@@ -26,12 +27,12 @@ export class ResultsService {
     private readonly db: Database,
     private readonly options: { analyticsEnabled?: boolean } = {},
   ) {}
-  async getResults(slug: string, token?: string): Promise<ResultsView> {
+  async getResults(slug: string, token?: string, options: {readOnly?:boolean} = {}): Promise<ResultsView> {
     if (!slugSchema.safeParse(slug).success)
       throw new BackendError("NOT_FOUND");
     return this.db.transaction(async (tx) => {
-      const intent = await readIntent(tx, slug, "write"),
-        people = await ensureResults(tx, intent);
+      const intent = await readIntent(tx, slug, options.readOnly ? "share" : "write"),
+        people = options.readOnly ? await loadPeople(tx, intent.id) : await ensureResults(tx, intent);
       return projectResults(tx, intent, await findSession(tx, token), people);
     });
   }

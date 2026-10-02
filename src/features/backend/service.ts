@@ -33,8 +33,8 @@ export class VeyaBackend {
     private readonly options: { analyticsEnabled?: boolean } = {},
   ) {}
 
-  getResults(slug: string, token?: string) {
-    return new ResultsService(this.db, this.options).getResults(slug, token);
+  getResults(slug: string, token?: string, options: {readOnly?:boolean} = {}) {
+    return new ResultsService(this.db, this.options).getResults(slug, token, options);
   }
   vote(token: string, slug: string, input: unknown) {
     return new ResultsService(this.db, this.options).vote(token, slug, input);

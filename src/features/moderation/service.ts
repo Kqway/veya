@@ -83,6 +83,8 @@ export class ModerationService {
     await this.authorize(tx,token);const report=await this.report(tx,key);
     if(report.target_profile_id!==initial.target_profile_id)throw new RetryLocks();
     if(data.canSeek!==undefined||data.canConnect!==undefined||data.moderationStatus!==undefined){
+     const target=await tx.query<{deleted_at:Date|null}>('SELECT deleted_at FROM social_profiles WHERE id=$1',[report.target_profile_id]);
+     if(target.rows[0]?.deleted_at)throw new HttpError(409,'PROFILE_UNAVAILABLE','This profile is unavailable. Case review remains available.');
      await tx.query('UPDATE social_profiles SET can_seek=COALESCE($2,can_seek),can_connect=COALESCE($3,can_connect),moderation_status=COALESCE($4,moderation_status),updated_at=clock_timestamp() WHERE id=$1',[report.target_profile_id,data.canSeek??null,data.canConnect??null,data.moderationStatus??null]);
      if(data.moderationStatus==='suspended'){
       await tx.query("UPDATE seeking_posts SET status='closed' WHERE profile_id=$1 AND status='active'",[report.target_profile_id]);
