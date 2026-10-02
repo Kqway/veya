@@ -709,16 +709,18 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
       "North",
       ...own.availability.flatMap((w) => [w.startAt, w.endAt]),
     ];
-    await auditA.check([key], privateValues);
-    await auditB.check([], privateValues);
-    await auditC.check();
-    await auditAnonymous.check([key]);
+    await test.step("Audit captured social responses", async () => {
+      await auditA.check([key], privateValues);
+      await auditB.check([], privateValues);
+      await auditC.check();
+      await auditAnonymous.check([key]);
+    });
   } finally {
-    await Promise.all([
+    await test.step("Close actor contexts", () => Promise.all([
       b.context.close(),
       c.context.close(),
       anonymous.context.close(),
-    ]);
+    ]));
   }
 });
 

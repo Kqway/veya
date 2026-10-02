@@ -12,7 +12,9 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 1 : 0,
+  // A release gate must fail on its first broken journey, even if retrying could
+  // pass. Preserve the first trace rather than accepting a flaky hosted result.
+  retries: 0,
   workers: 2,
   reporter: "list",
   use: {

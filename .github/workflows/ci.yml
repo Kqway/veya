@@ -49,9 +49,9 @@ jobs:
       - run: npx playwright install --with-deps chromium 2>&1 | tee logs/browser-install.log
       - run: npm run test:e2e -- --project=desktop --project=mobile 2>&1 | tee logs/e2e.log
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: release-failure-${{ github.run_id }}
+          name: release-verification-${{ github.run_id }}
           path: |
             test-results/
             playwright-report/

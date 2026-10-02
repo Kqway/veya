@@ -74,6 +74,19 @@ future windows isolate retry/repeat fixtures without relaxing exact candidate,
 privacy, blocking or UTC assertions. The affected desktop journeys passed twice.
 The corrected source must pass a fresh exact-SHA hosted workflow before release;
 local results never imply hosted PASS.
+At `b41c15d`, [run 37056311245](https://github.com/Kqway/veya/actions/runs/37056311245)
+was green but one desktop journey timed out and passed on retry (55 first-attempt
+passes plus one flaky). That is not accepted as final release evidence. CI now
+allows no browser retries and always retains verification logs/traces; explicit
+audit/cleanup steps make a future timeout diagnosable. The prior hosted trace was
+not uploaded because its job was green. Installing the identical hosted browser
+locally was blocked by the workspace network's CDN policy (403); local checks use
+system Chromium151, and hosted checks use installed Chromium153. This failure is
+recorded, not reported as a successful browser installation or equivalent engine.
+Three valid sequential desktop journey/recovery pairs passed (6/6) without retries.
+An exploratory fourth repeat selected day7, outside the unchanged picker horizon;
+its explicit validation rejection was diagnosed as invalid stress-fixture input,
+not treated as a passing run or a reason to relax the product's time bounds.
 No production HTTPS/database/scheduler/device verification has occurred.
 
 Owner work remains HTTPS hosting/domain, verified PostgreSQL, moderator credential and

@@ -10,7 +10,9 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
   PostgreSQL tests and production build); full `npm run test:e2e`; `npm audit --json`.
 - CI repeats all gates with Node 24, isolated temporary PostgreSQL and installed
   Playwright Chromium on non-root runners; both desktop/mobile projects execute.
-  Failed runs retain logs, screenshots and traces. No real DB or paid AI is used.
+  Browser retries are disabled: a broken first attempt fails the gate. Every run
+  retains verification logs and available screenshots/traces, including cleanup
+  failures. No real DB or paid AI is used.
 - E2E covers original coordination, incognito seeking/discovery/request/match/chat/
   disclosure/plan/results/block/recovery, two users live simultaneously, realtime
   reconnect repair, notification inbox, unsupported/denied push, protected moderator
