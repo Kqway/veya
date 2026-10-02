@@ -205,3 +205,15 @@ Targeted UI verification passed27/27; independent read-only re-review confirmed
 bounded refresh scheduling, mounted guards and unchanged authorization/privacy/quota
 boundaries, with no new Important/Critical issue. Final full-gate evidence follows
 in CODEX_PROGRESS.md.
+
+The next complete run found the same busy-lock race in the other two foreground
+screens: local mobile Accept had no POST while its background connections read ran;
+hosted mobile Send clicked without a corresponding message POST. Both complete
+runs finished55/56 and were rejected as release evidence. Two more deferred-read
+regressions reproduced RED, then passed with the same bounded foreground/background
+separation in Connections and Match. Manual actions and successful blocks invalidate
+stale pending-request lists, match snapshots, message pages and pagination updates.
+Targeted UI29/29 passed; independent read-only review checked accepted state, sent
+messages, block closure, pagination, mounted guards and one background refresh per
+component, with no new Important/Critical finding. Server authorization, projection
+and production quotas remain unchanged.

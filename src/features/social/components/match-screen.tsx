@@ -22,7 +22,16 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
     [planConfirm, setPlanConfirm] = useState(false),
     [notice, setNotice] = useState("");
   const action = useSocialAction();
-  const { run } = action;
+  const { run: runAction } = action;
+  const { run: runBackground } = useSocialAction();
+  const generation = useRef(0);
+  const run = useCallback((work: (current: () => boolean) => Promise<void>) =>
+    runAction(async (alive) => {
+      const version = ++generation.current;
+      const current = () => alive() && version === generation.current;
+      try { await work(current); }
+      catch (error) { if (current()) throw error; }
+    }), [runAction]);
   const path = `/matches/${encodeURIComponent(matchKey)}`;
   const olderLoaded = useRef(false);
   const latestLoadedKeys = useRef(new Set<string>());
@@ -40,12 +49,13 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
       }
     });
   }, [path, run]);
-  const reload = useCallback(() => run(async (alive) => {
+  const readLatest = useCallback(async (alive: () => boolean) => {
+    const version = generation.current;
     const data = await socialApi<Match>(path);
-    if (!alive()) return;
+    if (!alive() || version !== generation.current) return;
     setMatch(data);
     const page = await socialApi<MessagePage>(`${path}/messages?limit=30`);
-    if (alive()) {
+    if (alive() && version === generation.current) {
       const contiguous=page.messages.some(message=>latestLoadedKeys.current.has(message.publicKey)) || latestLoadedKeys.current.size===0;
       latestLoadedKeys.current=new Set(page.messages.map(message=>message.publicKey));
       if(!contiguous){
@@ -58,8 +68,10 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
         if (!olderLoaded.current) setNextBefore(page.nextBefore);
       }
     }
-  }), [path, run]);
-  const live = useSocialRefresh(["match", "connections"], reload, { enabled: !!match && !action.busy });
+  }, [path]);
+  const reload = useCallback(() => run(readLatest), [run, readLatest]);
+  const reloadLive = useCallback(() => runBackground(readLatest), [runBackground, readLatest]);
+  const live = useSocialRefresh(["match", "connections"], reloadLive, { enabled: !!match && !action.busy });
   function refresh() { void reload(); }
   function send(e: FormEvent) {
     e.preventDefault();
@@ -367,9 +379,10 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
             <h2>Safety</h2>
             <SafetyControls
               target={{ matchKey }}
-              onBlocked={() =>
-                setMatch({ ...match, status: "closed", planSlug: null })
-              }
+              onBlocked={() => {
+                ++generation.current;
+                setMatch({ ...match, status: "closed", planSlug: null });
+              }}
             />
           </section>
           {notice && <p role="status">{notice}</p>}

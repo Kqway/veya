@@ -367,6 +367,59 @@ it("keeps interest actionable during background discovery and ignores stale cand
   expect(fetcher.mock.calls.filter(([path]) => path.endsWith("/connections"))).toHaveLength(1);
 });
 
+it("accepts during a background connection read and cannot regress to pending", async () => {
+  const { ConnectionsScreen } = await import("@/features/social/components/connections-screen");
+  const request = { publicKey: "R".repeat(24), direction: "incoming", status: "pending", identity: { alias: "Pine", avatarSeed: "random" }, activityLabel: "Chess", matchKey: null };
+  let release!: (response: Response) => void;
+  const deferred = new Promise<Response>(resolve => { release = resolve; });
+  let reads = 0;
+  const fetcher = vi.fn((path: string, options?: RequestInit): Promise<Response> => {
+    if (options?.method === "POST") return Promise.resolve(json({ publicKey: request.publicKey, status: "accepted", matchKey: "M".repeat(24) }));
+    return ++reads === 1 ? Promise.resolve(json({ requests: [request] })) : deferred;
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const user = userEvent.setup();
+  render(<ConnectionsScreen />);
+  await screen.findByRole("button", { name: "Accept" });
+  let background!: Promise<void>;
+  await act(async () => { background = refresh.reload!(); });
+  expect(reads).toBe(2);
+  expect(screen.getByRole("button", { name: "Accept" })).toBeEnabled();
+  await user.click(screen.getByRole("button", { name: "Accept" }));
+  expect(await screen.findByRole("link", { name: "View conversation" })).toHaveAttribute("href", `/m/${"M".repeat(24)}`);
+  await act(async () => { release(json({ requests: [request] })); await background; });
+  expect(screen.queryByRole("button", { name: "Accept" })).not.toBeInTheDocument();
+  expect(screen.getByText("Status: accepted")).toBeVisible();
+  expect(fetcher.mock.calls.filter(([, options]) => options?.method === "POST")).toHaveLength(1);
+});
+it("sends during a background conversation read without losing the message to stale history", async () => {
+  const match = { publicKey: "M".repeat(24), status: "active", identity: { alias: "Pine", avatarSeed: "random" }, ownIdentity: { alias: "Maple", avatarSeed: "mine" }, activityLabel: "Chess", disclosures: [], planSlug: null };
+  const message = { publicKey: "N".repeat(24), text: "See you tomorrow", createdAt: new Date().toISOString(), isMine: true, identity: match.ownIdentity };
+  let release!: (response: Response) => void;
+  const deferred = new Promise<Response>(resolve => { release = resolve; });
+  let reads = 0;
+  const fetcher = vi.fn((path: string, options?: RequestInit): Promise<Response> => {
+    if (options?.method === "POST") return Promise.resolve(json(message));
+    if (path.includes("/messages?")) return ++reads === 1 ? Promise.resolve(json({ messages: [], nextBefore: null })) : deferred;
+    return Promise.resolve(json(match));
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const user = userEvent.setup();
+  render(<MatchScreen matchKey={match.publicKey} />);
+  await screen.findByText("No messages yet. Start with the activity you have in common.");
+  await user.type(screen.getByLabelText("Message"), message.text);
+  let background!: Promise<void>;
+  await act(async () => { background = refresh.reload!(); });
+  expect(reads).toBe(2);
+  expect(screen.getByRole("button", { name: "Send message" })).toBeEnabled();
+  await user.click(screen.getByRole("button", { name: "Send message" }));
+  await screen.findByText(message.text);
+  await act(async () => { release(json({ messages: [], nextBefore: null })); await background; });
+  expect(screen.getByRole("list", { name: "Conversation messages" })).toHaveTextContent(message.text);
+  expect(screen.getByLabelText("Message")).toHaveValue("");
+  expect(fetcher.mock.calls.filter(([, options]) => options?.method === "POST")).toHaveLength(1);
+});
+
 it("offers inline onboarding for a new guest without creating a profile on mount", async () => {
   const { NewSeekScreen } = await import(
     "@/features/social/components/seek-screen"

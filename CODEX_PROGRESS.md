@@ -114,6 +114,17 @@ invalidate their stale results. UI27/27 and independent read-only re-review pass
 Fresh corrected check passed **679 tests/76 files**, lint/types/build and audit0;
 its full local browser and exact corrected-SHA hosted gates are pending.
 
+At `d872337`, [run 37061389126](https://github.com/Kqway/veya/actions/runs/37061389126)
+passed679 native tests/build/audit and both container/database gates, but hosted
+mobile Send was lost during a background read (55/56). Local full execution also
+finished55/56: mobile Accept clicked without a POST during a connection refresh.
+Neither run is accepted as final evidence. Two deferred-read UI regressions
+reproduced these actions being disabled; foreground/background read separation and
+generation checks now cover Connections and Match as well. UI29/29 and independent
+read-only re-review passed. Corrected complete check: **681 tests/76 files**,
+lint/types/build and audit0. Its fresh full local browser and exact-SHA hosted gates
+are pending; no failing run is discarded from this record.
+
 No production HTTPS/database/scheduler/device verification has occurred.
 
 Owner work remains HTTPS hosting/domain, verified PostgreSQL, moderator credential and

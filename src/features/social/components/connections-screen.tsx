@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSocialRefresh } from "@/features/realtime/client";
 import { socialApi, useSocialAction, type Connection } from "../client";
@@ -8,13 +8,25 @@ import { SafetyControls } from "./safety-controls";
 export function ConnectionsScreen() {
   const [requests, setRequests] = useState<Connection[] | null>(null);
   const action = useSocialAction();
-  const { run } = action;
-  const reload = useCallback(() => run(async (alive) => {
+  const { run: runAction } = action;
+  const { run: runBackground } = useSocialAction();
+  const generation = useRef(0);
+  const run = useCallback((work: (current: () => boolean) => Promise<void>) =>
+    runAction(async (alive) => {
+      const version = ++generation.current;
+      const current = () => alive() && version === generation.current;
+      try { await work(current); }
+      catch (error) { if (current()) throw error; }
+    }), [runAction]);
+  const readRequests = useCallback(async (alive: () => boolean) => {
+    const version = generation.current;
     const data = await socialApi<{ requests: Connection[] }>("/connections");
-    if (alive()) setRequests(data.requests);
-  }), [run]);
+    if (alive() && version === generation.current) setRequests(data.requests);
+  }, []);
+  const reload = useCallback(() => run(readRequests), [run, readRequests]);
+  const reloadLive = useCallback(() => runBackground(readRequests), [runBackground, readRequests]);
   useEffect(() => { void reload(); }, [reload]);
-  const live = useSocialRefresh(["connections", "match"], reload, { enabled: !action.busy });
+  const live = useSocialRefresh(["connections", "match"], reloadLive, { enabled: !action.busy });
   function respond(key: string, response: "accept" | "decline") {
     void run(async (alive) => {
       const data = await socialApi<{
@@ -103,14 +115,15 @@ export function ConnectionsScreen() {
                 )}
                 <SafetyControls
                   target={{ requestKey: request.publicKey }}
-                  onBlocked={() =>
+                  onBlocked={() => {
+                    ++generation.current;
                     setRequests(
                       (values) =>
                         values?.filter(
                           (r) => r.publicKey !== request.publicKey,
                         ) ?? [],
-                    )
-                  }
+                    );
+                  }}
                 />
               </article>
             ))}
