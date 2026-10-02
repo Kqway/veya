@@ -217,3 +217,11 @@ Targeted UI29/29 passed; independent read-only review checked accepted state, se
 messages, block closure, pagination, mounted guards and one background refresh per
 component, with no new Important/Critical finding. Server authorization, projection
 and production quotas remain unchanged.
+
+The final observability check found LISTEN reconnect exhaustion had no fixed
+operational log. Its existing bounded-retry test was extended without removing any
+assertions: missing logging reproduced RED; the hub now emits one allowlisted
+realtime_unavailable event with only numeric attempts at exhausted recovery. Normal
+shutdown emits no extra failure, and no URL/credentials/profile/error content is
+logged. Hub/API-logging targeted5/5 passed; independent read-only review confirmed
+unchanged retry timing, authorization and subscriber cleanup.

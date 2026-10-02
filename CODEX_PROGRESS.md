@@ -125,6 +125,15 @@ read-only re-review passed. Corrected complete check: **681 tests/76 files**,
 lint/types/build and audit0. Its fresh full local browser and exact-SHA hosted gates
 are pending; no failing run is discarded from this record.
 
+At `353de4f`, [run 37062608458](https://github.com/Kqway/veya/actions/runs/37062608458)
+passed both hosted jobs: **681 tests/76 files,56/56 first-attempt desktop/mobile**,
+production build/audit0, both actual Docker builds, non-root and real PG/worker/restore
+smokes. The same social source passed local full56/56 with no retries (3.8min).
+The final observability check reproduced missing LISTEN exhaustion logging RED, then
+added one fixed numeric-only event. Independent review and targeted5/5 passed;
+current full check still passes681/76 plus lint/types/build/audit0. A fresh browser
+and exact-SHA hosted run will verify this final logging addition separately.
+
 No production HTTPS/database/scheduler/device verification has occurred.
 
 Owner work remains HTTPS hosting/domain, verified PostgreSQL, moderator credential and

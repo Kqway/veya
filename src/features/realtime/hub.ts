@@ -1,5 +1,6 @@
 import 'server-only';
 import { Client } from 'pg';
+import { logOperationalEvent } from '@/lib/logging/server';
 export type HubReason = 'change' | 'sync' | 'unavailable';
 type Subscriber = (reason: HubReason) => void;
 /** One session-mode LISTEN connection per process; NOTIFY never leaves the server. */
@@ -53,7 +54,7 @@ export class EventHub {
  }
  private schedule() {
   if (this.stopped || this.retry || !this.subscriberCount) return;
-  if (this.attempts>=6) { this.all('unavailable'); this.subscribers.clear(); return; }
+  if (this.attempts>=6) { logOperationalEvent('realtime_unavailable',{count:this.attempts}); this.all('unavailable'); this.subscribers.clear(); return; }
   const delay=Math.min(30000,(this.options.retryBaseMs ?? 1000)*2**this.attempts++);
   this.retry=setTimeout(()=> { this.retry=undefined; void this.connect().catch(()=>this.schedule()); },delay);
   this.retry.unref?.();
