@@ -86,10 +86,12 @@ sides to sends and disclosures; closed conversation reads retained history with
 generic closed state, no blocker attribution. Request decline/pass suppress repeat.
 Chat plain text≤2000, random message keys, server timestamps/isMine/pair identity,
 recent30, maximum page50, opaque message-key before cursor scoped to conversation.
-No sender IDs or client-picked sender. Explicit refresh; no background presence.
+No sender IDs or client-picked sender. Authenticated live invalidations reload persistent
+messages; explicit refresh remains available. No background presence.
 One firstName≤60/contactHandle≤120 disclosure per sender/kind/match, explicit consent;
 no automatic sharing or analytics. Reports bounded enum+≤1000 text, target concrete
-request/match; reporter identity server-owned. No fake automated moderation console.
+request/match; reporter identity server-owned. A separate protected human console
+reviews immutable bounded evidence and audits restrictions/suspension; no AI bans.
 
 ## Plan integration
 
@@ -105,13 +107,16 @@ link or erase an already-created coordination plan. UI explains that boundary.
 
 Independent limiter budgets discovery, seekingCreate, connection, message, report,
 recovery plus existing social read/write. Enforce before body/DB/AI; combine global
-and SHA256 guest bucket and per-profile durable admission limits. Built-in limiter
-is process-local; distributed host/gateway required for public multi-instance use.
+and SHA256 guest bucket and per-profile durable admission limits. PostgreSQL shared
+limiting is the production default and survives replicas/restarts; memory is local only.
+Host/gateway connection controls complement these application budgets.
 Pending10, active3, candidates100/cards5, body16KiB5s, bounded pagination/messages.
 New tables have relational CHECK/UNIQUE/FK constraints and server-only RLS. Applied
-migrations0001–0004 are immutable. Retention explicit dry-run CLI, social interaction
+migrations0001–0010 are immutable; Phase 9 adds0011–0017. Retention explicit dry-run CLI, social interaction
 records eligible after180d closed/inactive, expired seeking posts90d, abandoned
-discovery handles/passes90d, reports365d. Recent messages/disclosures, open matches,
+discovery handles/passes90d, resolved/dismissed reports365d. Open/reviewing cases
+protect evidence/context indefinitely; release events24h, notifications30d and terminal
+worker jobs/expired moderator sessions7d use bounded cleanup. Recent messages/disclosures, open matches,
 active posts/live requests and retained reports protect interaction histories from
 cleanup. Profiles/bindings/blocks persist; self-service account deletion is not
 implemented. Guest cleanup may remove expired unreferenced sessions and their

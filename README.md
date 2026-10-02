@@ -565,7 +565,8 @@ DATABASE_URL before starting the backend. Supply migration files with the CLI
 checkout. Do not run the demo seed in production. Persistent plan APIs require a live
 database; the landing and stateless intent parser work without one. Migrations
 0005–0010 add identity, seeking, connections, conversation, planning and safety;
-0001–0004 are unchanged. Complete the host checks in
+0011–0017 add live events, notifications, moderation, shared limits, query indexes,
+funnel transitions and future-candidate jobs. Applied0001–0010 are unchanged. Complete the host checks in
 [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md).
 
 The Intent Network MVP is a release candidate for a controlled preview. Local production-browser
@@ -584,14 +585,19 @@ remain host-specific checks. This development run performs no deployment.
 8. Intent Network — complete: 8A identity/recovery/privacy, 8B seeking/matching/AI,
    8C discovery/requests/pair identities, 8D conversation/disclosure, 8E ordinary plan
    bridge, 8F safety/limits/retention, 8G social UX/E2E/privacy release review.
+9. Production release candidate — complete: authenticated realtime, private inbox/
+   opt-in push, human moderation/enforced suspension, shared abuse budgets, aggregate
+   funnel, cold-start jobs, activity normalization, non-root images, release CI and
+   independent review/regression fixes. See CODEX_PROGRESS.md for exact evidence.
 
 Core local flows need only this application and PostgreSQL. Email/SMS, external
 identity/chat/avatar providers, Redis, GPS, remote fonts and paid AI are not required.
 A public production launch still needs a configured HTTPS host, managed database,
-backups, shared/gateway abuse controls and human report handling. Real OpenAI,
-remote CI/deployment and actual device/browser compatibility are separate rollout
-checks. No production deployment was performed.
+backups, host/gateway connection controls, scheduled workers and human report
+handling. Shared PostgreSQL limits are implemented. Remote Node24 release CI is
+separately verified (see CODEX_PROGRESS.md); actual deployment, optional live OpenAI/
+push and device/browser compatibility remain host checks. No deployment occurred.
 
-Future improvements: hosted reliability/moderation operations, optional federated
+Future improvements: hosted operational monitoring, optional federated
 recovery and account-deletion policy, broader activity normalization and timezone-
 aware coarse hints. These are not implemented as part of this release.

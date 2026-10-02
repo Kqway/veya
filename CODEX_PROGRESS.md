@@ -2,7 +2,7 @@
 
 ## Current release: Phase 9A–9L
 
-**Status: production release candidate implemented and locally and remotely verified, 2026-10-02.**
+**Status: production release candidate implemented; locally and remotely verified, 2026-10-02.**
 Baseline was independently checked at `d5f3b30`: 398 tests/43 files and 38/38
 Playwright cases. Phase 9 preserves that coordination/Intent Network flow and adds:
 
@@ -67,8 +67,10 @@ events, notifications, expired admin sessions and limiter buckets explicitly.
   **48/48 desktop/mobile E2E** passed, with no flaky/retry result. Both Docker
   images built and restrictive-permission non-root smoke passed. This is remote
   evidence for that exact source SHA, not evidence of a production deployment.
-  This documentation-only follow-up changes no application, migrations or tests;
-  its own pushed SHA is checked again by CI and the final engineering report.
+  The documentation follow-up `1b5e7a6` also passed both jobs in
+  [run36989554676](https://github.com/Kqway/veya/actions/runs/36989554676).
+  Final alignment changes documents only; its own exact pushed SHA is checked
+  again by CI and the final engineering report.
 
 **Hosted portability corrections:** run `36920188548` exposed missing rg,
 headless clipboard denial and setup navigation before Interested acknowledgement.
@@ -108,7 +110,8 @@ bounded aggregate counts when analytics is enabled.
 - `3204643` — phase-9a: enforce dependency audit in CI.
 - `ecff806` — phase-9j: verify non-root operational images.
 - `b7e5d98` — phase-9a: make browser and container gates portable.
-- Documentation-only final evidence commit: `docs: record verified Phase 9 release candidate`.
+- `1b5e7a6` — docs: record verified Phase 9 release candidate.
+- Final documentation alignment: `docs: align current Phase 9 deployment boundaries`.
 
 ## Historical Phase 8 baseline
 
@@ -281,7 +284,7 @@ Verify actual HEAD/remote before continuing; this document describes the release
 - `npm audit --json`: **0 vulnerabilities**, no dependencies added. Final migration
   hashes/staged whitespace/credential/artifact inspection recorded before publication.
 
-## Production-only Work and Known Limitations
+## Historical Phase 8 Production-only Work and Known Limitations
 
 - Configure HTTPS Nodehost/publicorigin, server PostgreSQL/TLS/migrations/backups,
   shared/gateway limiting, host-level anti-abuse and human report ownership. Durable
@@ -297,7 +300,7 @@ Verify actual HEAD/remote before continuing; this document describes the release
 - No absolute anonymity claim, no public directory, dating mechanics/followers/
   ads/payments/automatic contacts/location tracking or fake moderation automation.
 
-## Next Work / Notes for Next Codex Run
+## Historical Phase 8 Handoff Notes (superseded by the Phase 9 release above)
 
 Read README, docs/intent-network-design.md, docs/social-api-contract.md and
 [release checklist](docs/RELEASE_CHECKLIST.md). Verify HEAD/tree/remote, migrations,
