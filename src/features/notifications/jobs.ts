@@ -7,8 +7,8 @@ import { subscriptionSchema, type PushConfig } from './schema';
 import { genericPushPayload, PushDeliveryError, sendBrowserPush, type PushSender } from './push';
 type Job={id:string;notification_id:string;subscription_id:string;attempts:number;lease_key:string};
 type Delivery={guest_id:string;profile_id:string;peer_profile_id:string|null;endpoint:string;p256dh:string;auth:string};
-export type NotificationJobOptions={limit?:number;push?:PushConfig;sender?:PushSender;reminders?:boolean};
-async function enqueueReminders(db:Database,limit:number):Promise<number>{
+export type NotificationJobOptions={limit?:number;push?:PushConfig;sender?:PushSender;reminders?:boolean;signal?:AbortSignal};
+async function enqueueReminders(db:Database,limit:number,signal?:AbortSignal):Promise<number>{
   const candidates=await db.query<{id:string;low_profile_id:string;high_profile_id:string}>(`SELECT m.id,p.low_profile_id,p.high_profile_id FROM social_matches m JOIN social_pairs p ON p.id=m.pair_id JOIN intents i ON i.id=m.plan_intent_id JOIN plan_suggestions s ON s.id=i.selected_suggestion_id AND s.intent_id=i.id
     WHERE m.status='active' AND i.status='decided' AND s.start_at>clock_timestamp() AND s.start_at<=clock_timestamp()+interval '24 hours'
     AND EXISTS(SELECT 1 FROM social_profiles WHERE id=p.low_profile_id AND moderation_status='active') AND EXISTS(SELECT 1 FROM social_profiles WHERE id=p.high_profile_id AND moderation_status='active')
@@ -17,6 +17,7 @@ async function enqueueReminders(db:Database,limit:number):Promise<number>{
     ORDER BY s.start_at,m.id LIMIT $1`,[limit]);
   let reminders=0;
   for(const candidate of candidates.rows){
+    if(signal?.aborted)break;
     reminders+=await db.transaction(async tx=>{
       await lockProfiles(tx,[candidate.low_profile_id,candidate.high_profile_id]);
       const match=await tx.query<{public_key:string;start_key:string}>(`SELECT m.public_key,s.start_at::text start_key FROM social_matches m JOIN intents i ON i.id=m.plan_intent_id JOIN plan_suggestions s ON s.id=i.selected_suggestion_id AND s.intent_id=i.id
@@ -39,10 +40,15 @@ async function finish(tx:DatabaseExecutor,job:Job,status:'delivered'|'cancelled'
 }
 export async function processNotificationJobs(db:Database,options:NotificationJobOptions={}):Promise<{reminders:number;claimed:number;delivered:number;cancelled:number;retried:number;failed:number}>{
   const limit=options.limit??20;if(!Number.isInteger(limit)||limit<1||limit>100)throw new Error('Use a worker limit from 1 to 100.');
-  const result={reminders:options.reminders===false?0:await enqueueReminders(db,limit),claimed:0,delivered:0,cancelled:0,retried:0,failed:0};
-  if(!options.push)return result;
+  const result={reminders:options.reminders===false||options.signal?.aborted?0:await enqueueReminders(db,limit,options.signal),claimed:0,delivered:0,cancelled:0,retried:0,failed:0};
+  if(!options.push||options.signal?.aborted)return result;
   const jobs=await claim(db,limit);result.claimed=jobs.length;
   for(const job of jobs){
+    if(options.signal?.aborted){
+      await db.query(`UPDATE social_notification_jobs SET status='pending',attempts=attempts-1,lease_key=NULL,lease_until=NULL
+        WHERE id=ANY($1::uuid[]) AND lease_key=$2 AND status='processing'`,[jobs.slice(jobs.indexOf(job)).map(remaining=>remaining.id),job.lease_key]);
+      break;
+    }
     const status=await db.transaction(async tx=>{
       const initial=await tx.query<Delivery>(`SELECT s.guest_id,s.profile_id,n.peer_profile_id,s.endpoint,s.p256dh,s.auth FROM social_push_subscriptions s JOIN social_notifications n ON n.id=$1 AND n.recipient_profile_id=s.profile_id WHERE s.id=$2`,[job.notification_id,job.subscription_id]);
       const first=initial.rows[0];if(!first){await finish(tx,job,'cancelled');return 'cancelled' as const;}

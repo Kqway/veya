@@ -89,12 +89,19 @@ async function processOne(db: Database, job: Job): Promise<number | null> {
 }
 
 /** Run explicitly from a scheduled worker. A call performs at most twenty persisted jobs. */
-export async function processCandidateJobs(db: Database, options: {limit?:number} = {}): Promise<CandidateJobResult> {
+export async function processCandidateJobs(db: Database, options: {limit?:number;signal?:AbortSignal} = {}): Promise<CandidateJobResult> {
   const limit = options.limit ?? 20;
   if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new Error("Use a candidate worker limit from 1 to 20.");
   const result: CandidateJobResult = {claimed:0, completed:0, retried:0, failed:0, notified:0};
+  if (options.signal?.aborted) return result;
   const jobs = await claim(db, limit); result.claimed = jobs.length;
   for (const job of jobs) {
+    if (options.signal?.aborted) {
+      // Undo only unstarted claims that we still own; another worker's lease is untouched.
+      await db.query(`UPDATE social_candidate_jobs SET status='pending',attempts=attempts-1,lease_key=NULL,lease_until=NULL
+        WHERE id=ANY($1::uuid[]) AND lease_key=$2 AND status='processing'`, [jobs.slice(jobs.indexOf(job)).map(remaining=>remaining.id),job.lease_key]);
+      break;
+    }
     try {
       const notified = await processOne(db, job);
       if (notified !== null) { result.notified += notified; result.completed++; }

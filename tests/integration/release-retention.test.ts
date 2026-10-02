@@ -5,6 +5,8 @@ import {socialActor} from '../support/social';
 import {cleanupReleaseData} from '@/lib/db/release-retention';
 import {requireProfile} from '@/features/social/context';
 import {opaqueKey} from '@/features/social/pairs';
+import {cleanupSocial} from '@/lib/db/social-retention';
+import {cleanupExpired} from '@/lib/db/retention';
 let c:Awaited<ReturnType<typeof startTestDatabase>>;
 beforeAll(async()=>{c=await startTestDatabase();await applyMigrations(c.db);});afterAll(async()=>{if(c)await c.stop();});
 it('defaults to bounded dry-run and purges old event/notification data without deleting recent inbox or profiles',async()=>{
@@ -20,4 +22,12 @@ it('defaults to bounded dry-run and purges old event/notification data without d
  expect((await c.db.query('SELECT action FROM rate_limit_buckets')).rows).toEqual([{action:'message'}]);
  expect((await c.db.query('SELECT * FROM social_profiles')).rows).toHaveLength(1);
  await expect(cleanupReleaseData(c.db,{batchSize:501})).rejects.toThrow();
+});
+it('leaves all retained categories untouched when interrupted before maintenance starts',async()=>{
+ const controller=new AbortController();controller.abort();
+ const before=(await c.db.query('SELECT count(*) FROM social_events')).rows;
+ await cleanupReleaseData(c.db,{apply:true,signal:controller.signal});
+ expect((await c.db.query('SELECT count(*) FROM social_events')).rows).toEqual(before);
+ expect(await cleanupSocial(c.db,{apply:true,signal:controller.signal})).toEqual({dryRun:false,reports:0,handles:0,passes:0,posts:0,pairs:0});
+ expect(await cleanupExpired(c.db,{apply:true,signal:controller.signal})).toEqual({dryRun:false,intents:0,guests:0,analytics:0});
 });

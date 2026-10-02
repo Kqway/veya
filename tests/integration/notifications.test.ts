@@ -55,6 +55,17 @@ describe('recipient notifications and durable generic browser push',()=>{
   const sender=vi.fn(async(subscription:unknown,payload:string)=>{expect(subscription).toBeTruthy();expect(payload).toBe(genericPushPayload);});const outcomes=await Promise.all([processNotificationJobs(c.db,{push:config,sender,reminders:false}),processNotificationJobs(c.db,{push:config,sender,reminders:false})]);expect(outcomes.reduce((n,r)=>n+r.delivered,0)).toBe(1);expect(sender).toHaveBeenCalledTimes(1);expect(sender.mock.calls[0]![1]).toBe(genericPushPayload);expect(genericPushPayload).toBe(JSON.stringify({title:'Veya',body:'You have a new update in Veya',url:'/notifications'}));
   expect((await c.db.query('SELECT status,attempts FROM social_notification_jobs')).rows).toEqual([{status:'delivered',attempts:1}]);
  });
+ it('stops on interruption and releases unsent leases including final claims without losing retry budget',async()=>{
+  const {a,own,peer}=await actors();await service.subscribe(a.token,subscription());await service.subscribe(a.token,subscription(1));await notify(own.id,peer.id);
+  const stopped=new AbortController();stopped.abort();
+  expect((await processNotificationJobs(c.db,{signal:stopped.signal,push:config,reminders:false})).claimed).toBe(0);
+  await c.db.query('UPDATE social_notification_jobs SET attempts=4');
+  const controller=new AbortController();const sender=vi.fn(async()=>{controller.abort();});
+  const result=await processNotificationJobs(c.db,{signal:controller.signal,push:config,sender,reminders:false});
+  expect(result).toMatchObject({claimed:2,delivered:1,failed:0});expect(sender).toHaveBeenCalledTimes(1);
+  expect((await c.db.query("SELECT status,attempts FROM social_notification_jobs WHERE status<>'delivered'")).rows).toEqual([{status:'pending',attempts:4}]);
+  expect((await processNotificationJobs(c.db,{push:config,sender:async()=>{},reminders:false})).delivered).toBe(1);
+ });
  it('keeps a valid queued notification retryable when its batch lease expires before delivery',async()=>{
   const {a,own,peer}=await actors();await service.subscribe(a.token,subscription());await service.subscribe(a.token,subscription(1));await notify(own.id,peer.id);
   let calls=0;const sender=async(current:{endpoint:string})=>{calls++;if(calls===1)await c.db.query("UPDATE social_notification_jobs j SET lease_until=clock_timestamp()-interval '1 second' FROM social_push_subscriptions s WHERE j.subscription_id=s.id AND s.endpoint<>$1 AND j.status='processing'",[current.endpoint]);};

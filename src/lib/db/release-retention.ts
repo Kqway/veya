@@ -1,7 +1,7 @@
 import 'server-only';
 import type { Database } from './types';
 /** Separate bounded maintenance, never implicit on startup/request. SQL is server-owned. */
-export async function cleanupReleaseData(db:Database,options:{apply?:boolean;batchSize?:number}={}){
+export async function cleanupReleaseData(db:Database,options:{apply?:boolean;batchSize?:number;signal?:AbortSignal}={}){
  const apply=options.apply??false,batch=options.batchSize??100;
  if(!Number.isInteger(batch)||batch<1||batch>500)throw new Error('Invalid retention batch size.');
  const rules={
@@ -15,6 +15,7 @@ export async function cleanupReleaseData(db:Database,options:{apply?:boolean;bat
  } as const;
  const result:Record<string,number>={};
  for(const [name,[table,key,where]] of Object.entries(rules)){
+  if(options.signal?.aborted){result[name]=0;continue;}
   // Candidate-worker schema may be added after this foundational module.
   if(table==='social_candidate_jobs'&&!(await db.query("SELECT to_regclass('public.social_candidate_jobs') AS relation")).rows[0]?.relation){result[name]=0;continue;}
   result[name]=await db.transaction(async tx=>{

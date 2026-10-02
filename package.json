@@ -23,7 +23,11 @@
     "db:cleanup": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/retention.ts",
     "social:process": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/social-worker.ts",
     "notifications:process": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/notifications.ts",
-    "analytics:funnel": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/funnel.ts"
+    "analytics:funnel": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/funnel.ts",
+    "db:verify": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/database.ts verify",
+    "db:backup": "bash scripts/backup.sh",
+    "db:restore": "bash scripts/restore.sh",
+    "ops:status": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/status.ts"
   },
   "dependencies": {
     "date-fns": "^4.1.0",

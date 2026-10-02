@@ -4,11 +4,12 @@ import { lockProfiles } from "@/features/social/context";
 export type SocialCleanupResult = { dryRun:boolean; reports:number; handles:number; passes:number; posts:number; pairs:number };
 type RetentionRow = { id:string; profile_a:string; profile_b:string | null };
 /** Explicit maintenance only. Default dry-run counts; stable profiles/bindings/blocks persist. */
-export async function cleanupSocial(db: Database,options: {apply?:boolean;batchSize?:number} = {}): Promise<SocialCleanupResult> {
+export async function cleanupSocial(db: Database,options: {apply?:boolean;batchSize?:number;signal?:AbortSignal} = {}): Promise<SocialCleanupResult> {
   const apply = options.apply ?? false, batchSize = options.batchSize ?? 100;
   if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 500) throw new Error("Batch size must be an integer from 1 to 500.");
   // All SQL components below are fixed server constants, never caller input.
   async function purge(table:string,key:string,profiles:string,eligible:string,order:string): Promise<number> {
+    if(options.signal?.aborted)return 0;
     return db.transaction(async (tx) => {
       const selected = await tx.query<RetentionRow>(`SELECT ${key} AS id,${profiles} FROM ${table} t WHERE ${eligible} ORDER BY ${order} LIMIT $1`,[batchSize]);
       if (!apply || !selected.rows.length) return selected.rows.length;

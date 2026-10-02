@@ -69,3 +69,4 @@ jobs:
       - run: docker build --target operations -t veya:operations-smoke .
       - run: docker build --target runner -t veya:smoke .
       - run: bash scripts/docker-smoke.sh
+      - run: bash scripts/docker-database-smoke.sh

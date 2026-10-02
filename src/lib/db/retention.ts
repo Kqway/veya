@@ -3,7 +3,7 @@ import type { Database, DatabaseExecutor } from "./types";
 /** Explicit maintenance only. Never called by request handlers or automatic startup. */
 export async function cleanupExpired(
   db: Database,
-  options: { apply?: boolean; batchSize?: number } = {},
+  options: { apply?: boolean; batchSize?: number;signal?:AbortSignal } = {},
 ) {
   const apply = options.apply ?? false,
     batchSize = options.batchSize ?? 100;
@@ -17,6 +17,7 @@ export async function cleanupExpired(
     table: "intents" | "guest_participant_sessions" | "analytics_events",
     type: "uuid" | "bigint",
   ) {
+    if(options.signal?.aborted)return [];
     const rows = (await tx.query<{ id: string }>(select, values)).rows;
     if (!apply || !rows.length) return rows.map((r) => r.id);
     return (

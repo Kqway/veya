@@ -150,3 +150,16 @@ it('rolls back all candidate notifications and invalidations when a later enqueu
   expect(await candidateCount()).toBe(0);
   expect(Number((await c.db.query<{count:string}>("SELECT count(*) FROM social_events WHERE topic IN('notifications','discovery')")).rows[0]!.count)).toBe(0);
 });
+it('stops before claiming when interrupted and releases unstarted owned leases without consuming attempts',async()=>{
+  const {source,target}=await pair();
+  const controller=new AbortController();controller.abort();
+  expect((await processCandidateJobs(c.db,{signal:controller.signal})).claimed).toBe(0);
+  const running=new AbortController();
+  const db=observed(async()=>{running.abort();});
+  expect((await processCandidateJobs(db,{signal:running.signal})).completed).toBe(1);
+  expect((await c.db.query("SELECT status,attempts FROM social_candidate_jobs WHERE status='pending'")).rows).toEqual([{status:'pending',attempts:0}]);
+  expect((await c.db.query("SELECT id FROM social_candidate_jobs WHERE status='processing'")).rows).toEqual([]);
+  expect((await processCandidateJobs(c.db)).completed).toBe(1);
+  expect(await candidateCount()).toBe(2);
+  expect(source.id).not.toBe(target.id);
+});

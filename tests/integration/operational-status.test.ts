@@ -1,0 +1,21 @@
+import {afterAll,beforeAll,expect,it} from 'vitest';
+import {startTestDatabase} from '../support/postgres';
+import {applyMigrations} from '@/lib/db/migrations';
+import {socialActor} from '../support/social';
+import {processCandidateJobs} from '@/features/discovery/candidate-jobs';
+import {readOperationalStatus} from '@/lib/db/operational-status';
+let fixture:Awaited<ReturnType<typeof startTestDatabase>>;
+beforeAll(async()=>{fixture=await startTestDatabase();await applyMigrations(fixture.db);});
+afterAll(async()=>{await fixture?.stop();});
+it('reports only aggregate backlog, terminal failures and durable completion age without content or identities',async()=>{
+ await socialActor(fixture.db,'Private content A');await socialActor(fixture.db,'Private content B');
+ const pending=await readOperationalStatus(fixture.db);
+ expect(pending.candidates).toMatchObject({pending:2,processing:0,failed:0,completed:0,lastCompletionAgeSeconds:null});
+ await processCandidateJobs(fixture.db);
+ const complete=await readOperationalStatus(fixture.db);
+ expect(complete.candidates).toMatchObject({pending:0,processing:0,failed:0,completed:2});
+ expect(complete.candidates.lastCompletionAgeSeconds).toEqual(expect.any(Number));
+ expect(JSON.stringify(complete)).not.toMatch(/Private|profile|password|token|public_key|lease_key|[0-9a-f]{8}-/);
+ await fixture.db.query("UPDATE social_candidate_jobs SET status='failed',failure_code='MATCHING_FAILED'");
+ expect((await readOperationalStatus(fixture.db)).candidates.failed).toBe(2);
+});
