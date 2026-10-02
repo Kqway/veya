@@ -158,6 +158,11 @@ test("revoked membership cannot silently replace its identity on edit", async ({
 test("enabled analytics follows entry actions without personal properties", async ({
   page,
 }) => {
+  // This journey asserts a successful native clipboard write. Denial/fallback is
+  // covered separately; headless Chromium does not grant this permission by default.
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"], {
+    origin: "http://127.0.0.1:3100",
+  });
   const events: { name: string; surface: string }[] = [];
   page.on("request", (request) => {
     if (new URL(request.url()).pathname === "/api/analytics")
@@ -165,6 +170,8 @@ test("enabled analytics follows entry actions without personal properties", asyn
   });
   await createPlan(page);
   await page.getByRole("button", { name: "Copy link" }).click();
+  await expect(page.getByRole("status").filter({hasText:"Link copied. Bring your people!"})).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(page.url());
   await expect
     .poll(() => events.map((event) => event.name))
     .toEqual(

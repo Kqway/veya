@@ -60,6 +60,8 @@ async function matched(a: Page, b: Page, testInfo: TestInfo) {
   const cards = await api<{cards:Card[]}>(a,`/api/social/discover?source=${source.publicKey}`);
   expect(cards.cards[0]!.identity.alias).not.toBe("Launch B");
   await candidates.getByRole("button",{name:"Interested",exact:true}).click();
+  // Wait for the persisted action acknowledgement before leaving its page.
+  await expect(a.getByRole("status").filter({hasText:"Interest sent."})).toBeVisible();
   await a.goto("/connections");
   const incoming = b.getByRole("region",{name:"Incoming requests",exact:true});
   await expect(incoming.getByRole("button",{name:"Accept",exact:true})).toBeVisible();

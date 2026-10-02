@@ -72,3 +72,15 @@ Docker execution. Builder COPY now assigns node ownership; actual non-root runne
 migration and worker smoke passed, including generic no-DB failures. A separate CI
 container job deliberately uses restrictive checkout permissions and runs this
 regression. Application authorization/projection code was unchanged by this repair.
+
+### Hosted CI portability follow-up (2026-10-02)
+
+The actual hosted run `36920188548` passed the application quality gates through
+audit, but exposed a smoke-script dependency on unavailable rg and browser test
+preconditions: clipboard writes were denied and a setup navigation cancelled an
+unacknowledged Interested request. Artifact snapshots/network traces confirmed
+these causes. The script now uses standard grep; successful-copy testing grants
+real clipboard permission and asserts copied contents, and navigation waits for the
+visible persisted-action acknowledgement. Existing assertions remain. All four
+affected desktop/mobile cases and non-root Docker smoke passed locally. These are
+test-harness corrections; application authorization/privacy behavior is unchanged.

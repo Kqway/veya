@@ -60,12 +60,18 @@ events, notifications, expired admin sessions and limiter buckets explicitly.
   fixed and re-reviewed, with regression tests; no unresolved Critical/Important
   finding in reviewed scope. See [review](docs/security-phase9-review.md) for evidence
   and limits. This is not a claim of absolute anonymity or external penetration testing.
-- **Remote Phase 9 CI is running, not yet a PASS.** The GitHub connector can
-  read Actions even though shell API access is denied. Historical Phase 8 run
-  `36864125409` was separately verified successful; that does not verify Phase 9.
-  The initial Phase 9 publication `a93568f` started run `36919527003`; a CI follow-up
-  adds dependency-audit enforcement. The final pushed SHA must receive its own PASS.
-  No production deployment occurred.
+- **Remote Phase 9 CI requires final rerun verification.** Historical Phase 8 run
+  `36864125409` was separately verified successful. Phase 9 run `36920188548`
+  passed install/lint/types/586 tests/build/audit and both Docker builds, but failed
+  the smoke script because hosted Ubuntu lacked rg, and browser copy analytics
+  because Chromium denied clipboard permission; its Interested setup also exposed
+  navigation before the mutation acknowledgement. Artifact/trace review reproduced
+  these causes. The smoke uses portable grep; the successful-copy journey grants
+  real clipboard permission and verifies contents; Interested waits for its saved
+  acknowledgement. Affected desktop/mobile cases (4/4), lint/types and actual
+  non-root Docker smoke passed locally on 2026-10-02. No assertions were removed.
+  The final pushed SHA must receive its own remote PASS. No production deployment
+  occurred. Read Actions through the connector, not inaccessible shell GitHub API.
 
 **Operator requirements:** configure an HTTPS origin/host and verified-TLS PostgreSQL,
 apply migrations with a server-only role, set a random moderator secret, configure
@@ -96,7 +102,8 @@ bounded aggregate counts when analytics is enabled.
 - `972d011` — phase-9l: launch UX and desktop/mobile journeys
 - `a93568f` — phase-9k: security review and release evidence.
 - `3204643` — phase-9a: enforce dependency audit in CI.
-- Container follow-up: `phase-9j: verify non-root operational images`.
+- `ecff806` — phase-9j: verify non-root operational images.
+- CI portability follow-up: `phase-9a: make browser and container gates portable`.
 
 ## Historical Phase 8 baseline
 

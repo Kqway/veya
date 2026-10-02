@@ -36,13 +36,13 @@ if docker run --rm --env NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000 \
   cat "$smoke_logs/migrate.log"
   exit 1
 fi
-rg --quiet --fixed-strings 'Database command failed.' "$smoke_logs/migrate.log"
+grep -qF 'Database command failed.' "$smoke_logs/migrate.log"
 if docker run --rm --env NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000 \
   "$operations_image" npm run social:process >"$smoke_logs/worker.log" 2>&1; then
   cat "$smoke_logs/worker.log"
   exit 1
 fi
-rg --quiet --fixed-strings 'Social worker unavailable.' "$smoke_logs/worker.log"
+grep -qF 'Social worker unavailable.' "$smoke_logs/worker.log"
 # Give the instrumentation/Next shutdown path its normal grace period.
 docker stop --timeout 15 "$smoke_container" >/dev/null
 printf '%s\n' 'Non-root runner and operations smoke passed.'
