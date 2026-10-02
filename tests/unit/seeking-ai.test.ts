@@ -71,9 +71,13 @@ describe("optional own-text seeking assistance", () => {
     expect(await new AiTasks().parseSeeking({ ...input, text: "Something wonderful" }))
       .toEqual({ data: empty, source: "fallback" });
   });
-  it("does not treat embedded keywords or general study as a known activity", async () => {
-    for (const text of ["coffeehouse somedaytomorrow", "study", "games", "English"])
+  it("does not treat embedded keywords or unspecified games/language as a known activity", async () => {
+    for (const text of ["coffeehouse somedaytomorrow", "studious", "games", "English"])
       expect((await new AiTasks().parseSeeking({ ...input, text })).data).toEqual(empty);
+  });
+  it("structures general study locally without requiring an AI key", async () => {
+    expect((await new AiTasks().parseSeeking({ ...input, text: "study" })).data)
+      .toEqual({ ...empty, activityKey: "study", activityLabel: "Study" });
   });
   it("extracts explicitly written online and one-person preferences", async () => {
     expect((await new AiTasks().parseSeeking({

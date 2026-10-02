@@ -34,6 +34,7 @@ export function ConnectionsScreen() {
   }
   return (
     <SocialShell title="Connections">
+      <p>Interested is a request to connect. Accepting opens a private conversation; nothing personal is shared automatically.</p>
       <SocialError message={action.error} focusRef={action.errorRef} />
       <SocialLiveStatus {...live} />
       <button
@@ -71,6 +72,8 @@ export function ConnectionsScreen() {
                 <Person identity={request.identity} />
                 <h3>{request.activityLabel}</h3>
                 <p>Status: {request.status}</p>
+                {request.status === "pending" && <p>{request.direction === "outgoing" ? "Waiting for the recipient to accept. Chat opens after acceptance." : "Accept to chat about this activity, or decline the request."}</p>}
+                {request.status === "expired" && <p>The activity closed, expired or no longer shares future availability. This is not a decline.</p>}
                 {request.direction === "incoming" &&
                   request.status === "pending" && (
                     <div className="social-actions">

@@ -78,7 +78,7 @@ export function IntentComposer() {
           <p id="composer-hint">
             An idea is all it takes.
             <br />
-            <span>No account needed.</span>
+            <span>No email or password needed.</span>
           </p>
           <div className="social-composer-actions">
             <button
@@ -114,6 +114,7 @@ export function IntentComposer() {
           </div>
         </div>
       </form>
+      <p className="quiet-copy">Find compatible people starts an activity and a private request. Make it happen creates an invitation for people you already know.</p>
       <div className="examples" aria-label="Try an idea">
         <p>A little inspiration</p>
         <div className="example-buttons">

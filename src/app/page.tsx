@@ -8,11 +8,11 @@ const steps = [
   },
   {
     title: "Bring your people",
-    copy: "Meet compatible people through an activity, or bring friends to your next plan.",
+    copy: "Find people who want the same activity. Send Interested; a private chat opens after they accept.",
   },
   {
     title: "Find your moment",
-    copy: "Less back-and-forth. More time for the things you actually want to do.",
+    copy: "Choose Plan it in your chat, add availability, and agree on a time. Or invite friends to your own plan.",
   },
 ];
 

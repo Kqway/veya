@@ -153,7 +153,8 @@ export function SeekingForm({ profile }: { profile: Profile }) {
       <h2>Your activity, your terms</h2>
       <p>
         Choose what you want to do and real times you are available. No home
-        addresses or precise location.
+        addresses or precise location. Matching uses your activity, meeting format,
+        shared language and overlapping future times.
       </p>
       <fieldset disabled={action.busy}>
         <label className="field">
@@ -188,7 +189,7 @@ export function SeekingForm({ profile }: { profile: Profile }) {
         </button>
         <p className="quiet-copy">
           Optional assistance. Review suggestions before applying them; you can
-          edit every field.
+          edit every field or fill them manually without AI. Unrecognized activities are welcome.
         </p>
         {suggestion && (
           <section className="social-preview" aria-label="Review suggestion">
@@ -241,6 +242,7 @@ export function SeekingForm({ profile }: { profile: Profile }) {
             </div>
           </section>
         )}
+        <p className="quiet-copy">Activity key groups the same activity together. Use a short name such as chess or pottery; join multiple words with hyphens. Activity label is the name people see.</p>
         <div className="social-grid">
           <label className="field">
             Activity key

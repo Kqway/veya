@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render as baseRender, screen, waitFor } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
-import { RecoveryKeyProvider } from "@/features/social/components/recovery-key-provider";
+import { RecoveryKeyProvider, useRecoveryKey } from "@/features/social/components/recovery-key-provider";
 const render = (ui: ReactNode) => baseRender(<RecoveryKeyProvider>{ui}</RecoveryKeyProvider>);
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
@@ -9,6 +9,7 @@ import { ProfilePanel } from "@/features/social/components/profile-panel";
 import { SeekingForm } from "@/features/social/components/seeking-form";
 import { MatchScreen } from "@/features/social/components/match-screen";
 import { IntentComposer } from "@/features/intents/components/intent-composer";
+import type { Profile } from "@/features/social/client";
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("@/features/realtime/client", () => ({ useSocialRefresh: () => ({status: "inactive", reconnect: vi.fn()}) }));
 vi.mock("@/features/notifications/components", () => ({ NotificationBadge: () => null }));
@@ -173,7 +174,7 @@ it("keeps the social draft out of the URL and preserves coordination action", as
   ).toBeInTheDocument();
 });
 
-it("submits a complete manual seeking form with selected local times", async () => {
+it.each([["chess", "Chess"], ["pottery", "Pottery"]])("submits a complete manual %s seeking form with selected local times", async (activityKey, activityLabel) => {
   const fetcher = vi
     .fn()
     .mockResolvedValue(json({ publicKey: "P".repeat(24) }));
@@ -184,8 +185,8 @@ it("submits a complete manual seeking form with selected local times", async () 
     screen.getByLabelText("What do you want to do?"),
     "Play chess online",
   );
-  await user.type(screen.getByLabelText("Activity key"), "chess");
-  await user.type(screen.getByLabelText("Activity label"), "Chess");
+  await user.type(screen.getByLabelText("Activity key"), activityKey);
+  await user.type(screen.getByLabelText("Activity label"), activityLabel);
   await user.selectOptions(screen.getByLabelText("Interaction"), "online");
   await user.click(screen.getAllByRole("button", { name: /^Evening / })[1]!);
   await user.click(screen.getByRole("button", { name: "Create seeking post" }));
@@ -195,7 +196,7 @@ it("submits a complete manual seeking form with selected local times", async () 
   const body = JSON.parse(fetcher.mock.calls[0]![1].body);
   expect(body).toMatchObject({
     rawText: "Play chess online",
-    activityKey: "chess",
+    activityKey,
     interactionMode: "online",
     city: null,
     privacyMode: "INCOGNITO",
@@ -393,4 +394,126 @@ it("delivers an issued key and activates live social after the initiating screen
   finish(json({ profile, recoveryKey: "L".repeat(43) }));
   expect(await screen.findByLabelText("Veya Key")).toHaveValue("L".repeat(43));
   expect(dispatch.mock.calls.filter(([event]) => event.type === "veya:social-profile-changed")).toHaveLength(1);
+});
+
+function IssueKey() {
+  const { showKey } = useRecoveryKey();
+  return <button onClick={() => showKey("C".repeat(43))}>Issue key</button>;
+}
+it("copies a key but keeps it unsaved until explicit acknowledgement", async () => {
+  const user = userEvent.setup();
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+  render(<IssueKey />);
+  await user.click(screen.getByRole("button", { name: "Issue key" }));
+  await user.click(screen.getByRole("button", { name: "Copy Veya Key" }));
+  expect(writeText).toHaveBeenCalledWith("C".repeat(43));
+  expect(await screen.findByRole("status")).toHaveTextContent("Key copied");
+  expect(screen.getByLabelText("Veya Key")).toHaveValue("C".repeat(43));
+  expect(screen.getByText(/lose both this key and your browser session/)).toBeVisible();
+  const leaving = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(leaving);
+  expect(leaving.defaultPrevented).toBe(true);
+  await user.click(screen.getByRole("button", { name: "I saved my key" }));
+  const savedLeaving = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(savedLeaving);
+  expect(savedLeaving.defaultPrevented).toBe(false);
+  expect(localStorage.length).toBe(0);
+  expect(sessionStorage.length).toBe(0);
+  expect(window.location.href).not.toContain("C".repeat(43));
+});
+it("does not restore a copy notice after an acknowledged key is cleared", async () => {
+  const user = userEvent.setup();
+  let finish!: () => void;
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: () => new Promise<void>((resolve) => { finish = resolve; }) } });
+  render(<IssueKey />);
+  await user.click(screen.getByRole("button", { name: "Issue key" }));
+  await user.click(screen.getByRole("button", { name: "Copy Veya Key" }));
+  await user.click(screen.getByRole("button", { name: "I saved my key" }));
+  await user.click(screen.getByRole("button", { name: "Issue key" }));
+  finish();
+  await Promise.resolve();
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});
+it("offers manual copying when clipboard access fails without showing the clipboard error", async () => {
+  const user = userEvent.setup();
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: vi.fn().mockRejectedValue(new Error("secret clipboard provider detail")) } });
+  render(<IssueKey />);
+  await user.click(screen.getByRole("button", { name: "Issue key" }));
+  await user.click(screen.getByRole("button", { name: "Copy Veya Key" }));
+  expect(await screen.findByRole("status")).toHaveTextContent("Select the key and copy it manually");
+  expect(screen.getByLabelText("Veya Key")).toHaveValue("C".repeat(43));
+  expect(screen.queryByText(/secret clipboard provider detail/)).not.toBeInTheDocument();
+});
+it("requires an exact destructive confirmation and deletes only the current profile", async () => {
+  const fetcher = vi.fn().mockResolvedValue(json({ deleted: true }));
+  vi.stubGlobal("fetch", fetcher);
+  const changed = vi.spyOn(window, "dispatchEvent");
+  const user = userEvent.setup();
+  function ProfileState() {
+    const [current, setCurrent] = useState<Profile | null>(profile);
+    return <ProfilePanel profile={current} onProfile={setCurrent} />;
+  }
+  render(<ProfileState />);
+  await user.click(screen.getByRole("button", { name: "Delete Veya profile" }));
+  expect(screen.getByText(/cannot be undone/)).toHaveTextContent("Moderation evidence");
+  const confirm = screen.getByRole("button", { name: "Permanently delete profile" });
+  expect(confirm).toBeDisabled();
+  await user.type(screen.getByLabelText("Type DELETE to confirm"), "delete");
+  expect(confirm).toBeDisabled();
+  await user.click(screen.getByRole("button", { name: "Cancel deletion" }));
+  expect(fetcher).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Delete Veya profile" }));
+  expect(screen.getByLabelText("Type DELETE to confirm")).toHaveValue("");
+  await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
+  await user.click(screen.getByRole("button", { name: "Permanently delete profile" }));
+  expect(await screen.findByRole("button", { name: "Create profile" })).toBeVisible();
+  expect(screen.getByRole("status")).toHaveTextContent("Your social profile was deleted.");
+  expect(screen.getByLabelText("Alias")).toHaveValue("");
+  expect(fetcher).toHaveBeenCalledWith("/api/social/profile", expect.objectContaining({ method: "DELETE", body: JSON.stringify({ confirmation: "DELETE" }) }));
+  expect(changed.mock.calls.some(([event]) => event.type === "veya:social-profile-changed")).toBe(true);
+});
+it("preserves the profile when deletion fails and allows an explicit retry", async () => {
+  const fetcher = vi.fn().mockResolvedValueOnce(json({ error: { code: "SERVICE_UNAVAILABLE" } }, 503)).mockResolvedValueOnce(json({ deleted: true }));
+  vi.stubGlobal("fetch", fetcher);
+  const onProfile = vi.fn();
+  const user = userEvent.setup();
+  render(<ProfilePanel profile={profile} onProfile={onProfile} />);
+  await user.click(screen.getByRole("button", { name: "Delete Veya profile" }));
+  await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
+  await user.click(screen.getByRole("button", { name: "Permanently delete profile" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(/try again/);
+  expect(onProfile).not.toHaveBeenCalled();
+  expect(screen.getByLabelText("Alias")).toHaveValue("Maple");
+  await user.click(screen.getByRole("button", { name: "Permanently delete profile" }));
+  await waitFor(() => expect(onProfile).toHaveBeenCalledWith(null));
+});
+
+it.each(["seek", "discover"])("offers profile deletion to an unavailable owner on %s without unusable onboarding", async (surface) => {
+  const { NewSeekScreen } = await import("@/features/social/components/seek-screen");
+  const { DiscoverScreen } = await import("@/features/social/components/discover-screen");
+  const fetcher = vi.fn().mockResolvedValueOnce(json({ error: { code: "FORBIDDEN" } }, 403)).mockResolvedValueOnce(json({ deleted: true }));
+  vi.stubGlobal("fetch", fetcher);
+  const user = userEvent.setup();
+  render(surface === "seek" ? <NewSeekScreen /> : <DiscoverScreen />);
+  await user.click(await screen.findByRole("button", { name: "Delete Veya profile" }));
+  expect(screen.queryByRole("button", { name: "Create profile" })).not.toBeInTheDocument();
+  await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
+  await user.click(screen.getByRole("button", { name: "Permanently delete profile" }));
+  expect(await screen.findByRole("button", { name: "Create profile" })).toBeVisible();
+  expect(screen.getByRole("status")).toHaveTextContent("Your social profile was deleted.");
+});
+it("explains an invalid or revoked recovery key without erasing the entered key", async () => {
+  const fetcher = vi.fn().mockResolvedValueOnce(json({ authenticated: true })).mockResolvedValueOnce(json({ error: { code: "NOT_FOUND" } }, 404));
+  vi.stubGlobal("fetch", fetcher);
+  const user = userEvent.setup();
+  render(<ProfilePanel profile={null} onProfile={() => {}} />);
+  await user.click(screen.getByRole("button", { name: "Recover with a Veya Key" }));
+  await user.type(screen.getByLabelText("Recovery key"), "O".repeat(43));
+  await user.click(screen.getByRole("button", { name: "Recover profile" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("This Veya Key is invalid or no longer active");
+  expect(screen.getByLabelText("Recovery key")).toHaveValue("O".repeat(43));
+  expect(screen.getByRole("alert")).not.toHaveTextContent("O".repeat(43));
+  expect(localStorage.length).toBe(0);
+  expect(sessionStorage.length).toBe(0);
 });

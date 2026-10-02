@@ -14,6 +14,7 @@ import { ProfilePanel } from "./profile-panel";
 import { SeekingForm } from "./seeking-form";
 export function NewSeekScreen() {
   const [profile, setProfile] = useState<Profile | null>(null),
+    [restricted, setRestricted] = useState(false),
     [loaded, setLoaded] = useState(false);
   const action = useSocialAction();
   const { run } = action;
@@ -23,6 +24,10 @@ export function NewSeekScreen() {
         const data = await socialApi<{ profile: Profile | null }>("/profile");
         if (alive()) setProfile(data.profile);
       } catch (e) {
+        if (e instanceof ApiError && e.status === 403) {
+          if (alive()) setRestricted(true);
+          return;
+        }
         if (!(e instanceof ApiError && e.status === 401)) throw e;
       } finally {
         if (alive()) setLoaded(true);
@@ -35,7 +40,7 @@ export function NewSeekScreen() {
       <SocialError message={action.error} focusRef={action.errorRef} />
       {loaded && (
         <>
-          <ProfilePanel profile={profile} onProfile={setProfile} />
+          <ProfilePanel profile={profile} restricted={restricted} onProfile={(value) => { setProfile(value); setRestricted(false); }} />
           {profile && <SeekingForm profile={profile} />}
         </>
       )}

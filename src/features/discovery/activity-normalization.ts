@@ -1,15 +1,22 @@
-type Activity = { key: string; label: string; aliases: string };
+type Activity = { key: string; label: string; aliases: string; studySubject?: boolean };
 
 /** Explicit, extensible vocabulary. No candidate text or profile attributes are inputs. */
 const catalogue: readonly Activity[] = [
   { key: "chess", label: "Chess", aliases: "chess|шахмат(?:ы|ам|ах|ами)?|шахматишки|поиграть в шахматы|сыграть партию" },
   { key: "gym", label: "Gym", aliases: "gym|спортзал|тренаж[её]рный зал|зал" },
-  { key: "calculus", label: "Calculus study", aliases: "calculus|матанализ(?:а|у|ом|е)?|матан|математический анализ" },
+  { key: "calculus", label: "Calculus study", aliases: "calculus|матанализ(?:а|у|ом|е)?|матан|математический анализ", studySubject: true },
   { key: "walk", label: "Walking", aliases: "walk|walking|прогулк(?:а|и|у|ой)|гулять" },
+  { key: "running", label: "Running", aliases: "run|running|jogging|бег|бегать|пробежк(?:а|и|у|ой)" },
+  { key: "movies", label: "Movies", aliases: "movies?|cinema|films?|кино|фильм(?:ы|а|ов)?|смотреть фильмы" },
+  { key: "gaming", label: "Gaming", aliases: "gaming|video games?|computer games?|видеоигр(?:а|ы|у)|компьютерны[ех] игр(?:ы)?" },
+  { key: "study", label: "Study", aliases: "study|studying|уч[её]б(?:а|ы|у|ой)|учиться" },
+  { key: "programming", label: "Programming", aliases: "programming|coding|программировани(?:е|я|ем)|кодинг", studySubject: true },
   { key: "board-games", label: "Board games", aliases: "board[ -]games?|настолк(?:а|и|у)|настольны[ех] игр(?:ы)?" },
   { key: "coffee", label: "Coffee", aliases: "coffee|кофе" },
   { key: "english-practice", label: "English practice", aliases: "english practice|practi[cs]e english|практик(?:а|и|у) английского" },
-  { key: "football", label: "Football", aliases: "football|футбол" },
+  { key: "football", label: "Football", aliases: "football|soccer|футбол(?:а|у|ом|е)?" },
+  { key: "basketball", label: "Basketball", aliases: "basketball|баскетбол(?:а|у|ом|е)?" },
+  { key: "language-practice", label: "Language practice", aliases: "language practice|practi[cs]e languages?|языковая практика|практик(?:а|и|у) языков|разговорная практика" },
 ];
 const clean = (value: string) => value.normalize("NFC").trim().toLowerCase().replace(/\s+/gu, " ");
 const expressions = catalogue.map((activity) => ({
@@ -17,10 +24,13 @@ const expressions = catalogue.map((activity) => ({
   exact: new RegExp(`^(?:${activity.key}|${activity.aliases})$`, "u"),
   phrase: new RegExp(`(?:^|[^\\p{L}\\p{N}_])(?:${activity.aliases})(?=$|[^\\p{L}\\p{N}_])`, "u"),
 }));
+// A study modifier followed directly by an explicit subject names one activity.
+// Conjunctions such as "study and programming" still remain ambiguous.
+const studyModifier = new RegExp(`(?:^|(?<=[^\\p{L}\\p{N}_]))(?:study|studying|уч[её]ба|учиться) (?=(?:${catalogue.filter((a) => a.studySubject).map((a) => a.aliases).join("|")})(?=$|[^\\p{L}\\p{N}_]))`, "gu");
 
 /** Recognizes an unambiguous activity in the owner's text. Unknown text stays manual. */
 export function normalizeActivity(text: string): { key: string; label: string } | null {
-  const value = clean(text);
+  const value = clean(text).replace(studyModifier, "");
   const matches = expressions.filter((activity) => activity.phrase.test(value));
   if (matches.length !== 1) return null;
   const activity = matches[0]!;

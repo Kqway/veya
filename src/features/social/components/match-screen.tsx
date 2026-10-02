@@ -129,7 +129,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
             <p>You appear here as {match.ownIdentity.alias}.</p>
             <p className="quiet-copy">
               This alias belongs to your pair context. There are no public
-              profile links.
+              profile links. Sharing your name or contact details is optional.
             </p>
             {closed && (
               <p className="social-warning" role="status">
@@ -301,7 +301,8 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                 A Veya plan has a bearer invitation link: anyone with the link
                 can access the plan. Blocking social contact cannot retract a
                 copied link. Your private availability and disclosures are not
-                copied; add availability separately.
+                copied; add availability separately. Both of you join the plan,
+                choose times, then vote on suggestions. The organizer confirms the final time.
               </p>
               {match.planSlug ? (
                 <Link

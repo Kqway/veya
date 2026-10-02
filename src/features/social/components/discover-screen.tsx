@@ -24,6 +24,7 @@ const reasonCopy: Record<string, string> = {
 export function DiscoverScreen() {
   const [profile, setProfile] = useState<Profile | null>(null),
     [loaded, setLoaded] = useState(false),
+    [restricted, setRestricted] = useState(false),
     [posts, setPosts] = useState<OwnPost[]>([]),
     [source, setSource] = useState(""),
     [cards, setCards] = useState<Card[] | null>(null),
@@ -46,6 +47,10 @@ export function DiscoverScreen() {
           }
         }
       } catch (e) {
+        if (e instanceof ApiError && e.status === 403) {
+          if (alive()) setRestricted(true);
+          return;
+        }
         if (!(e instanceof ApiError && e.status === 401)) throw e;
       } finally {
         if (alive()) setLoaded(true);
@@ -58,8 +63,16 @@ export function DiscoverScreen() {
     if (alive()) setCards(data.cards);
   }), [source, run]);
   const live = useSocialRefresh(["discovery", "connections"], reloadCandidates, { enabled: !!profile && !!source && cards !== null && !action.busy });
-  function onProfile(value: Profile) {
+  function onProfile(value: Profile | null) {
+    setRestricted(false);
     setProfile(value);
+    if (!value) {
+      setPosts([]);
+      setSource("");
+      setCards(null);
+      setNotice("");
+      return;
+    }
     if (!profile)
       void run(async (alive) => {
         const own = await socialApi<{ posts: OwnPost[] }>("/seeking");
@@ -78,14 +91,15 @@ export function DiscoverScreen() {
       {profile && <SocialLiveStatus {...live} />}
       {loaded && (
         <>
-          <ProfilePanel profile={profile} onProfile={onProfile} />
+          <ProfilePanel profile={profile} onProfile={onProfile} restricted={restricted} />
           {profile && (
             <>
               <section className="social-card">
                 <h2>Start with your activity</h2>
                 <p>
                   Discovery uses one of your active seeking posts. You can have
-                  up to three active posts.
+                  up to three active posts. Interested sends a request; a private
+                  conversation opens only after the recipient accepts.
                 </p>
                 <Link className="button button-secondary" href="/seek/new">
                   Create a seeking post
@@ -184,7 +198,12 @@ export function DiscoverScreen() {
                 {cards?.length === 0 && (
                   <p className="social-card">
                     No compatible people found for this activity yet. Try
-                    another activity or availability. Your activity is saved until it expires. New compatible posts can appear here; check again later. Veya never sends Interested for you.
+                    another activity or availability. Matching needs the same activity,
+                    compatible format, a shared language and overlapping future times.
+                    Your activity is saved until it expires. New compatible posts can
+                    appear here; check again later. If candidate updates are enabled,
+                    your <Link href="/notifications">notification inbox</Link> can let
+                    you know about a new compatible activity. Veya never sends Interested for you.
                   </p>
                 )}
                 {cards?.map((card) => (

@@ -17,7 +17,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: auto; }
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; }
 button, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
@@ -54,7 +54,10 @@ button, textarea, a { touch-action: manipulation; }
 .composer-bottom p span { font-size: 12px; }
 .button { display: inline-flex; justify-content: center; align-items: center; gap: 16px; min-height: 52px; padding: 14px 24px; border-radius: 999px; border: 1px solid transparent; font-weight: 600; font-size: 15px; transition: background-color 160ms ease, transform 160ms ease; }
 .button-primary { background: var(--accent); color: white; }
-.button-primary:hover { background: #aa351f; transform: translateY(-1px); }
+.button-primary:hover { background: #aa351f; }
+@media (hover: hover) and (pointer: fine) {
+  .button-primary:hover { transform: translateY(-1px); }
+}
 .button-primary:active { transform: translateY(0); }
 .button-secondary { background: var(--paper); border-color: var(--line); }
 .button-secondary:hover { background: #edebdf; }
