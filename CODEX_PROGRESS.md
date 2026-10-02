@@ -34,8 +34,9 @@ No additional Critical/Important issue remains in that reviewed scope.
 - Clean `npm ci`: PASS. `npm run check`: zero-warning lint, strict TypeScript,
   **673 tests / 76 files** (+87 tests / +8 files over the independently checked
   Phase 9 baseline), production build PASS.
-- Full `npm run test:e2e`: **54/54 PASS**, 27 desktop +27 mobile, no retries,
-  including the complete voted plan, recovery/deletion and two-pair privacy journey.
+- Full final `npm run test:e2e`: **56/56 PASS**, 28 desktop +28 mobile, no retries,
+  including the complete voted plan, recovery/deletion, two-pair privacy journey
+  and socket-reset/no-mutation-replay regression (+8 cases over the Phase 9 baseline).
 - `npm audit --json`: PASS, **zero known vulnerabilities** at verification time.
 - The 320px normal-click journey reproduced a touch hover-transform oscillation;
   fine-pointer-only hover transforms corrected it. Full gates also exposed missed
@@ -57,12 +58,22 @@ No additional Critical/Important issue remains in that reviewed scope.
   Preliminary runs interrupted by disk exhaustion were discarded; task-owned stale
   vfs image/cache artifacts were removed and complete gates repeated successfully.
   Actual PostgreSQL/backup smoke is isolated and uses no development/production DB.
+  The smoke wrapper now reuses one operations filesystem: concurrent workers are
+  still independent Node processes/pools, and all database/dedupe/restore assertions
+  remain unchanged. The revised full PostgreSQL smoke passed locally.
 
 **Hosted CI evidence is separate.** Verified Phase 9 starting HEAD `b3b2dcd` passed
 [run 36990321453](https://github.com/Kqway/veya/actions/runs/36990321453).
-The beta commits are published only after local gates. Their workflow must be
-checked against the exact source SHA in [Actions](https://github.com/Kqway/veya/actions);
-no beta hosted result is assumed or implied by the local results in this record.
+Beta HEAD `6f1f0ed` [run 37027471223](https://github.com/Kqway/veya/actions/runs/37027471223)
+passed both actual Docker builds, non-root and real PostgreSQL/worker/backup smoke,
+plus lint/types/673 tests/build/audit. Its browser gate failed (53 passed): the real
+response auditor's Node transport hit ECONNRESET on an idle GET, then the retry
+encountered retained fixture posts. A socket-reset regression reproduced RED, then
+GREEN with a bounded GET-only transport retry and no mutation replay. Disjoint
+future windows isolate retry/repeat fixtures without relaxing exact candidate,
+privacy, blocking or UTC assertions. The affected desktop journeys passed twice.
+The corrected source must pass a fresh exact-SHA hosted workflow before release;
+local results never imply hosted PASS.
 No production HTTPS/database/scheduler/device verification has occurred.
 
 Owner work remains HTTPS hosting/domain, verified PostgreSQL, moderator credential and

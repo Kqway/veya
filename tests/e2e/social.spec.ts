@@ -16,6 +16,7 @@ import type {
   Profile,
   SeekingInput,
 } from "../../src/features/social/client";
+import { fetchAuditedResponse } from "../support/audited-response";
 
 const origin = "http://127.0.0.1:3100";
 const uuid =
@@ -58,7 +59,7 @@ async function observe(page: Page, errors: string[]) {
     if(path==="/api/social/events"){await route.continue();return;}
     const method=route.request().method();
     const work=(async()=>{
-      const response=await route.fetch();
+      const response=await fetchAuditedResponse(route);
       const body:unknown=await response.json();
       const own=/^\/api\/social\/(?:profile|seeking)(?:\/|$)/.test(path);
       const oneTime=method==="POST"&&/^\/api\/social\/profile(?:\/recover|\/key)?$/.test(path);
@@ -196,12 +197,12 @@ async function customTime(page: Page, date: string) {
   ).toHaveCount(1);
 }
 
-async function tomorrow(page: Page) {
-  return page.evaluate(() => {
+async function tomorrow(page: Page, offset = 1) {
+  return page.evaluate((days) => {
     const day = new Date();
-    day.setDate(day.getDate() + 1);
+    day.setDate(day.getDate() + days);
     return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-  });
+  }, offset);
 }
 
 async function joinPlan(
@@ -279,7 +280,9 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
       .getByRole("combobox", { name: "Skill", exact: true })
       .selectOption("intermediate");
     await page.getByLabel("Languages", { exact: true }).fill(language);
-    const date = await tomorrow(page);
+    // Retrying/repeating a failed journey retains its DB fixture. Keep actual
+    // chess/Moscow/language matching, with disjoint future windows per attempt.
+    const date = await tomorrow(page, 1 + testInfo.retry + testInfo.repeatEachIndex * 2);
     await customTime(page, date);
     const postResponse = responseFor(page, "/api/social/seeking");
     await page

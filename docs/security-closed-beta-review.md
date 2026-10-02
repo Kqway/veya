@@ -148,3 +148,22 @@ contention in the managed workspace.
 Final reviewer follow-up at `75a4ee6` found no new Critical/Important issue in the
 CSS/cold-start/copy/test changes. Implementer full verification remains separate:
 673 tests/76 files and 54/54 desktop/mobile E2E, with no retries.
+
+## Hosted browser transport follow-up
+
+At `6f1f0ed`, hosted container/database gates passed; one desktop browser journey
+failed because the test auditor's upstream `route.fetch` received ECONNRESET.
+The failure trace established a transport error before response projection, then
+a second attempt encountered compatible posts left by the first attempt.
+No application authorization or blocking failure was demonstrated by this trace.
+
+A real local HTTP socket-reset regression first failed with the original auditor,
+then passed with exactly one GET-only ECONNRESET retry; POST is asserted to make
+exactly one attempt. HTTP error responses are not retried. Disjoint future windows
+isolate retry/repeat fixtures while retaining real chess/Moscow/language matching,
+exactly one candidate and all privacy/UTC/block assertions. An independent read-only
+follow-up found no new Critical/Important issue in these infrastructure changes or
+the operations-container reuse; concurrent worker processes/pools and unchanged
+database assertions were checked. The controller also restricted the transport
+fixture to its resource endpoint so unrelated browser requests cannot alter counts.
+Full final application and hosted evidence is recorded separately in CODEX_PROGRESS.md.

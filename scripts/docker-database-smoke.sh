@@ -8,7 +8,7 @@ postgres_image="${3:-postgres:18-bookworm}"
 smoke_prefix="veya-db-smoke-$$"
 smoke_tmp="$(mktemp -d)"
 cleanup() {
-  docker rm --force "$smoke_prefix-web" "$smoke_prefix-db" >/dev/null 2>&1 || true
+  docker rm --force "$smoke_prefix-web" "$smoke_prefix-operations" "$smoke_prefix-db" >/dev/null 2>&1 || true
   rm -rf "$smoke_tmp"
 }
 trap cleanup EXIT
@@ -35,8 +35,13 @@ for attempt in {1..60}; do
   if [[ "$attempt" == 60 ]]; then exit 1; fi
   sleep 1
 done
+# Reuse the image filesystem, particularly on vfs Docker drivers. Each exec starts
+# an independent CLI process/pool; concurrent workers still coordinate only via PG.
+docker run --detach --init --name "$smoke_prefix-operations" --network "container:$smoke_prefix-db" \
+  --env-file "$smoke_tmp/runtime.env" "$operations_image" sleep infinity >/dev/null
+[[ "$(docker exec "$smoke_prefix-operations" id -u)" == 1000 ]]
 operations() {
-  docker run --rm --init --network "container:$smoke_prefix-db" --env-file "$smoke_tmp/runtime.env" "$operations_image" "$@"
+  docker exec "$smoke_prefix-operations" "$@"
 }
 operations npm run db:migrate
 operations npm run db:migrate
@@ -97,7 +102,7 @@ if docker exec --env PGSERVICEFILE=/tmp/pg_service.conf --env PGSERVICE=source "
 docker exec --env PGSERVICEFILE=/tmp/pg_service.conf --env RESTORE_PGSERVICE=restore "$smoke_prefix-db" bash /tmp/restore.sh /tmp/veya.dump
 if docker exec --env PGSERVICEFILE=/tmp/pg_service.conf --env RESTORE_PGSERVICE=source "$smoke_prefix-db" bash /tmp/restore.sh /tmp/veya.dump >/dev/null 2>&1; then exit 1; fi
 sed 's@/veya_smoke$@/veya_restore@' "$smoke_tmp/runtime.env" > "$smoke_tmp/restore.env"
-docker run --rm --init --network "container:$smoke_prefix-db" --env-file "$smoke_tmp/restore.env" "$operations_image" npm run db:verify
+docker exec --env-file "$smoke_tmp/restore.env" "$smoke_prefix-operations" npm run db:verify
 [[ "$(docker exec "$smoke_prefix-db" psql --username=veya_smoke --dbname=veya_restore --no-psqlrc -Atc "SELECT count(*) FROM social_notifications WHERE type='CANDIDATE_FOUND'")" == 2 ]]
 # Missing-table readiness must fail safely; checksums can be corrupted in this disposable fixture.
 docker exec "$smoke_prefix-db" psql --username=veya_smoke --dbname=veya_smoke --no-psqlrc -c "UPDATE veya_schema_migrations SET checksum='bad'" >/dev/null
