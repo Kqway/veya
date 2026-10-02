@@ -87,6 +87,20 @@ Three valid sequential desktop journey/recovery pairs passed (6/6) without retri
 An exploratory fourth repeat selected day7, outside the unchanged picker horizon;
 its explicit validation rejection was diagnosed as invalid stress-fixture input,
 not treated as a passing run or a reason to relax the product's time bounds.
+At `d9b6e0a`, strict [run 37057659178](https://github.com/Kqway/veya/actions/runs/37057659178)
+passed container and native/build/audit gates, but browser execution failed (55/56).
+The retained trace showed HTTP429/Retry-After5: parallel independent journeys exhausted
+unchanged global production read budgets. Journeys now run serially; simultaneous
+actors within realtime cases and independent worker processes remain concurrent.
+Production limits, privacy assertions and first-attempt release gates remain intact.
+Discovery now distinguishes failed activity loading from a genuinely empty list and
+provides explicit retry. Independent review found and confirmed correction of a P2
+late-response/deletion UI race; generation guards discard obsolete results/errors.
+Five new UI regressions pass (26/26 targeted). Fresh npmci/check/audit on corrected
+sources passed: **678 tests /76 files**, zero-warning lint/types/build, audit0.
+The corrected full browser and exact-SHA hosted gates are still pending; earlier
+local/hosted results are not claimed as verification of this correction.
+
 No production HTTPS/database/scheduler/device verification has occurred.
 
 Owner work remains HTTPS hosting/domain, verified PostgreSQL, moderator credential and

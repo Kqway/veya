@@ -15,7 +15,9 @@ export default defineConfig({
   // A release gate must fail on its first broken journey, even if retrying could
   // pass. Preserve the first trace rather than accepting a flaky hosted result.
   retries: 0,
-  workers: 2,
+  // Independent journeys share the real global production quotas in one isolated
+  // database. Pace them; realtime journeys still run multiple actors together.
+  workers: 1,
   reporter: "list",
   use: {
     baseURL: "http://127.0.0.1:3100",

@@ -167,3 +167,28 @@ the operations-container reuse; concurrent worker processes/pools and unchanged
 database assertions were checked. The controller also restricted the transport
 fixture to its resource endpoint so unrelated browser requests cannot alter counts.
 Full final application and hosted evidence is recorded separately in CODEX_PROGRESS.md.
+
+## Production quota and deletion UI follow-up
+
+The strict hosted gate at `d9b6e0a` failed with 55 browser cases passing: its trace
+showed HTTP429/Retry-After5 on own-seeking and unread reads. Parallel independent
+journeys exhausted the real shared global read quota; production budgets and
+fail-closed enforcement were correct. Browser journeys now run serially while
+simultaneous actors within realtime cases and independent database worker processes
+remain concurrent. No production quota was increased or bypassed.
+
+Two UI regressions reproduced failed own-post loading being presented as an empty
+list (HTTP429 and503). Discovery now distinguishes unloaded/error state and offers
+an explicit Retry activities action, without automatic polling or sending interest.
+Independent review then found a P2 race: a delayed retry profile response could
+restore the displayed identity after successful deletion. A deferred-response test
+reproduced that failure before correction. Generation checks now ignore obsolete
+profile/post/candidate responses and action completions/errors after profile changes.
+All five new cases passed within the 26-case UI suite. Independent read-only
+re-review confirmed the fix and found no additional Important/Critical issue.
+
+The restore procedure explicitly documents that historical backups can restore
+previously deleted content or revoked credentials. There is no external automatic
+deletion/revocation journal. Reconciliation or verified point-in-time recovery is an
+operator requirement before promotion; uncertain restored data must stay isolated.
+Encrypted backups retain old content until their documented bounded expiry.

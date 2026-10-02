@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render as baseRender, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render as baseRender, screen, waitFor } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { RecoveryKeyProvider, useRecoveryKey } from "@/features/social/components/recovery-key-provider";
 const render = (ui: ReactNode) => baseRender(<RecoveryKeyProvider>{ui}</RecoveryKeyProvider>);
@@ -31,6 +31,70 @@ afterEach(() => {
   sessionStorage.clear();
   localStorage.clear();
   push.mockClear();
+});
+it.each([429, 503])("keeps failed activity loading distinct from an empty list and retries explicitly (%s)", async (status) => {
+  const { DiscoverScreen } = await import("@/features/social/components/discover-screen");
+  const post = { publicKey: "p".repeat(24), status: "active", activityLabel: "Chess" };
+  const fetcher = vi.fn()
+    .mockResolvedValueOnce(json({ profile }))
+    .mockResolvedValueOnce(json({ error: { code: status === 429 ? "RATE_LIMITED" : "SERVICE_UNAVAILABLE" } }, status))
+    .mockResolvedValueOnce(json({ profile }))
+    .mockResolvedValueOnce(json({ posts: [post] }));
+  vi.stubGlobal("fetch", fetcher);
+  const user = userEvent.setup();
+  render(<DiscoverScreen />);
+  await screen.findByRole("alert");
+  expect(screen.queryByText(/No active seeking posts yet/)).not.toBeInTheDocument();
+  expect(screen.queryByRole("combobox", { name: "Your active activity" })).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Retry activities" }));
+  expect(await screen.findByRole("combobox", { name: "Your active activity" })).toHaveValue(post.publicKey);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(fetcher).toHaveBeenCalledTimes(4);
+});
+it.each(["profile", "posts", "created"])("ignores a late %s response after profile deletion", async (phase) => {
+  const { DiscoverScreen } = await import("@/features/social/components/discover-screen");
+  let release!: (response: Response) => void;
+  const deferred = new Promise<Response>(resolve => { release = resolve; });
+  let profileReads = 0, postReads = 0;
+  const fetcher = vi.fn((path: string, options?: RequestInit): Promise<Response> => {
+    if (options?.method === "DELETE") return Promise.resolve(json({ deleted: true }));
+    if (path === "/api/session") return Promise.resolve(json({ authenticated: true }));
+    if (path === "/api/social/profile" && options?.method === "POST") return Promise.resolve(json({ profile, recoveryKey: "Q".repeat(43) }));
+    if (path === "/api/social/profile") {
+      profileReads++;
+      return phase === "profile" && profileReads === 2 ? deferred : Promise.resolve(json({ profile: phase === "created" ? null : profile }));
+    }
+    postReads++;
+    if (phase !== "created" && postReads === 1) return Promise.resolve(json({ error: { code: "RATE_LIMITED" } }, 429));
+    if (phase !== "profile") return deferred;
+    return Promise.resolve(json({ posts: [{ publicKey: "p".repeat(24), status: "active", activityLabel: "Old activity" }] }));
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const user = userEvent.setup();
+  render(<DiscoverScreen />);
+  if (phase === "created") {
+    await user.type(await screen.findByLabelText("Alias"), "Maple");
+    await user.click(screen.getByLabelText("I am 18 or older"));
+    await user.click(screen.getByRole("button", { name: "Create profile" }));
+    await user.click(await screen.findByRole("button", { name: "I saved my key" }));
+    await waitFor(() => expect(postReads).toBe(1));
+  } else {
+    await user.click(await screen.findByRole("button", { name: "Retry activities" }));
+    await waitFor(() => expect(profileReads).toBe(2));
+    if (phase === "posts") await waitFor(() => expect(postReads).toBe(2));
+  }
+  await user.click(screen.getByRole("button", { name: "Delete Veya profile" }));
+  await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
+  await user.click(screen.getByRole("button", { name: "Permanently delete profile" }));
+  expect(await screen.findByRole("button", { name: "Create profile" })).toBeVisible();
+  await act(async () => {
+    release(json(phase === "profile" ? { profile } : { posts: [{ publicKey: "p".repeat(24), status: "active", activityLabel: "Old activity" }] }));
+  });
+  expect(screen.getByRole("button", { name: "Create profile" })).toBeVisible();
+  expect(screen.queryByRole("combobox", { name: "Your active activity" })).not.toBeInTheDocument();
+  expect(screen.queryByText("Old activity")).not.toBeInTheDocument();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(postReads).toBe(phase === "posts" ? 2 : 1);
 });
 it("requires explicit adult consent and shows a selectable one-time key without storing it", async () => {
   const fetcher = vi

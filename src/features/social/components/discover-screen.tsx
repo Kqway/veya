@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useSocialRefresh } from "@/features/realtime/client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/features/entry/client";
 import {
   socialApi,
@@ -24,6 +24,7 @@ const reasonCopy: Record<string, string> = {
 export function DiscoverScreen() {
   const [profile, setProfile] = useState<Profile | null>(null),
     [loaded, setLoaded] = useState(false),
+    [postsLoaded, setPostsLoaded] = useState(false),
     [restricted, setRestricted] = useState(false),
     [posts, setPosts] = useState<OwnPost[]>([]),
     [source, setSource] = useState(""),
@@ -31,53 +32,69 @@ export function DiscoverScreen() {
     [notice, setNotice] = useState("");
   const action = useSocialAction();
   const { run } = action;
-  useEffect(() => {
-    void run(async (alive) => {
+  const loadGeneration = useRef(0);
+  const runCurrent = useCallback((work: (current: () => boolean) => Promise<void>) =>
+    run(async (alive) => {
+      const generation = loadGeneration.current;
+      const current = () => alive() && generation === loadGeneration.current;
+      try { await work(current); }
+      catch (error) { if (current()) throw error; }
+    }), [run]);
+  const loadActivities = useCallback(() => run(async (alive) => {
+      const generation = ++loadGeneration.current;
+      const current = () => alive() && generation === loadGeneration.current;
+      setPostsLoaded(false);
       try {
         const data = await socialApi<{ profile: Profile | null }>("/profile");
-        if (!alive()) return;
+        if (!current()) return;
         setProfile(data.profile);
         if (data.profile) {
           const own = await socialApi<{ posts: OwnPost[] }>("/seeking");
-          if (alive()) {
+          if (current()) {
             setPosts(own.posts);
+            setPostsLoaded(true);
             setSource(
               own.posts.find((p) => p.status === "active")?.publicKey ?? "",
             );
           }
         }
       } catch (e) {
+        if (!current()) return;
         if (e instanceof ApiError && e.status === 403) {
-          if (alive()) setRestricted(true);
+          if (current()) setRestricted(true);
           return;
         }
         if (!(e instanceof ApiError && e.status === 401)) throw e;
       } finally {
-        if (alive()) setLoaded(true);
+        if (current()) setLoaded(true);
       }
-    });
-  }, [run]);
-  const reloadCandidates = useCallback(() => run(async (alive) => {
+    }), [run]);
+  useEffect(() => { void loadActivities(); }, [loadActivities]);
+  const reloadCandidates = useCallback(() => runCurrent(async (alive) => {
     if (!source) return;
     const data = await socialApi<{ cards: Card[] }>(`/discover?source=${encodeURIComponent(source)}`);
     if (alive()) setCards(data.cards);
-  }), [source, run]);
+  }), [source, runCurrent]);
   const live = useSocialRefresh(["discovery", "connections"], reloadCandidates, { enabled: !!profile && !!source && cards !== null && !action.busy });
   function onProfile(value: Profile | null) {
+    ++loadGeneration.current;
     setRestricted(false);
     setProfile(value);
     if (!value) {
       setPosts([]);
+      setPostsLoaded(false);
       setSource("");
       setCards(null);
       setNotice("");
       return;
     }
     if (!profile)
-      void run(async (alive) => {
+      void runCurrent(async (alive) => {
+        setPostsLoaded(false);
         const own = await socialApi<{ posts: OwnPost[] }>("/seeking");
         if (alive()) {
           setPosts(own.posts);
+          setPostsLoaded(true);
           setSource(
             own.posts.find((p) => p.status === "active")?.publicKey ?? "",
           );
@@ -88,6 +105,12 @@ export function DiscoverScreen() {
     <SocialShell title="Find compatible people">
       {!loaded && <p role="status">Loading your profile…</p>}
       <SocialError message={action.error} focusRef={action.errorRef} />
+      {loaded && (action.error || profile) && !postsLoaded && !restricted && (
+        <button className="button button-secondary" disabled={action.busy}
+          onClick={() => { void loadActivities(); }}>
+          Retry activities
+        </button>
+      )}
       {profile && <SocialLiveStatus {...live} />}
       {loaded && (
         <>
@@ -104,7 +127,9 @@ export function DiscoverScreen() {
                 <Link className="button button-secondary" href="/seek/new">
                   Create a seeking post
                 </Link>
-                {posts.some((p) => p.status === "active") ? (
+                {!postsLoaded ? (
+                  <p role="status">{restricted ? "Your social activities are unavailable to this session." : action.busy ? "Loading your activities…" : "Your activities could not be loaded. Use Retry activities to try again."}</p>
+                ) : posts.some((p) => p.status === "active") ? (
                   <>
                     <label className="field">
                       Your active activity
@@ -129,7 +154,7 @@ export function DiscoverScreen() {
                       className="button button-primary"
                       disabled={action.busy || !source}
                       onClick={() => {
-                        void run(async (alive) => {
+                        void runCurrent(async (alive) => {
                           const data = await socialApi<{ cards: Card[] }>(
                             `/discover?source=${encodeURIComponent(source)}`,
                           );
@@ -163,7 +188,7 @@ export function DiscoverScreen() {
                           className="social-text-button"
                           disabled={action.busy}
                           onClick={() => {
-                            void run(async (alive) => {
+                            void runCurrent(async (alive) => {
                               await socialApi(
                                 `/seeking/${encodeURIComponent(post.publicKey)}`,
                                 "DELETE",
@@ -245,7 +270,7 @@ export function DiscoverScreen() {
                         className="button button-primary"
                         disabled={action.busy}
                         onClick={() => {
-                          void run(async (alive) => {
+                          void runCurrent(async (alive) => {
                             await socialApi("/connections", "POST", {
                               handle: card.handle,
                             });
@@ -269,7 +294,7 @@ export function DiscoverScreen() {
                         className="button button-secondary"
                         disabled={action.busy}
                         onClick={() => {
-                          void run(async (alive) => {
+                          void runCurrent(async (alive) => {
                             await socialApi(
                               `/discover/${encodeURIComponent(card.handle)}/pass`,
                               "POST",
