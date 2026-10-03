@@ -67,6 +67,7 @@ Files: tests/e2e/beta.spec.ts, isolated container smoke, review document.
 - [x] Fresh npm ci/lint/typecheck/test/build/audit/E2E; runner+operations Docker builds,
   non-root/actual DB migrations/workers/backup restore smoke; preserve old SQL hashes.
 - [x] Update README/progress/checklist/deployment/security with exact counts and limitations.
-- [ ] Normal publication and observe exact remote CI; no production deployment.
-  Local verification is complete; hosted evidence is recorded after publication.
+- [x] Normal publication and observe exact application-source CI; no production deployment.
+  Source95187be passed hosted run37063414137 and local681/76 plus56/56 first-attempt.
+  The documentation-only release-evidence commit repeats CI before handoff.
 - [x] Report concrete owner env/deploy/worker/device checklist.

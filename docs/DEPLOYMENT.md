@@ -111,7 +111,7 @@ proposals until maintenance ends. Connection reads preserve recorded status with
 expiring requests. Apply changed flags to **both web and worker**
 environments and restart them; an already-running invocation can finish current work.
 
-Optional configuration:
+Integration and credential details:
 
 - `AI_PROVIDER=mock` works without paid APIs. Set server-only `OPENAI_API_KEY` to use
   OpenAI, with optional bounded `OPENAI_MODEL`; provider failure retains local fallback.

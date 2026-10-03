@@ -12,7 +12,9 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
   Playwright Chromium on non-root runners; both desktop/mobile projects execute.
   Browser retries are disabled: a broken first attempt fails the gate. Every run
   retains verification logs and available screenshots/traces, including cleanup
-  failures. No real DB or paid AI is used.
+  failures. Independent journeys are paced within unchanged global production
+  budgets; simultaneous actors and concurrent worker processes remain covered.
+  No development/production database or paid AI is used.
 - E2E covers original coordination, incognito seeking/discovery/request/match/chat/
   disclosure/plan/results/block/recovery, two users live simultaneously, realtime
   reconnect repair, notification inbox, unsupported/denied push, protected moderator
@@ -66,7 +68,10 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
   empty queue does not establish that the scheduler is healthy.
 - Protect runtime secrets, backups and proxy logs. Never log cookies/recovery keys,
   private intent/chat/disclosure bodies or exact availability. Regularly restore an
-  encrypted backup into an isolated environment and measure recovery time.
+  encrypted backup into an isolated environment and measure recovery time. Before
+  promotion, reconcile post-backup deletions, revoked keys/sessions, blocks and
+  moderation state; this release has no external automatic revocation journal.
+  Keep uncertain restores isolated. See DEPLOYMENT.md for the complete procedure.
 - Confirm actual remote GitHub Actions PASS for the published commit; local PASS does
   not establish hosted PASS. Test real TLS certificates, proxy streaming and mobile
   devices/Safari separately. No production deployment is performed by this task.

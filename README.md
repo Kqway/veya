@@ -602,8 +602,10 @@ Core local flows need only this application and PostgreSQL. Email/SMS, external
 identity/chat/avatar providers, Redis, GPS, remote fonts and paid AI are not required.
 A public production launch still needs a configured HTTPS host, managed database,
 backups, host/gateway connection controls, scheduled workers and human report
-handling. Shared PostgreSQL limits are implemented. Remote Node24 CI is separately verified for the
-Phase 9 baseline (see CODEX_PROGRESS.md); beta hosted CI is checked on its published SHA.
+handling. Shared PostgreSQL limits are implemented. Closed-beta application source
+`95187be` passed local and hosted Node24 gates: 681 tests / 76 files, 56/56 first-attempt
+desktop/mobile E2E and audit0. Hosted CI also passed both container/database smokes. See CODEX_PROGRESS.md
+for the exact source SHA, workflow and the separate baseline/failure history.
 Actual deployment, optional live OpenAI/
 push and device/browser compatibility remain host checks. No deployment occurred.
 

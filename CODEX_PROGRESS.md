@@ -32,7 +32,7 @@ No additional Critical/Important issue remains in that reviewed scope.
 **Final local application evidence, 2026-10-02 (Node 24.19.0):**
 
 - Clean `npm ci`: PASS. `npm run check`: zero-warning lint, strict TypeScript,
-  **673 tests / 76 files** (+87 tests / +8 files over the independently checked
+  **681 tests / 76 files** (+95 tests / +8 files over the independently checked
   Phase 9 baseline), production build PASS.
 - Full final `npm run test:e2e`: **56/56 PASS**, 28 desktop +28 mobile, no retries,
   including the complete voted plan, recovery/deletion, two-pair privacy journey
@@ -49,8 +49,8 @@ No additional Critical/Important issue remains in that reviewed scope.
   isolated PostgreSQL smoke applied all 18 migrations, reran idempotently, verified
   schema, concurrent candidate processing/dedupe and no automatic Interested,
   worker/retention previews, ready/unavailable states and protected backup/restore.
-- Final runner and operations image builds: PASS; fresh UID1000 health/missing-DB
-  migration/worker smoke PASS. Runner `sha256:d138b6e6b905c5e52a72957690a5fe8ce5d0342e3432676a95e0eeffbdf7fe7f`;
+- Local runner and operations builds before the browser follow-ups: PASS;
+  fresh UID1000 health/missing-DB migration/worker smoke PASS. Runner `sha256:d138b6e6b905c5e52a72957690a5fe8ce5d0342e3432676a95e0eeffbdf7fe7f`;
   operations `sha256:7c3a5b0927470932aebf148a929baed9b02d93ed8dc0e7acf93d79354da71249`.
   Docker Hub exhausted the workspace's anonymous pull budget; local builds used
   the identical cached official Node24 base digest `0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6`
@@ -62,6 +62,30 @@ No additional Critical/Important issue remains in that reviewed scope.
   still independent Node processes/pools, and all database/dedupe/restore assertions
   remain unchanged. The revised full PostgreSQL smoke passed locally.
 
+**Final hosted application evidence, independently observed 2026-10-03:**
+
+[Run 37063414137](https://github.com/Kqway/veya/actions/runs/37063414137), source
+`95187bef1011b47fa40a6606019897e0508e5fe4`, completed both jobs successfully.
+Hosted Node24 clean npmci/lint/types/**681 tests/76 files**/production build/audit0,
+**56/56 first-attempt desktop/mobile browser cases** (2.4min), both normal repository
+Docker targets, non-root smoke and actual isolated PG18 migrations/concurrent workers/
+readiness/protected backup-restore passed. Current source also passed the final local
+check/audit and full56/56 browser gate (3.7min) after the last logging correction.
+No application changes follow this verified source; the release-evidence commit only
+updates documentation. Check the current published SHA on the
+[workflow page](https://github.com/Kqway/veya/actions/workflows/ci.yml) before rollout.
+
+Discovery now distinguishes load failure from no activities and offers explicit retry.
+Delayed responses cannot restore deleted profile state. Background reads in discovery,
+connections and chat have separate bounded locks; manual actions and blocks invalidate
+old state. Deferred-read regressions prove Interested/Accept/Send stay actionable,
+perform one explicit POST and cannot be overwritten by stale results. UI29/29 and
+independent follow-up reviews passed. Exhausted LISTEN recovery logs one fixed event
+with numeric counters only; its existing retry test reproduced RED then GREEN, and
+hub/API-logging targeted5/5 passed. No production limits/assertions were weakened.
+
+**Earlier beta gate history (superseded by the final evidence above).**
+
 **Hosted CI evidence is separate.** Verified Phase 9 starting HEAD `b3b2dcd` passed
 [run 36990321453](https://github.com/Kqway/veya/actions/runs/36990321453).
 Beta HEAD `6f1f0ed` [run 37027471223](https://github.com/Kqway/veya/actions/runs/37027471223)
@@ -72,8 +96,8 @@ encountered retained fixture posts. A socket-reset regression reproduced RED, th
 GREEN with a bounded GET-only transport retry and no mutation replay. Disjoint
 future windows isolate retry/repeat fixtures without relaxing exact candidate,
 privacy, blocking or UTC assertions. The affected desktop journeys passed twice.
-The corrected source must pass a fresh exact-SHA hosted workflow before release;
-local results never imply hosted PASS.
+A fresh exact-SHA hosted workflow was required after that correction;
+local results never imply hosted PASS. Later runs are recorded below.
 At `b41c15d`, [run 37056311245](https://github.com/Kqway/veya/actions/runs/37056311245)
 was green but one desktop journey timed out and passed on retry (55 first-attempt
 passes plus one flaky). That is not accepted as final release evidence. CI now
@@ -98,8 +122,8 @@ provides explicit retry. Independent review found and confirmed correction of a 
 late-response/deletion UI race; generation guards discard obsolete results/errors.
 Five new UI regressions pass (26/26 targeted). Fresh npmci/check/audit on corrected
 sources passed: **678 tests /76 files**, zero-warning lint/types/build, audit0.
-The corrected full browser and exact-SHA hosted gates are still pending; earlier
-local/hosted results are not claimed as verification of this correction.
+The corrected full browser/hosted gates were pending at that checkpoint; their
+later outcomes are recorded below, separately from earlier source verification.
 
 At `10da84f`, [run 37060563837](https://github.com/Kqway/veya/actions/runs/37060563837)
 passed both hosted jobs:678 tests/76 files,56/56 browser cases on their first attempt,
@@ -112,7 +136,8 @@ A deterministic deferred-background UI regression reproduced RED before the fix.
 Background reads now use a separate bounded lock; manual actions/selection changes
 invalidate their stale results. UI27/27 and independent read-only re-review passed.
 Fresh corrected check passed **679 tests/76 files**, lint/types/build and audit0;
-its full local browser and exact corrected-SHA hosted gates are pending.
+its full local browser and hosted gates were pending at that checkpoint; see the
+subsequent recorded outcomes.
 
 At `d872337`, [run 37061389126](https://github.com/Kqway/veya/actions/runs/37061389126)
 passed679 native tests/build/audit and both container/database gates, but hosted
@@ -122,8 +147,8 @@ Neither run is accepted as final evidence. Two deferred-read UI regressions
 reproduced these actions being disabled; foreground/background read separation and
 generation checks now cover Connections and Match as well. UI29/29 and independent
 read-only re-review passed. Corrected complete check: **681 tests/76 files**,
-lint/types/build and audit0. Its fresh full local browser and exact-SHA hosted gates
-are pending; no failing run is discarded from this record.
+lint/types/build and audit0. Its full local/hosted gates were pending at that
+checkpoint; subsequent verification follows. No failed run is discarded here.
 
 At `353de4f`, [run 37062608458](https://github.com/Kqway/veya/actions/runs/37062608458)
 passed both hosted jobs: **681 tests/76 files,56/56 first-attempt desktop/mobile**,
@@ -131,8 +156,8 @@ production build/audit0, both actual Docker builds, non-root and real PG/worker/
 smokes. The same social source passed local full56/56 with no retries (3.8min).
 The final observability check reproduced missing LISTEN exhaustion logging RED, then
 added one fixed numeric-only event. Independent review and targeted5/5 passed;
-current full check still passes681/76 plus lint/types/build/audit0. A fresh browser
-and exact-SHA hosted run will verify this final logging addition separately.
+current full check passed681/76 plus lint/types/build/audit0. The final browser and
+hosted verification of that logging addition is recorded above.
 
 No production HTTPS/database/scheduler/device verification has occurred.
 
