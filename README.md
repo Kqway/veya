@@ -612,7 +612,9 @@ handling. Shared PostgreSQL limits are implemented. Closed-beta application sour
 passed local Node24 gates: **689 tests / 77 files**, **56/56 first-attempt desktop/mobile
 E2E**, production build and audit0. Both normal Docker builds, non-root execution,
 Cyrillic image rendering and isolated PostgreSQL migration/worker/backup/restore smokes
-passed. See CODEX_PROGRESS.md for separate remote CI evidence and baseline/failure history.
+passed. The same source also passed both hosted jobs in
+[run 37155067183](https://github.com/Kqway/veya/actions/runs/37155067183).
+See CODEX_PROGRESS.md for the exact verified source and baseline/failure history.
 Actual deployment, optional live OpenAI/
 push and device/browser compatibility remain host checks. No deployment occurred.
 

@@ -35,8 +35,13 @@ Earlier translation selector failures were corrected without loosening behaviora
 assertions. A container smoke hit local VFS ENOSPC; only old task-owned images/cache
 were removed and the complete database smoke reran successfully.
 
-**Remote evidence for this change:** pending the new commit/push; prior release evidence
-below remains separate. No production deployment/domain purchase occurred. Intavro is
+**Remote evidence for this change: PASS.** Source
+`394624bf89c3d739ed3f36b7e2ba6859954bf8ec`, [run 37155067183](https://github.com/Kqway/veya/actions/runs/37155067183):
+quality job `111296666358` and container job `111296666210` both SUCCESS. Hosted
+Node24 checks independently reproduced 689 tests/77 files, audit0 and 56/56 desktop/
+mobile first-attempt E2E; normal images/non-root and isolated PostgreSQL/OG/worker/
+backup/restore smokes PASS. This follow-up records verified source evidence; historical
+release evidence below remains separate. No production deployment/domain purchase occurred. Intavro is
 an invented international brand candidate: available GitHub repository-name search
 returned no match, but public search was blocked here. Domain/trademark availability
 still requires owner verification; no universal/legal uniqueness is asserted.
