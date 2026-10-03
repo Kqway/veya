@@ -225,3 +225,17 @@ realtime_unavailable event with only numeric attempts at exhausted recovery. Nor
 shutdown emits no extra failure, and no URL/credentials/profile/error content is
 logged. Hub/API-logging targeted5/5 passed; independent read-only review confirmed
 unchanged retry timing, authorization and subscriber cleanup.
+
+On 2026-10-03 a fresh hosted audit reported High GHSA-vfj7-8cjw-p6xm in the
+development-only Next ESLint fast-glob → micromatch → braces chain. No patched
+braces release existed at the check. The chain was removed through a scoped,
+repository-owned directory-root adapter backed by pinned tinyglobby, without
+downgrading Next, disabling lint rules or accepting an audit exception.
+Configured directory sets remain equivalent: recursive expansion is disabled;
+brace nesting above64 is rejected before parsing. This guard protects that narrow
+developer-configured call and is not a general hostile-glob sandbox.
+Regression tests invoke the actual installed Next utility: default/configured roots
+and the excessive nesting case3/3PASS, with the guard first reproduced RED.
+Independent read-only re-review confirmed the scoped resolution, clean-install/
+Docker inputs, absence of braces/micromatch and audit0. No Important/Critical
+finding in the reviewed replacement; no production authorization/privacy code changed.

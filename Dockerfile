@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 FROM node:24-bookworm-slim AS dependencies
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
+COPY tools/next-root-glob ./tools/next-root-glob
 RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
     npm ci --strict-ssl=true

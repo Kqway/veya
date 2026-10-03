@@ -29,6 +29,11 @@
     "db:restore": "bash scripts/restore.sh",
     "ops:status": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/status.ts"
   },
+  "overrides": {
+    "@next/eslint-plugin-next": {
+      "fast-glob": "file:../../../tools/next-root-glob"
+    }
+  },
   "dependencies": {
     "date-fns": "^4.1.0",
     "next": "16.3.8",

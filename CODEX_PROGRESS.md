@@ -29,7 +29,7 @@ regression tests, fixed and independently re-reviewed. See
 [closed-beta review](docs/security-closed-beta-review.md) for evidence and limits.
 No additional Critical/Important issue remains in that reviewed scope.
 
-**Final local application evidence, 2026-10-02 (Node 24.19.0):**
+**Verified application evidence before dependency follow-up, 2026-10-02 (Node 24.19.0):**
 
 - Clean `npm ci`: PASS. `npm run check`: zero-warning lint, strict TypeScript,
   **681 tests / 76 files** (+95 tests / +8 files over the independently checked
@@ -54,7 +54,7 @@ No additional Critical/Important issue remains in that reviewed scope.
   operations `sha256:7c3a5b0927470932aebf148a929baed9b02d93ed8dc0e7acf93d79354da71249`.
   Docker Hub exhausted the workspace's anonymous pull budget; local builds used
   the identical cached official Node24 base digest `0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6`
-  through a temporary pinned Dockerfile. The repository Dockerfile remains unchanged.
+  through a temporary pinned Dockerfile. At that checkpoint the repository Dockerfile was unchanged.
   Preliminary runs interrupted by disk exhaustion were discarded; task-owned stale
   vfs image/cache artifacts were removed and complete gates repeated successfully.
   Actual PostgreSQL/backup smoke is isolated and uses no development/production DB.
@@ -62,7 +62,7 @@ No additional Critical/Important issue remains in that reviewed scope.
   still independent Node processes/pools, and all database/dedupe/restore assertions
   remain unchanged. The revised full PostgreSQL smoke passed locally.
 
-**Final hosted application evidence, independently observed 2026-10-03:**
+**Verified hosted application evidence before dependency follow-up, independently observed 2026-10-03:**
 
 [Run 37063414137](https://github.com/Kqway/veya/actions/runs/37063414137), source
 `95187bef1011b47fa40a6606019897e0508e5fe4`, completed both jobs successfully.
@@ -71,8 +71,7 @@ Hosted Node24 clean npmci/lint/types/**681 tests/76 files**/production build/aud
 Docker targets, non-root smoke and actual isolated PG18 migrations/concurrent workers/
 readiness/protected backup-restore passed. Current source also passed the final local
 check/audit and full56/56 browser gate (3.7min) after the last logging correction.
-No application changes follow this verified source; the release-evidence commit only
-updates documentation. Check the current published SHA on the
+The following commit `c9468dd` only updated documentation. Check the current published SHA on the
 [workflow page](https://github.com/Kqway/veya/actions/workflows/ci.yml) before rollout.
 
 Discovery now distinguishes load failure from no activities and offers explicit retry.
@@ -84,7 +83,32 @@ independent follow-up reviews passed. Exhausted LISTEN recovery logs one fixed e
 with numeric counters only; its existing retry test reproduced RED then GREEN, and
 hub/API-logging targeted5/5 passed. No production limits/assertions were weakened.
 
-**Earlier beta gate history (superseded by the final evidence above).**
+**Dependency advisory follow-up, 2026-10-03:**
+
+The documentation commit `c9468dd` failed [run 37099580326](https://github.com/Kqway/veya/actions/runs/37099580326)
+at audit: a newly reported High advisory, GHSA-vfj7-8cjw-p6xm, affected `braces`
+through Next ESLint's development-only fast-glob/micromatch chain. Native681/build
+and both container/database gates passed; browser execution was skipped after audit,
+not counted as a browser pass. Earlier audit0 results remain historical observations.
+
+No patched braces release was available. A narrow, honestly named repository adapter
+replaces only Next ESLint's directory-root glob dependency using pinned tinyglobby.
+Recursive directory expansion is disabled to preserve root selection; excessive
+brace nesting is rejected before parsing. All Next ESLint rules remain enabled;
+Next/React were not downgraded, and audit was not waived. `.npmrc` and Docker's
+pre-install COPY make the file dependency reproducible in clean/container installs.
+The actual Next utility's default/literal/wildcard/brace/array roots and nesting
+guard pass3/3; the guard reproduced RED first. Independent read-only re-review
+confirmed the installed adapter, removed braces/micromatch, audit0 and no new
+Important/Critical finding in this development-only scope.
+
+Fresh Node24 plain `npm ci` and `npm run check` passed: **684 tests /77 files**
+(+98 tests/+9 files over Phase9), lint/types/build PASS. Full desktop/mobile E2E
+passed **56/56 on first attempt** (3.6min); fresh `npm audit --json` reports0.
+Container and exact published-source CI follow-up must be observed separately
+before handoff; local results do not imply hosted PASS.
+
+**Earlier beta gate history (superseded by the evidence above).**
 
 **Hosted CI evidence is separate.** Verified Phase 9 starting HEAD `b3b2dcd` passed
 [run 36990321453](https://github.com/Kqway/veya/actions/runs/36990321453).

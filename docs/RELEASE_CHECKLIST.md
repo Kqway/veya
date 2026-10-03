@@ -8,6 +8,9 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
 
 - `npm ci`; `npm run check` (zero-warning lint, strict types, all unit/DOM/native
   PostgreSQL tests and production build); full `npm run test:e2e`; `npm audit --json`.
+- Clean installs include `.npmrc` and `tools/next-root-glob`; Docker copies both
+  before dependency installation. Recheck the narrowly scoped Next lint override
+  when upgrading the plugin; all its lint rules remain enabled.
 - CI repeats all gates with Node 24, isolated temporary PostgreSQL and installed
   Playwright Chromium on non-root runners; both desktop/mobile projects execute.
   Browser retries are disabled: a broken first attempt fails the gate. Every run
