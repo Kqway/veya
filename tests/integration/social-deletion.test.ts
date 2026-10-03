@@ -70,13 +70,13 @@ describe('explicit social profile deletion',()=>{
   expect((await c.db.query('SELECT 1 FROM social_events WHERE recipient_profile_id=$1',[profileId])).rows).toEqual([]);
   expect((await c.db.query<{evidence:unknown}>('SELECT evidence FROM social_reports WHERE target_profile_id=$1',[profileId])).rows[0]!.evidence).toEqual(evidence);
   const view=await chat.get(b.token,match);
-  expect(view).toMatchObject({status:'closed',identity:{alias:'Deleted participant'},disclosures:[],planSlug:null});
+  expect(view).toMatchObject({status:'closed',identity:{alias:'Удалённый участник'},disclosures:[],planSlug:null});
   expect(forbiddenKeys(view)).toEqual([]);
   expect((await chat.messages(b.token,match)).messages.map(m=>m.text)).toEqual(['Peer-authored history']);
   await expect(chat.send(b.token,match,{text:'Cannot write'})).rejects.toMatchObject({code:'CONFLICT'});
   await expect(chat.send(a.token,match,{text:'No stale social access'})).rejects.toMatchObject({code:'NOT_FOUND'});
   expect((await new DiscoveryService(c.db).discover(b.token,b.post.publicKey))).toEqual([]);
-  expect((await new ConnectionsService(c.db).list(b.token)).find(r=>r.publicKey===request.publicKey)?.identity.alias).toBe('Deleted participant');
+  expect((await new ConnectionsService(c.db).list(b.token)).find(r=>r.publicKey===request.publicKey)?.identity.alias).toBe('Удалённый участник');
   expect((await new NotificationService(c.db).list(b.token)).notifications).toEqual([]);
   expect((await remove(a.token)).status).toBe(200);
   expect((await identity.get(b.token))?.alias).toBe('Secret alias B');
@@ -111,7 +111,7 @@ describe('explicit social profile deletion',()=>{
   await backend.decide(a.token,linked.publicSlug,{suggestionKey:results.suggestions[0]!.suggestionKey,revision:results.revision});
   expect((await remove(a.token)).status).toBe(200);
   const remaining=await backend.getIntent(linked.publicSlug,b.token);
-  expect(remaining.intent).toMatchObject({creatorName:'Deleted participant',participantCount:1,status:'decided'});
+  expect(remaining.intent).toMatchObject({creatorName:'Удалённый участник',participantCount:1,status:'decided'});
   expect((await backend.getIntent(linked.publicSlug,a.token)).ownParticipant).toBeNull();
   const after=await backend.getResults(linked.publicSlug,b.token);
   expect(after.selectedSuggestionKey).toBe(results.suggestions[0]!.suggestionKey);

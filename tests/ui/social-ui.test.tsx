@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, render as baseRender, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render as baseRender, screen, waitFor, within } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { RecoveryKeyProvider, useRecoveryKey } from "@/features/social/components/recovery-key-provider";
 const render = (ui: ReactNode) => baseRender(<RecoveryKeyProvider>{ui}</RecoveryKeyProvider>);
@@ -45,10 +45,10 @@ it.each([429, 503])("keeps failed activity loading distinct from an empty list a
   const user = userEvent.setup();
   render(<DiscoverScreen />);
   await screen.findByRole("alert");
-  expect(screen.queryByText(/No active seeking posts yet/)).not.toBeInTheDocument();
-  expect(screen.queryByRole("combobox", { name: "Your active activity" })).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Retry activities" }));
-  expect(await screen.findByRole("combobox", { name: "Your active activity" })).toHaveValue(post.publicKey);
+  expect(screen.queryByText(/Активных заявок на занятие пока нет/)).not.toBeInTheDocument();
+  expect(screen.queryByRole("combobox", { name: "Ваша активная заявка" })).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Загрузить занятия снова" }));
+  expect(await screen.findByRole("combobox", { name: "Ваша активная заявка" })).toHaveValue(post.publicKey);
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(fetcher).toHaveBeenCalledTimes(4);
 });
@@ -74,25 +74,25 @@ it.each(["profile", "posts", "created"])("ignores a late %s response after profi
   const user = userEvent.setup();
   render(<DiscoverScreen />);
   if (phase === "created") {
-    await user.type(await screen.findByLabelText("Alias"), "Maple");
-    await user.click(screen.getByLabelText("I am 18 or older"));
-    await user.click(screen.getByRole("button", { name: "Create profile" }));
-    await user.click(await screen.findByRole("button", { name: "I saved my key" }));
+    await user.type(await screen.findByLabelText("Псевдоним"), "Maple");
+    await user.click(screen.getByLabelText("Мне исполнилось 18 лет"));
+    await user.click(screen.getByRole("button", { name: "Создать профиль" }));
+    await user.click(await screen.findByRole("button", { name: "Ключ сохранён" }));
     await waitFor(() => expect(postReads).toBe(1));
   } else {
-    await user.click(await screen.findByRole("button", { name: "Retry activities" }));
+    await user.click(await screen.findByRole("button", { name: "Загрузить занятия снова" }));
     await waitFor(() => expect(profileReads).toBe(2));
     if (phase === "posts") await waitFor(() => expect(postReads).toBe(2));
   }
-  await user.click(screen.getByRole("button", { name: "Delete Veya profile" }));
-  await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
-  await user.click(screen.getByRole("button", { name: "Permanently delete profile" }));
-  expect(await screen.findByRole("button", { name: "Create profile" })).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Удалить профиль Intavro" }));
+  await user.type(screen.getByLabelText("Введите DELETE для подтверждения"), "DELETE");
+  await user.click(screen.getByRole("button", { name: "Удалить профиль навсегда" }));
+  expect(await screen.findByRole("button", { name: "Создать профиль" })).toBeVisible();
   await act(async () => {
     release(json(phase === "profile" ? { profile } : { posts: [{ publicKey: "p".repeat(24), status: "active", activityLabel: "Old activity" }] }));
   });
-  expect(screen.getByRole("button", { name: "Create profile" })).toBeVisible();
-  expect(screen.queryByRole("combobox", { name: "Your active activity" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Создать профиль" })).toBeVisible();
+  expect(screen.queryByRole("combobox", { name: "Ваша активная заявка" })).not.toBeInTheDocument();
   expect(screen.queryByText("Old activity")).not.toBeInTheDocument();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(postReads).toBe(phase === "posts" ? 2 : 1);
@@ -105,21 +105,25 @@ it("requires explicit adult consent and shows a selectable one-time key without 
   vi.stubGlobal("fetch", fetcher);
   const user = userEvent.setup();
   render(<ProfilePanel profile={null} onProfile={() => {}} />);
-  await user.type(screen.getByLabelText("Alias"), "Maple");
-  await user.click(screen.getByRole("button", { name: "Create profile" }));
-  expect(screen.getByRole("alert")).toHaveTextContent("18 or older");
+  expect(screen.getByLabelText("Языки профиля (необязательно)")).toHaveValue("ru");
+  expect(screen.getByRole("option", { name: "Открытый" })).toHaveValue("OPEN");
+  expect(screen.getByRole("option", { name: "Приватный" })).toHaveValue("PRIVATE");
+  expect(screen.getByRole("option", { name: "Инкогнито" })).toHaveValue("INCOGNITO");
+  await user.type(screen.getByLabelText("Псевдоним"), "Maple");
+  await user.click(screen.getByRole("button", { name: "Создать профиль" }));
+  expect(screen.getByRole("alert")).toHaveTextContent("18 лет");
   expect(fetcher).not.toHaveBeenCalled();
-  await user.click(screen.getByLabelText("I am 18 or older"));
-  await user.click(screen.getByRole("button", { name: "Create profile" }));
-  expect(await screen.findByLabelText("Veya Key")).toHaveValue("K".repeat(43));
-  expect(screen.getByLabelText("Veya Key")).toHaveAttribute("readonly");
+  await user.click(screen.getByLabelText("Мне исполнилось 18 лет"));
+  await user.click(screen.getByRole("button", { name: "Создать профиль" }));
+  expect(await screen.findByLabelText("Ключ Intavro")).toHaveValue("K".repeat(43));
+  expect(screen.getByLabelText("Ключ Intavro")).toHaveAttribute("readonly");
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);
   const leaving = new Event("beforeunload", { cancelable: true });
   window.dispatchEvent(leaving);
   expect(leaving.defaultPrevented).toBe(true);
-  await user.click(screen.getByRole("button", { name: "I saved my key" }));
-  expect(screen.queryByLabelText("Veya Key")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Ключ сохранён" }));
+  expect(screen.queryByLabelText("Ключ Intavro")).not.toBeInTheDocument();
 });
 it("previews AI fields before reviewed apply and leaves manual availability required", async () => {
   vi.stubGlobal(
@@ -145,29 +149,34 @@ it("previews AI fields before reviewed apply and leaves manual availability requ
   const user = userEvent.setup();
   render(<SeekingForm profile={profile} />);
   await user.type(
-    screen.getByLabelText("What do you want to do?"),
+    screen.getByLabelText("Чем хотите заняться?"),
     "Play chess",
   );
   await user.type(
-    screen.getByLabelText("Activity label"),
+    screen.getByLabelText("Название занятия"),
     "My manual activity",
   );
-  await user.click(screen.getByRole("button", { name: "Help structure" }));
+  await user.click(screen.getByRole("button", { name: "Помочь с заполнением" }));
   expect(
-    await screen.findByRole("heading", { name: "Suggested structure" }),
+    await screen.findByRole("heading", { name: "Предложенные сведения" }),
   ).toBeInTheDocument();
+  const preview = screen.getByRole("region", { name: "Проверка предложения" });
+  expect(within(preview).getByText("Код занятия")).toBeVisible();
+  expect(within(preview).getByText("Онлайн")).toBeVisible();
+  expect(within(preview).getByText("Вдвоём")).toBeVisible();
+  expect(within(preview).getByText("Любитель")).toBeVisible();
   const aiBody = JSON.parse(vi.mocked(fetch).mock.calls[0]![1]!.body as string);
   expect(aiBody.referenceDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-  expect(screen.getByLabelText("Activity label")).toHaveValue(
+  expect(screen.getByLabelText("Название занятия")).toHaveValue(
     "My manual activity",
   );
   await user.click(
-    screen.getByRole("button", { name: "Apply reviewed suggestion" }),
+    screen.getByRole("button", { name: "Применить проверенное предложение" }),
   );
-  expect(screen.getByLabelText("Activity label")).toHaveValue("Chess");
-  await user.click(screen.getByRole("button", { name: "Create seeking post" }));
+  expect(screen.getByLabelText("Название занятия")).toHaveValue("Chess");
+  await user.click(screen.getByRole("button", { name: "Создать заявку на занятие" }));
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "Choose at least one time",
+    "Выберите хотя бы один подходящий промежуток времени",
   );
 });
 it("renders chat as plain text and requires match-only disclosure consent", async () => {
@@ -208,14 +217,14 @@ it("renders chat as plain text and requires match-only disclosure consent", asyn
     await screen.findByText('<img src=x onerror="alert(1)">'),
   ).toBeInTheDocument();
   expect(container.querySelector("img")).toBeNull();
-  await user.type(screen.getByLabelText("Disclosure value"), "Sam");
-  await user.click(screen.getByRole("button", { name: "Share disclosure" }));
-  expect(screen.getByRole("alert")).toHaveTextContent("consent");
+  await user.type(screen.getByLabelText("Сведения для передачи"), "Sam");
+  await user.click(screen.getByRole("button", { name: "Поделиться сведениями" }));
+  expect(screen.getByRole("alert")).toHaveTextContent("согласие");
   expect(
     fetcher.mock.calls.some(([path]) => path.endsWith("/disclosures")),
   ).toBe(false);
-  await user.click(screen.getByLabelText("I understand and consent"));
-  await user.click(screen.getByRole("button", { name: "Share disclosure" }));
+  await user.click(screen.getByLabelText("Я понимаю и даю согласие"));
+  await user.click(screen.getByRole("button", { name: "Поделиться сведениями" }));
   await waitFor(() =>
     expect(
       fetcher.mock.calls.some(([path]) => path.endsWith("/disclosures")),
@@ -226,16 +235,16 @@ it("keeps the social draft out of the URL and preserves coordination action", as
   const user = userEvent.setup();
   render(<IntentComposer />);
   await user.type(
-    screen.getByLabelText("What do you want to do?"),
+    screen.getByLabelText("Чем хотите заняться?"),
     "Chess near me",
   );
   await user.click(
-    screen.getByRole("button", { name: "Find compatible people" }),
+    screen.getByRole("button", { name: "Найти людей" }),
   );
   expect(push).toHaveBeenCalledWith("/seek/new");
   expect(sessionStorage.getItem("veya.social.draft")).toBe("Chess near me");
   expect(
-    screen.getByRole("button", { name: "Make it happen" }),
+    screen.getByRole("button", { name: "Создать план" }),
   ).toBeInTheDocument();
 });
 
@@ -246,15 +255,16 @@ it.each([["chess", "Chess"], ["pottery", "Pottery"]])("submits a complete manual
   vi.stubGlobal("fetch", fetcher);
   const user = userEvent.setup();
   render(<SeekingForm profile={profile} />);
+  expect(screen.getByLabelText("Языки")).toHaveValue("ru");
   await user.type(
-    screen.getByLabelText("What do you want to do?"),
+    screen.getByLabelText("Чем хотите заняться?"),
     "Play chess online",
   );
-  await user.type(screen.getByLabelText("Activity key"), activityKey);
-  await user.type(screen.getByLabelText("Activity label"), activityLabel);
-  await user.selectOptions(screen.getByLabelText("Interaction"), "online");
-  await user.click(screen.getAllByRole("button", { name: /^Evening / })[1]!);
-  await user.click(screen.getByRole("button", { name: "Create seeking post" }));
+  await user.type(screen.getByLabelText("Код занятия"), activityKey);
+  await user.type(screen.getByLabelText("Название занятия"), activityLabel);
+  await user.selectOptions(screen.getByLabelText("Способ встречи"), "online");
+  await user.click(screen.getAllByRole("button", { name: /^Вечер / })[1]!);
+  await user.click(screen.getByRole("button", { name: "Создать заявку на занятие" }));
   await waitFor(() =>
     expect(push).toHaveBeenCalledWith(`/seek/${"P".repeat(24)}`),
   );
@@ -265,7 +275,7 @@ it.each([["chess", "Chess"], ["pottery", "Pottery"]])("submits a complete manual
     interactionMode: "online",
     city: null,
     privacyMode: "INCOGNITO",
-    languages: ["en"],
+    languages: ["ru"],
   });
   expect(body.availability).toHaveLength(1);
   expect(
@@ -319,15 +329,18 @@ it("uses discovery handles and readable compatibility reasons to send interest",
   vi.stubGlobal("fetch", fetcher);
   const user = userEvent.setup();
   render(<DiscoverScreen />);
-  await user.click(await screen.findByRole("button", { name: "Find people" }));
+  await user.click(await screen.findByRole("button", { name: "Найти людей" }));
   expect(
-    await screen.findByText("You want to do the same activity"),
+    await screen.findByText("Вы хотите заниматься одним и тем же"),
   ).toBeInTheDocument();
   expect(screen.queryByText("SECRET_SCORE_999")).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Interested" }));
-  expect(await screen.findByRole("status")).toHaveTextContent("Interest sent");
+  expect(screen.getByText("Подходит завтра")).toBeVisible();
+  expect(screen.queryByText("Compatible tomorrow")).not.toBeInTheDocument();
+  expect(screen.getByText("Pine")).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Хочу присоединиться" }));
+  expect(await screen.findByRole("status")).toHaveTextContent("Запрос отправлен");
   expect(
-    screen.queryByRole("button", { name: "Interested" }),
+    screen.queryByRole("button", { name: "Хочу присоединиться" }),
   ).not.toBeInTheDocument();
   const interest = fetcher.mock.calls.find(([path]) =>
     path.endsWith("/connections"),
@@ -353,17 +366,17 @@ it("keeps interest actionable during background discovery and ignores stale cand
   vi.stubGlobal("fetch", fetcher);
   const user = userEvent.setup();
   render(<DiscoverScreen />);
-  await user.click(await screen.findByRole("button", { name: "Find people" }));
-  await screen.findByRole("button", { name: "Interested" });
+  await user.click(await screen.findByRole("button", { name: "Найти людей" }));
+  await screen.findByRole("button", { name: "Хочу присоединиться" });
   let background!: Promise<void>;
   await act(async () => { background = refresh.reload!(); });
   expect(reads).toBe(2);
-  expect(screen.getByRole("button", { name: "Interested" })).toBeEnabled();
-  expect(screen.queryByText("Working…")).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Interested" }));
-  await screen.findByText(/Interest sent\./);
+  expect(screen.getByRole("button", { name: "Хочу присоединиться" })).toBeEnabled();
+  expect(screen.queryByText("Выполняем…")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Хочу присоединиться" }));
+  await screen.findByText(/Запрос отправлен\./);
   await act(async () => { release(json({ cards: [card] })); await background; });
-  expect(screen.queryByRole("button", { name: "Interested" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Хочу присоединиться" })).not.toBeInTheDocument();
   expect(fetcher.mock.calls.filter(([path]) => path.endsWith("/connections"))).toHaveLength(1);
 });
 
@@ -380,16 +393,16 @@ it("accepts during a background connection read and cannot regress to pending", 
   vi.stubGlobal("fetch", fetcher);
   const user = userEvent.setup();
   render(<ConnectionsScreen />);
-  await screen.findByRole("button", { name: "Accept" });
+  await screen.findByRole("button", { name: "Принять" });
   let background!: Promise<void>;
   await act(async () => { background = refresh.reload!(); });
   expect(reads).toBe(2);
-  expect(screen.getByRole("button", { name: "Accept" })).toBeEnabled();
-  await user.click(screen.getByRole("button", { name: "Accept" }));
-  expect(await screen.findByRole("link", { name: "View conversation" })).toHaveAttribute("href", `/m/${"M".repeat(24)}`);
+  expect(screen.getByRole("button", { name: "Принять" })).toBeEnabled();
+  await user.click(screen.getByRole("button", { name: "Принять" }));
+  expect(await screen.findByRole("link", { name: "Открыть чат" })).toHaveAttribute("href", `/m/${"M".repeat(24)}`);
   await act(async () => { release(json({ requests: [request] })); await background; });
-  expect(screen.queryByRole("button", { name: "Accept" })).not.toBeInTheDocument();
-  expect(screen.getByText("Status: accepted")).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Принять" })).not.toBeInTheDocument();
+  expect(screen.getByText("Статус: Принят")).toBeVisible();
   expect(fetcher.mock.calls.filter(([, options]) => options?.method === "POST")).toHaveLength(1);
 });
 it("sends during a background conversation read without losing the message to stale history", async () => {
@@ -406,17 +419,17 @@ it("sends during a background conversation read without losing the message to st
   vi.stubGlobal("fetch", fetcher);
   const user = userEvent.setup();
   render(<MatchScreen matchKey={match.publicKey} />);
-  await screen.findByText("No messages yet. Start with the activity you have in common.");
-  await user.type(screen.getByLabelText("Message"), message.text);
+  await screen.findByText("Сообщений пока нет. Начните с общего занятия.");
+  await user.type(screen.getByLabelText("Сообщение"), message.text);
   let background!: Promise<void>;
   await act(async () => { background = refresh.reload!(); });
   expect(reads).toBe(2);
-  expect(screen.getByRole("button", { name: "Send message" })).toBeEnabled();
-  await user.click(screen.getByRole("button", { name: "Send message" }));
+  expect(screen.getByRole("button", { name: "Отправить сообщение" })).toBeEnabled();
+  await user.click(screen.getByRole("button", { name: "Отправить сообщение" }));
   await screen.findByText(message.text);
   await act(async () => { release(json({ messages: [], nextBefore: null })); await background; });
-  expect(screen.getByRole("list", { name: "Conversation messages" })).toHaveTextContent(message.text);
-  expect(screen.getByLabelText("Message")).toHaveValue("");
+  expect(screen.getByRole("list", { name: "Сообщения чата" })).toHaveTextContent(message.text);
+  expect(screen.getByLabelText("Сообщение")).toHaveValue("");
   expect(fetcher.mock.calls.filter(([, options]) => options?.method === "POST")).toHaveLength(1);
 });
 
@@ -430,7 +443,7 @@ it("offers inline onboarding for a new guest without creating a profile on mount
   vi.stubGlobal("fetch", fetcher);
   render(<NewSeekScreen />);
   expect(
-    await screen.findByRole("button", { name: "Create profile" }),
+    await screen.findByRole("button", { name: "Создать профиль" }),
   ).toBeInTheDocument();
   expect(fetcher).toHaveBeenCalledTimes(1);
   expect(fetcher.mock.calls[0]![1].method).toBe("GET");
@@ -458,7 +471,7 @@ it("explains the 14-window social limit when a fifteenth time is selected", asyn
   const user = userEvent.setup();
   render(<SeekingForm profile={profile} />);
   for (let day = 1; day <= 5; day++) {
-    for (const period of ["Morning", "Afternoon", "Evening"]) {
+    for (const period of ["Утро", "День", "Вечер"]) {
       await user.click(
         screen.getAllByRole("button", { name: new RegExp(`^${period} `) })[
           day
@@ -466,9 +479,9 @@ it("explains the 14-window social limit when a fifteenth time is selected", asyn
       );
     }
   }
-  expect(screen.getByRole("alert")).toHaveTextContent("at most 14 time ranges");
+  expect(screen.getByRole("alert")).toHaveTextContent("не более 14 временных интервалов");
   expect(
-    screen.getByRole("list", { name: "Selected availability" }).children,
+    screen.getByRole("list", { name: "Выбранное свободное время" }).children,
   ).toHaveLength(14);
 });
 
@@ -485,15 +498,15 @@ it("recovers from a new unbound guest and restores editable profile choices afte
   const user = userEvent.setup();
   render(<NewSeekScreen />);
   await user.click(
-    await screen.findByRole("button", { name: "Recover with a Veya Key" }),
+    await screen.findByRole("button", { name: "Восстановить с помощью Ключа Intavro" }),
   );
-  await user.type(screen.getByLabelText("Recovery key"), "O".repeat(43));
-  await user.click(screen.getByRole("button", { name: "Recover profile" }));
-  expect(await screen.findByLabelText("Veya Key")).toHaveValue("R".repeat(43));
-  await user.click(screen.getByRole("button", { name: "I saved my key" }));
-  expect(screen.getByLabelText("Alias")).toHaveValue("Maple");
-  expect(screen.getByLabelText("Privacy")).toHaveValue("INCOGNITO");
-  expect(screen.getByLabelText("Profile languages (optional)")).toHaveValue(
+  await user.type(screen.getByLabelText("Ключ восстановления"), "O".repeat(43));
+  await user.click(screen.getByRole("button", { name: "Восстановить профиль" }));
+  expect(await screen.findByLabelText("Ключ Intavro")).toHaveValue("R".repeat(43));
+  await user.click(screen.getByRole("button", { name: "Ключ сохранён" }));
+  expect(screen.getByLabelText("Псевдоним")).toHaveValue("Maple");
+  expect(screen.getByLabelText("Приватность")).toHaveValue("INCOGNITO");
+  expect(screen.getByLabelText("Языки профиля (необязательно)")).toHaveValue(
     "en",
   );
   expect(JSON.parse(fetcher.mock.calls[2]![1].body)).toEqual({
@@ -511,16 +524,16 @@ it("keeps an unsaved recovery key visible after a client route unmounts the prof
   }
   const user = userEvent.setup();
   render(<Routes />);
-  await user.type(screen.getByLabelText("Alias"), "Maple");
-  await user.click(screen.getByLabelText("I am 18 or older"));
-  await user.click(screen.getByRole("button", {name: "Create profile"}));
-  expect(await screen.findByLabelText("Veya Key")).toHaveValue("N".repeat(43));
+  await user.type(screen.getByLabelText("Псевдоним"), "Maple");
+  await user.click(screen.getByLabelText("Мне исполнилось 18 лет"));
+  await user.click(screen.getByRole("button", {name: "Создать профиль"}));
+  expect(await screen.findByLabelText("Ключ Intavro")).toHaveValue("N".repeat(43));
   await user.click(screen.getByRole("button", {name: "Next route"}));
-  expect(screen.getByLabelText("Veya Key")).toHaveValue("N".repeat(43));
+  expect(screen.getByLabelText("Ключ Intavro")).toHaveValue("N".repeat(43));
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);
-  await user.click(screen.getByRole("button", {name: "I saved my key"}));
-  expect(screen.queryByLabelText("Veya Key")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", {name: "Ключ сохранён"}));
+  expect(screen.queryByLabelText("Ключ Intavro")).not.toBeInTheDocument();
 });
 it("delivers an issued key and activates live social after the initiating screen unmounts", async () => {
   const dispatch = vi.spyOn(window, "dispatchEvent");
@@ -534,13 +547,13 @@ it("delivers an issued key and activates live social after the initiating screen
   }
   const user = userEvent.setup();
   render(<Routes />);
-  await user.type(screen.getByLabelText("Alias"), "Maple");
-  await user.click(screen.getByLabelText("I am 18 or older"));
-  await user.click(screen.getByRole("button", { name: "Create profile" }));
+  await user.type(screen.getByLabelText("Псевдоним"), "Maple");
+  await user.click(screen.getByLabelText("Мне исполнилось 18 лет"));
+  await user.click(screen.getByRole("button", { name: "Создать профиль" }));
   await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
   await user.click(screen.getByRole("button", { name: "Next route" }));
   finish(json({ profile, recoveryKey: "L".repeat(43) }));
-  expect(await screen.findByLabelText("Veya Key")).toHaveValue("L".repeat(43));
+  expect(await screen.findByLabelText("Ключ Intavro")).toHaveValue("L".repeat(43));
   expect(dispatch.mock.calls.filter(([event]) => event.type === "veya:social-profile-changed")).toHaveLength(1);
 });
 
@@ -554,15 +567,15 @@ it("copies a key but keeps it unsaved until explicit acknowledgement", async () 
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
   render(<IssueKey />);
   await user.click(screen.getByRole("button", { name: "Issue key" }));
-  await user.click(screen.getByRole("button", { name: "Copy Veya Key" }));
+  await user.click(screen.getByRole("button", { name: "Скопировать Ключ Intavro" }));
   expect(writeText).toHaveBeenCalledWith("C".repeat(43));
-  expect(await screen.findByRole("status")).toHaveTextContent("Key copied");
-  expect(screen.getByLabelText("Veya Key")).toHaveValue("C".repeat(43));
-  expect(screen.getByText(/lose both this key and your browser session/)).toBeVisible();
+  expect(await screen.findByRole("status")).toHaveTextContent("Ключ скопирован");
+  expect(screen.getByLabelText("Ключ Intavro")).toHaveValue("C".repeat(43));
+  expect(screen.getByText(/потеряете и ключ, и сессию браузера/)).toBeVisible();
   const leaving = new Event("beforeunload", { cancelable: true });
   window.dispatchEvent(leaving);
   expect(leaving.defaultPrevented).toBe(true);
-  await user.click(screen.getByRole("button", { name: "I saved my key" }));
+  await user.click(screen.getByRole("button", { name: "Ключ сохранён" }));
   const savedLeaving = new Event("beforeunload", { cancelable: true });
   window.dispatchEvent(savedLeaving);
   expect(savedLeaving.defaultPrevented).toBe(false);
@@ -576,8 +589,8 @@ it("does not restore a copy notice after an acknowledged key is cleared", async 
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: () => new Promise<void>((resolve) => { finish = resolve; }) } });
   render(<IssueKey />);
   await user.click(screen.getByRole("button", { name: "Issue key" }));
-  await user.click(screen.getByRole("button", { name: "Copy Veya Key" }));
-  await user.click(screen.getByRole("button", { name: "I saved my key" }));
+  await user.click(screen.getByRole("button", { name: "Скопировать Ключ Intavro" }));
+  await user.click(screen.getByRole("button", { name: "Ключ сохранён" }));
   await user.click(screen.getByRole("button", { name: "Issue key" }));
   finish();
   await Promise.resolve();
@@ -588,9 +601,9 @@ it("offers manual copying when clipboard access fails without showing the clipbo
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: vi.fn().mockRejectedValue(new Error("secret clipboard provider detail")) } });
   render(<IssueKey />);
   await user.click(screen.getByRole("button", { name: "Issue key" }));
-  await user.click(screen.getByRole("button", { name: "Copy Veya Key" }));
-  expect(await screen.findByRole("status")).toHaveTextContent("Select the key and copy it manually");
-  expect(screen.getByLabelText("Veya Key")).toHaveValue("C".repeat(43));
+  await user.click(screen.getByRole("button", { name: "Скопировать Ключ Intavro" }));
+  expect(await screen.findByRole("status")).toHaveTextContent("Выделите ключ и скопируйте его вручную");
+  expect(screen.getByLabelText("Ключ Intavro")).toHaveValue("C".repeat(43));
   expect(screen.queryByText(/secret clipboard provider detail/)).not.toBeInTheDocument();
 });
 it("requires an exact destructive confirmation and deletes only the current profile", async () => {
@@ -603,21 +616,22 @@ it("requires an exact destructive confirmation and deletes only the current prof
     return <ProfilePanel profile={current} onProfile={setCurrent} />;
   }
   render(<ProfileState />);
-  await user.click(screen.getByRole("button", { name: "Delete Veya profile" }));
-  expect(screen.getByText(/cannot be undone/)).toHaveTextContent("Moderation evidence");
-  const confirm = screen.getByRole("button", { name: "Permanently delete profile" });
+  await user.click(screen.getByRole("button", { name: "Удалить профиль Intavro" }));
+  expect(screen.getByText(/действие нельзя отменить/)).toHaveTextContent("Материалы для модерации");
+  const confirm = screen.getByRole("button", { name: "Удалить профиль навсегда" });
   expect(confirm).toBeDisabled();
-  await user.type(screen.getByLabelText("Type DELETE to confirm"), "delete");
+  await user.type(screen.getByLabelText("Введите DELETE для подтверждения"), "delete");
   expect(confirm).toBeDisabled();
-  await user.click(screen.getByRole("button", { name: "Cancel deletion" }));
+  await user.click(screen.getByRole("button", { name: "Отменить удаление" }));
   expect(fetcher).not.toHaveBeenCalled();
-  await user.click(screen.getByRole("button", { name: "Delete Veya profile" }));
-  expect(screen.getByLabelText("Type DELETE to confirm")).toHaveValue("");
-  await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
-  await user.click(screen.getByRole("button", { name: "Permanently delete profile" }));
-  expect(await screen.findByRole("button", { name: "Create profile" })).toBeVisible();
-  expect(screen.getByRole("status")).toHaveTextContent("Your social profile was deleted.");
-  expect(screen.getByLabelText("Alias")).toHaveValue("");
+  await user.click(screen.getByRole("button", { name: "Удалить профиль Intavro" }));
+  expect(screen.getByLabelText("Введите DELETE для подтверждения")).toHaveValue("");
+  await user.type(screen.getByLabelText("Введите DELETE для подтверждения"), "DELETE");
+  await user.click(screen.getByRole("button", { name: "Удалить профиль навсегда" }));
+  expect(await screen.findByRole("button", { name: "Создать профиль" })).toBeVisible();
+  expect(screen.getByRole("status")).toHaveTextContent("Ваш профиль Intavro удалён.");
+  expect(screen.getByLabelText("Псевдоним")).toHaveValue("");
+  expect(screen.getByLabelText("Языки профиля (необязательно)")).toHaveValue("ru");
   expect(fetcher).toHaveBeenCalledWith("/api/social/profile", expect.objectContaining({ method: "DELETE", body: JSON.stringify({ confirmation: "DELETE" }) }));
   expect(changed.mock.calls.some(([event]) => event.type === "veya:social-profile-changed")).toBe(true);
 });
@@ -627,13 +641,13 @@ it("preserves the profile when deletion fails and allows an explicit retry", asy
   const onProfile = vi.fn();
   const user = userEvent.setup();
   render(<ProfilePanel profile={profile} onProfile={onProfile} />);
-  await user.click(screen.getByRole("button", { name: "Delete Veya profile" }));
-  await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
-  await user.click(screen.getByRole("button", { name: "Permanently delete profile" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent(/try again/);
+  await user.click(screen.getByRole("button", { name: "Удалить профиль Intavro" }));
+  await user.type(screen.getByLabelText("Введите DELETE для подтверждения"), "DELETE");
+  await user.click(screen.getByRole("button", { name: "Удалить профиль навсегда" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(/попробуйте ещё раз/i);
   expect(onProfile).not.toHaveBeenCalled();
-  expect(screen.getByLabelText("Alias")).toHaveValue("Maple");
-  await user.click(screen.getByRole("button", { name: "Permanently delete profile" }));
+  expect(screen.getByLabelText("Псевдоним")).toHaveValue("Maple");
+  await user.click(screen.getByRole("button", { name: "Удалить профиль навсегда" }));
   await waitFor(() => expect(onProfile).toHaveBeenCalledWith(null));
 });
 
@@ -644,23 +658,23 @@ it.each(["seek", "discover"])("offers profile deletion to an unavailable owner o
   vi.stubGlobal("fetch", fetcher);
   const user = userEvent.setup();
   render(surface === "seek" ? <NewSeekScreen /> : <DiscoverScreen />);
-  await user.click(await screen.findByRole("button", { name: "Delete Veya profile" }));
-  expect(screen.queryByRole("button", { name: "Create profile" })).not.toBeInTheDocument();
-  await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
-  await user.click(screen.getByRole("button", { name: "Permanently delete profile" }));
-  expect(await screen.findByRole("button", { name: "Create profile" })).toBeVisible();
-  expect(screen.getByRole("status")).toHaveTextContent("Your social profile was deleted.");
+  await user.click(await screen.findByRole("button", { name: "Удалить профиль Intavro" }));
+  expect(screen.queryByRole("button", { name: "Создать профиль" })).not.toBeInTheDocument();
+  await user.type(screen.getByLabelText("Введите DELETE для подтверждения"), "DELETE");
+  await user.click(screen.getByRole("button", { name: "Удалить профиль навсегда" }));
+  expect(await screen.findByRole("button", { name: "Создать профиль" })).toBeVisible();
+  expect(screen.getByRole("status")).toHaveTextContent("Ваш профиль Intavro удалён.");
 });
 it("explains an invalid or revoked recovery key without erasing the entered key", async () => {
   const fetcher = vi.fn().mockResolvedValueOnce(json({ authenticated: true })).mockResolvedValueOnce(json({ error: { code: "NOT_FOUND" } }, 404));
   vi.stubGlobal("fetch", fetcher);
   const user = userEvent.setup();
   render(<ProfilePanel profile={null} onProfile={() => {}} />);
-  await user.click(screen.getByRole("button", { name: "Recover with a Veya Key" }));
-  await user.type(screen.getByLabelText("Recovery key"), "O".repeat(43));
-  await user.click(screen.getByRole("button", { name: "Recover profile" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent("This Veya Key is invalid or no longer active");
-  expect(screen.getByLabelText("Recovery key")).toHaveValue("O".repeat(43));
+  await user.click(screen.getByRole("button", { name: "Восстановить с помощью Ключа Intavro" }));
+  await user.type(screen.getByLabelText("Ключ восстановления"), "O".repeat(43));
+  await user.click(screen.getByRole("button", { name: "Восстановить профиль" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Этот Ключ Intavro недействителен или больше не активен");
+  expect(screen.getByLabelText("Ключ восстановления")).toHaveValue("O".repeat(43));
   expect(screen.getByRole("alert")).not.toHaveTextContent("O".repeat(43));
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);

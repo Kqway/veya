@@ -46,6 +46,7 @@ describe("rate limiting HTTP boundaries", () => {
     const calls = factory.mock.calls.length;
     const rejected = await handlers.createSession(request("/api/session", {}));
     expect(rejected.status).toBe(429);
+    expect(await rejected.json()).toEqual({ error: { code: "RATE_LIMITED", message: "Слишком много запросов. Немного подождите и попробуйте снова." } });
     expect(rejected.headers.get("retry-after")).toMatch(/^\d+$/);
     expect(rejected.headers.get("cache-control")).toBe("no-store");
     expect(factory).toHaveBeenCalledTimes(calls);

@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import type { DatabaseExecutor } from "@/lib/db/types";
+import { proposalCopy } from "@/features/scheduling/presentation";
 import { ENGINE_VERSION, suggest } from "@/features/scheduling/engine";
 import type {
   PlanCandidate,
@@ -112,7 +113,7 @@ export async function ensureResults(
       "INSERT INTO plan_suggestions(intent_id,title,start_at,end_at,score,available_count,explanation,details) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
       [
         intent.id,
-        c.activity ? `Time for ${c.activity}` : "A good time together",
+        c.activity ? `Время для ${c.activity}` : "Удобное время для встречи",
         c.window.startAt,
         c.window.endAt,
         c.score,
@@ -184,9 +185,12 @@ export async function projectResults(
     for (const total of totals.rows.filter((v) => v.suggestion_id === p.id))
       votes[voteValue(total.value)] = Number(total.count);
     const ownVote = own.rows.find((v) => v.suggestion_id === p.id);
+    const copy = proposalCopy({ activity: p.details.activity ?? null, availableCount: p.available_count, totalCount: people.length,
+      durationMinutes: p.details.durationMinutes ?? (p.end_at.getTime() - p.start_at.getTime()) / 60000,
+      shortened: p.details.shortened ?? false, budgetAssessment: p.details.budgetAssessment ?? "unknown" });
     return {
       suggestionKey: p.public_key,
-      title: p.title,
+      title: copy.title,
       window: {
         startAt: p.start_at.toISOString(),
         endAt: p.end_at.toISOString(),
@@ -201,7 +205,7 @@ export async function projectResults(
       shortened: p.details.shortened ?? false,
       activity: p.details.activity ?? null,
       budgetAssessment: p.details.budgetAssessment ?? "unknown",
-      explanation: p.explanation ?? "A possible time for your group.",
+      explanation: copy.explanation,
       votes,
       ownVote: ownVote ? voteValue(ownVote.value) : null,
       ...(named
@@ -234,8 +238,8 @@ export async function projectResults(
     selectedSuggestionKey: selected?.public_key ?? null,
     suggestions,
     message:
-      (selected ?? proposals[0])?.explanation ??
-      "Ask friends to add longer future availability so we can find a good time together.",
+      suggestions.find(p => p.suggestionKey === (selected ?? proposals[0])?.public_key)?.explanation ??
+      "Попросите друзей указать более длинные промежутки свободного времени в будущем, чтобы найти общее время.",
     canVote: member && intent.status === "ready",
     summary: {
       participantsWithAvailability: withAvailability,

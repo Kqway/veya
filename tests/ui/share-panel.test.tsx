@@ -23,13 +23,13 @@ describe("invite sharing", () => {
     });
     const user = userEvent.setup();
     render(<SharePanel slug="abcdefghijklmnopqrstuvwx" creatorName="Artem" />);
-    const button = screen.getByRole("button", { name: "Share invite" });
+    const button = screen.getByRole("button", { name: "Поделиться приглашением" });
     await user.click(button);
     await user.click(button);
     expect(share).toHaveBeenCalledTimes(1);
     expect(button).toBeDisabled();
     expect(share).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Artem wants to make a plan 👀" }),
+      expect.objectContaining({ title: "Artem предлагает встретиться 👀" }),
     );
     finish();
   });
@@ -47,7 +47,7 @@ describe("invite sharing", () => {
     });
     const user = userEvent.setup();
     render(<SharePanel slug="abcdefghijklmnopqrstuvwx" />);
-    const button = screen.getByRole("button", { name: "Share invite" });
+    const button = screen.getByRole("button", { name: "Поделиться приглашением" });
     await user.click(button);
     expect(share).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -58,7 +58,7 @@ describe("invite sharing", () => {
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
     await user.click(button);
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Copy the link below instead.",
+      "Скопируйте ссылку ниже.",
     );
   });
   it("copies a canonical link and URL encodes Telegram sharing", async () => {
@@ -67,13 +67,13 @@ describe("invite sharing", () => {
       .spyOn(navigator.clipboard, "writeText")
       .mockResolvedValue();
     render(<SharePanel slug="abcdefghijklmnopqrstuvwx" />);
-    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    await user.click(screen.getByRole("button", { name: "Скопировать ссылку" }));
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining("/i/abcdefghijklmnopqrstuvwx"),
     );
-    expect(screen.getByRole("status")).toHaveTextContent("Link copied");
+    expect(screen.getByRole("status")).toHaveTextContent("Ссылка скопирована");
     const href = screen
-      .getByRole("link", { name: "Telegram share" })
+      .getByRole("link", { name: "Поделиться в Telegram" })
       .getAttribute("href")!;
     expect(new URL(href).searchParams.get("url")).toContain(
       "/i/abcdefghijklmnopqrstuvwx",
@@ -85,13 +85,13 @@ describe("invite sharing", () => {
       new Error("denied"),
     );
     render(<SharePanel slug="abcdefghijklmnopqrstuvwx" />);
-    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    await user.click(screen.getByRole("button", { name: "Скопировать ссылку" }));
     expect(screen.getByRole("status")).toHaveTextContent(
-      /copy the link below/i,
+      /Скопируйте ссылку ниже/i,
     );
-    expect(screen.getByRole("textbox", { name: "Invite link" })).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "Ссылка на приглашение" })).toHaveValue(
       "http://localhost:3000/i/abcdefghijklmnopqrstuvwx",
     );
-    expect(screen.getByRole("textbox", { name: "Invite link" })).toHaveFocus();
+    expect(screen.getByRole("textbox", { name: "Ссылка на приглашение" })).toHaveFocus();
   });
 });

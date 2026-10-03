@@ -4,22 +4,22 @@ import { useAnalytics } from "@/lib/analytics/browser";
 export function RepeatPlan({ surface }: { surface: "invite" | "result" }) {
   const track = useAnalytics();
   return (
-    <section className="repeat-plan" aria-label="Your next plan">
-      <p className="eyebrow">Good times lead to more good times</p>
+    <section className="repeat-plan" aria-label="Ваш следующий план">
+      <p className="eyebrow">Хорошие встречи хочется повторять</p>
       <h2>
         {surface === "invite"
-          ? "Have something you want to do?"
-          : "Start another plan with your friends."}
+          ? "Есть идея для встречи?"
+          : "Запланируйте ещё одну встречу с друзьями."}
       </h2>
       <p className="quiet-copy">
-        A new idea. The same easy way to bring your people together.
+        Новая идея. Всё тот же простой способ собрать друзей.
       </p>
       <Link
         className="button button-secondary"
         href="/"
         onClick={() => track("new_intent_from_invite", surface)}
       >
-        Create your own plan
+        Создать свой план
       </Link>
     </section>
   );

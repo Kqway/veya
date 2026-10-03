@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/features/entry/client";
 import {
   socialApi,
+  postStatusLabels,
   useSocialAction,
   type Card,
   type OwnPost,
@@ -13,13 +14,13 @@ import {
 import { Person, SocialError, SocialShell, SocialLiveStatus } from "./common";
 import { ProfilePanel } from "./profile-panel";
 const reasonCopy: Record<string, string> = {
-  SAME_ACTIVITY: "You want to do the same activity",
-  TIME_OVERLAP: "Your availability is compatible",
-  SAME_AREA: "A similar area preference",
-  SKILL_COMPATIBLE: "Compatible experience levels",
-  SHARED_LANGUAGE: "A shared language",
-  SHARED_INTEREST: "Shared interests",
-  FORMAT_COMPATIBLE: "A compatible way to meet",
+  SAME_ACTIVITY: "Вы хотите заниматься одним и тем же",
+  TIME_OVERLAP: "Ваше свободное время совпадает",
+  SAME_AREA: "Вам подходит один район",
+  SKILL_COMPATIBLE: "Ваши уровни опыта совместимы",
+  SHARED_LANGUAGE: "У вас есть общий язык",
+  SHARED_INTEREST: "У вас общие интересы",
+  FORMAT_COMPATIBLE: "Вам подходит один формат встречи",
 };
 export function DiscoverScreen() {
   const [profile, setProfile] = useState<Profile | null>(null),
@@ -105,13 +106,13 @@ export function DiscoverScreen() {
       });
   }
   return (
-    <SocialShell title="Find compatible people">
-      {!loaded && <p role="status">Loading your profile…</p>}
+    <SocialShell title="Найдите людей для совместных занятий">
+      {!loaded && <p role="status">Загружаем ваш профиль…</p>}
       <SocialError message={action.error} focusRef={action.errorRef} />
       {loaded && (action.error || profile) && !postsLoaded && !restricted && (
         <button className="button button-secondary" disabled={action.busy}
           onClick={() => { void loadActivities(); }}>
-          Retry activities
+          Загрузить занятия снова
         </button>
       )}
       {profile && <SocialLiveStatus {...live} />}
@@ -121,21 +122,19 @@ export function DiscoverScreen() {
           {profile && (
             <>
               <section className="social-card">
-                <h2>Start with your activity</h2>
+                <h2>Начните с занятия</h2>
                 <p>
-                  Discovery uses one of your active seeking posts. You can have
-                  up to three active posts. Interested sends a request; a private
-                  conversation opens only after the recipient accepts.
+                  Поиск использует одну из ваших активных заявок на занятие. Одновременно можно иметь до трёх активных заявок. Кнопка «Хочу присоединиться» отправляет запрос. Личный чат откроется только после его принятия.
                 </p>
                 <Link className="button button-secondary" href="/seek/new">
-                  Create a seeking post
+                  Создать заявку на занятие
                 </Link>
                 {!postsLoaded ? (
-                  <p role="status">{restricted ? "Your social activities are unavailable to this session." : action.busy ? "Loading your activities…" : "Your activities could not be loaded. Use Retry activities to try again."}</p>
+                  <p role="status">{restricted ? "Ваши занятия недоступны в этой сессии." : action.busy ? "Загружаем ваши занятия…" : "Не удалось загрузить ваши занятия. Нажмите «Загрузить занятия снова», чтобы повторить попытку."}</p>
                 ) : posts.some((p) => p.status === "active") ? (
                   <>
                     <label className="field">
-                      Your active activity
+                      Ваша активная заявка
                       <select
                         value={source}
                         onChange={(e) => {
@@ -169,13 +168,12 @@ export function DiscoverScreen() {
                         });
                       }}
                     >
-                      Find people
+                      Найти людей
                     </button>
                   </>
                 ) : (
                   <p>
-                    No active seeking posts yet. Create one with your
-                    availability to discover compatible people.
+                    Активных заявок на занятие пока нет. Создайте заявку и укажите свободное время, чтобы найти подходящих людей.
                   </p>
                 )}
                 <ul className="social-post-list">
@@ -186,7 +184,7 @@ export function DiscoverScreen() {
                       >
                         {post.activityLabel}
                       </Link>
-                      <span>{post.status}</span>
+                      <span>{postStatusLabels[post.status]}</span>
                       {post.status === "active" && (
                         <button
                           className="social-text-button"
@@ -215,24 +213,18 @@ export function DiscoverScreen() {
                             });
                           }}
                         >
-                          Close post
+                          Закрыть заявку
                         </button>
                       )}
                     </li>
                   ))}
                 </ul>
               </section>
-              <section aria-label="Compatible people">
-                {action.busy && <p role="status">Working…</p>}
+              <section aria-label="Подходящие люди">
+                {action.busy && <p role="status">Выполняем…</p>}
                 {cards?.length === 0 && (
                   <p className="social-card">
-                    No compatible people found for this activity yet. Try
-                    another activity or availability. Matching needs the same activity,
-                    compatible format, a shared language and overlapping future times.
-                    Your activity is saved until it expires. New compatible posts can
-                    appear here; check again later. If candidate updates are enabled,
-                    your <Link href="/notifications">notification inbox</Link> can let
-                    you know about a new compatible activity. Veya never sends Interested for you.
+                    Пока не удалось найти подходящих людей для этого занятия. Попробуйте другое занятие или свободное время. Для подбора нужны общее занятие, совместимый формат, общий язык и совпадающее свободное время в будущем. Ваша заявка сохранена до истечения срока действия. Здесь могут появиться новые подходящие заявки — загляните позже. Если включены уведомления о подходящих людях, раздел <Link href="/notifications">уведомлений</Link> сообщит о новом подходящем занятии. Intavro никогда не отправляет запрос «Хочу присоединиться» за вас.
                   </p>
                 )}
                 {cards?.map((card) => (
@@ -241,16 +233,16 @@ export function DiscoverScreen() {
                     <h2>{card.activityLabel}</h2>
                     <p>
                       {card.interactionMode === "in_person"
-                        ? "In person"
+                        ? "Вживую"
                         : card.interactionMode === "online"
-                          ? "Online"
-                          : "In person or online"}{" "}
+                          ? "Онлайн"
+                          : "Вживую или онлайн"}{" "}
                       ·{" "}
                       {card.format === "one_to_one"
-                        ? "One to one"
+                        ? "Вдвоём"
                         : card.format === "group"
-                          ? "Group"
-                          : "Flexible group format"}
+                          ? "В группе"
+                          : "Любой состав группы"}
                     </p>
                     <ul>
                       {card.reasons
@@ -260,14 +252,12 @@ export function DiscoverScreen() {
                         ))}
                     </ul>
                     <p>
-                      {[
-                        "Compatible today",
-                        "Compatible tomorrow",
-                        "Compatible this week",
-                        "Compatible soon",
-                      ].includes(card.timeHint)
-                        ? card.timeHint
-                        : "Compatible availability"}
+                      {({
+                        "Compatible today": "Подходит сегодня",
+                        "Compatible tomorrow": "Подходит завтра",
+                        "Compatible this week": "Подходит на этой неделе",
+                        "Compatible soon": "Подходит в ближайшее время",
+                      } as Record<string, string>)[card.timeHint] ?? "Совпадает свободное время"}
                     </p>
                     <div className="social-actions">
                       <button
@@ -286,13 +276,13 @@ export function DiscoverScreen() {
                                   ) ?? [],
                               );
                               setNotice(
-                                "Interest sent. You can follow the request in Connections.",
+                                "Запрос отправлен. Следить за ним можно в разделе «Запросы».",
                               );
                             }
                           });
                         }}
                       >
-                        Interested
+                        Хочу присоединиться
                       </button>
                       <button
                         className="button button-secondary"
@@ -314,14 +304,14 @@ export function DiscoverScreen() {
                           });
                         }}
                       >
-                        Pass
+                        Пропустить
                       </button>
                     </div>
                   </article>
                 ))}
                 {notice && (
                   <p role="status">
-                    {notice} <Link href="/connections">View connections</Link>
+                    {notice} <Link href="/connections">Посмотреть запросы</Link>
                   </p>
                 )}
               </section>

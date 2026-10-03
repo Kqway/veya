@@ -4,6 +4,7 @@ import type { AiProvider, AiRequest, ParseInput } from "./types";
 import type { ParsedIntent } from "@/features/intents/structured";
 import type { SeekingSuggestion } from "@/features/discovery/seeking-suggestion";
 import { normalizeActivity } from "@/features/discovery/activity-normalization";
+import { activityLabel } from "@/features/intents/labels";
 import {
   parseInputSchema,
   planContextSchema,
@@ -131,7 +132,7 @@ function parseSeeking(input: ParseInput): SeekingSuggestion {
     skill: skill?.[0] ?? null,
     languages: [],
     tags: [],
-    timeHint: date ? `${date}${evening ? " evening" : ""}` : evening ? "evening" : null,
+    timeHint: date ? `${date}${evening ? " вечером" : ""}` : evening ? "вечером" : null,
   };
 }
 /** Small explicit vocabulary and templates, not a language model. */
@@ -149,11 +150,11 @@ export class MockAiProvider implements AiProvider {
     const activity = context.proposal.activity;
     return {
       title: activity
-        ? `A little ${activity}, together`.slice(0, 100)
-        : "A little time together",
+        ? `${activityLabel(activity)} — вместе`.slice(0, 100)
+        : "Немного времени вместе",
       idea: activity
-        ? `Start with ${activity} and leave room for a conversation. Keep it simple and choose the details together.`
-        : "Keep the meetup simple: catch up, share an idea, and choose what feels good together.",
+        ? `Начните с занятия «${activityLabel(activity)}» и оставьте время для разговора. Не усложняйте: детали можно выбрать вместе.`
+        : "Начните с простой встречи: поговорите, поделитесь идеями и решите вместе, чем заняться.",
     };
   }
 }

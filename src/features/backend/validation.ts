@@ -9,7 +9,7 @@ export const createIntentSchema = z
   .object({
     rawText: z.string().trim().min(1).max(500),
     title: z.string().trim().min(1).max(120).optional(),
-    creatorName: z.string().trim().min(1).max(60).default("A friend"),
+    creatorName: z.string().trim().min(1).max(60).default("Друг"),
     structuredIntent: structuredIntentSchema.default({
       type: "general",
       activities: [],
@@ -74,7 +74,7 @@ export const participantSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["budgetMax"],
-        message: "Budget range is reversed.",
+        message: "Минимальный бюджет не может превышать максимальный.",
       });
     }
     const hasBudget = data.budgetMin !== null || data.budgetMax !== null;
@@ -82,7 +82,7 @@ export const participantSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["currency"],
-        message: "Currency must accompany a budget.",
+        message: "Укажите валюту бюджета.",
       });
     const keys = data.preferences.map(
       (item) => `${item.category}:${item.value}`,
@@ -91,7 +91,7 @@ export const participantSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["preferences"],
-        message: "Duplicate preference.",
+        message: "Удалите повторяющееся предпочтение.",
       });
   });
 

@@ -50,8 +50,8 @@ describe("mutual match to ordinary coordination plan", () => {
     expect(JSON.stringify(view)).not.toMatch(
       /Global secret|PRIVATE-CONTACT|North|Moscow|Play chess in Moscow/,
     );
-    expect(view.intent.rawText).toBe("Chess together");
-    expect(view.intent.creatorName).toMatch(/^Quiet /);
+    expect(view.intent.rawText).toBe("Chess — вместе");
+    expect(view.intent.creatorName).toMatch(/^Тихий /);
     expect(view.ownParticipant).toBe(null);
     const input = {
       displayName: "Pair guest",

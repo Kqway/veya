@@ -176,8 +176,8 @@ describe("optional safe AI HTTP boundaries with PostgreSQL", () => {
       expect(response.status).toBe(200);
       expect(await response.json()).toMatchObject({
         ...g.selection,
-        idea: { data: { title: expect.stringMatching(/coffee/i) } },
-        explanation: { data: { explanation: expect.stringMatching(/All 1/) } },
+        idea: { data: { title: expect.stringMatching(/кофе/i) } },
+        explanation: { data: { explanation: expect.stringMatching(/всем \(1\)/) } },
       });
     }
     const after = await backend.getResults(g.slug, g.member.token);

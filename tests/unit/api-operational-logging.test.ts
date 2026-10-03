@@ -7,7 +7,7 @@ it("records unexpected API failures as a fixed operational event without secret 
   const logged = vi.spyOn(console, "error").mockImplementation(() => {});
   const response = apiError(new Error("postgres://private-user:private-password@db/private message private-location"));
   expect(response.status).toBe(503);
-  expect(await response.json()).toHaveProperty("error.code", "SERVICE_UNAVAILABLE");
+  expect(await response.json()).toEqual({ error: { code: "SERVICE_UNAVAILABLE", message: "Сервис временно недоступен." } });
   expect(logged).toHaveBeenCalledTimes(1);
   expect(JSON.parse(logged.mock.calls[0]![0] as string)).toEqual({ event: "api_unavailable", occurrences: 1 });
 });

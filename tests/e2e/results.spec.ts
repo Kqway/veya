@@ -3,27 +3,27 @@ import { devices, expect, test, type Page } from "@playwright/test";
 async function createPlan(page: Page) {
   await page.goto("/");
   await page.getByRole("textbox").fill("Coffee and a walk together?");
-  await page.getByRole("button", { name: "Make it happen" }).click();
-  await page.getByLabel("Your name").fill("Maya");
-  await page.getByRole("button", { name: "Coffee", exact: true }).click();
-  await page.getByRole("button", { name: "Create invite" }).click();
+  await page.getByRole("button", { name: "Создать план" }).click();
+  await page.getByLabel("Ваше имя").fill("Maya");
+  await page.getByRole("button", { name: "Кофе", exact: true }).click();
+  await page.getByRole("button", { name: "Создать приглашение" }).click();
   await expect(page).toHaveURL(/\/i\/[A-Za-z0-9_-]{24}$/);
   return page.url();
 }
 async function join(page: Page, creator: boolean, name: string) {
   await page
     .getByRole("button", {
-      name: creator ? "Add your availability" : "Add yourself",
+      name: creator ? "Указать свободное время" : "Присоединиться",
     })
     .click();
-  await page.getByLabel("Display name").fill(name);
+  await page.getByLabel("Ваше имя").fill(name);
   await page
-    .getByRole("button", { name: /Evening / })
+    .getByRole("button", { name: /Вечер / })
     .nth(1)
     .click();
-  await page.getByRole("button", { name: "Join the plan" }).click();
+  await page.getByRole("button", { name: "Присоединиться к встрече" }).click();
   await expect(
-    page.getByRole("heading", { name: `You're in, ${name}.` }),
+    page.getByRole("heading", { name: `Вы с нами, ${name}.` }),
   ).toBeVisible();
 }
 test("group overlaps, persistent votes, stale results and explicit organizer confirmation", async ({
@@ -51,38 +51,38 @@ test("group overlaps, persistent votes, stale results and explicit organizer con
     friend.on("pageerror", (error) => errors.push(error.message));
     await friend.goto(`${url}/results`);
     await expect(
-      friend.getByRole("region", { name: "Best match", exact: true }),
-    ).toContainText("1 of 1");
+      friend.getByRole("region", { name: "Лучший вариант", exact: true }),
+    ).toContainText("1 из 1");
     await expect(
-      friend.getByRole("list", { name: "Group availability" }),
+      friend.getByRole("list", { name: "Свободное время участников" }),
     ).toHaveCount(0);
     await expect(
-      friend.getByRole("button", { name: "YES", exact: true }),
+      friend.getByRole("button", { name: "ДА", exact: true }),
     ).toHaveCount(0);
     await friend
-      .getByRole("link", { name: "Join the plan", exact: true })
+      .getByRole("link", { name: "Присоединиться к встрече", exact: true })
       .click();
     await join(friend, false, "Sam");
     await friend
-      .getByRole("link", { name: "Find a time together", exact: true })
+      .getByRole("link", { name: "Найти общее время", exact: true })
       .click();
     const best = friend.getByRole("region", {
-      name: "Best match",
+      name: "Лучший вариант",
       exact: true,
     });
-    await expect(best).toContainText("2 of 2");
+    await expect(best).toContainText("2 из 2");
     await expect(
-      best.getByRole("list", { name: "Group availability" }),
+      best.getByRole("list", { name: "Свободное время участников" }),
     ).toContainText("Maya");
     await expect(
-      best.getByRole("list", { name: "Group availability" }),
+      best.getByRole("list", { name: "Свободное время участников" }),
     ).toContainText("Sam");
-    await best.getByRole("button", { name: "YES", exact: true }).click();
+    await best.getByRole("button", { name: "ДА", exact: true }).click();
     await expect(
-      best.getByRole("button", { name: "YES", exact: true }),
+      best.getByRole("button", { name: "ДА", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     await friend.reload();
-    await expect(best.getByLabel("Group votes")).toContainText("YES 1");
+    await expect(best.getByLabel("Голоса участников")).toContainText("ДА 1");
     expect(
       await friend.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -93,63 +93,63 @@ test("group overlaps, persistent votes, stale results and explicit organizer con
       fullPage: true,
     });
 
-    await page.getByRole("button", { name: "Edit your details" }).click();
+    await page.getByRole("button", { name: "Изменить данные" }).click();
     await page
-      .getByRole("button", { name: "Remove time 1", exact: true })
+      .getByRole("button", { name: "Удалить промежуток 1", exact: true })
       .click();
     await page
-      .getByRole("button", { name: /Morning / })
+      .getByRole("button", { name: /Утро / })
       .nth(1)
       .click();
-    await page.getByRole("button", { name: "Save changes" }).click();
+    await page.getByRole("button", { name: "Сохранить изменения" }).click();
     await expect(
-      page.getByRole("heading", { name: "You're in, Maya." }),
+      page.getByRole("heading", { name: "Вы с нами, Maya." }),
     ).toBeVisible();
-    await best.getByRole("button", { name: "MAYBE", exact: true }).click();
+    await best.getByRole("button", { name: "ВОЗМОЖНО", exact: true }).click();
     await expect(
       friend
         .getByRole("alert")
-        .filter({ hasText: "These suggestions changed." }),
+        .filter({ hasText: "Варианты встречи изменились." }),
     ).toBeVisible();
     await friend
-      .getByRole("button", { name: "Reload results", exact: true })
+      .getByRole("button", { name: "Перезагрузить результаты", exact: true })
       .click();
     await expect(
       friend
         .getByRole("alert")
-        .filter({ hasText: "These suggestions changed." }),
+        .filter({ hasText: "Варианты встречи изменились." }),
     ).toHaveCount(0);
-    await expect(best).toContainText("1 of 2");
-    await expect(best.getByLabel("Group votes")).toContainText("YES 0");
+    await expect(best).toContainText("1 из 2");
+    await expect(best.getByLabel("Голоса участников")).toContainText("ДА 0");
 
     await page
-      .getByRole("link", { name: "Find a time together", exact: true })
+      .getByRole("link", { name: "Найти общее время", exact: true })
       .click();
     const ownerBest = page.getByRole("region", {
-      name: "Best match",
+      name: "Лучший вариант",
       exact: true,
     });
-    await expect(ownerBest).toContainText("1 of 2");
+    await expect(ownerBest).toContainText("1 из 2");
     await ownerBest
-      .getByRole("button", { name: "Choose this plan", exact: true })
+      .getByRole("button", { name: "Выбрать этот план", exact: true })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Make this the group plan?" }),
+      page.getByRole("heading", { name: "Подтвердить этот вариант для всех?" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "It's a plan." }),
+      page.getByRole("heading", { name: "Встреча запланирована." }),
     ).toHaveCount(0);
     await page
-      .getByRole("button", { name: "Confirm plan", exact: true })
+      .getByRole("button", { name: "Подтвердить план", exact: true })
       .click();
     await expect(
-      page.getByRole("heading", { name: "It's a plan." }),
+      page.getByRole("heading", { name: "Встреча запланирована." }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "YES", exact: true }),
+      page.getByRole("button", { name: "ДА", exact: true }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Choose this plan", exact: true }),
+      page.getByRole("button", { name: "Выбрать этот план", exact: true }),
     ).toHaveCount(0);
     expect(
       await page.evaluate(
@@ -161,17 +161,17 @@ test("group overlaps, persistent votes, stale results and explicit organizer con
       fullPage: true,
     });
     await friend
-      .getByRole("button", { name: "Refresh results", exact: true })
+      .getByRole("button", { name: "Обновить результаты", exact: true })
       .click();
     await expect(
-      friend.getByRole("heading", { name: "It's a plan." }),
+      friend.getByRole("heading", { name: "Встреча запланирована." }),
     ).toBeVisible();
     await friend.goto(url);
     await expect(
-      friend.getByRole("heading", { name: "This plan is closed to changes." }),
+      friend.getByRole("heading", { name: "Этот план больше нельзя изменить." }),
     ).toBeVisible();
     await expect(
-      friend.getByRole("button", { name: "Edit your details" }),
+      friend.getByRole("button", { name: "Изменить данные" }),
     ).toHaveCount(0);
     await expect
       .poll(() => events.map((event) => event.name))
@@ -189,20 +189,20 @@ test("empty, invalid and expired results provide a useful next step", async ({
 }) => {
   await page.goto("/i/not-an-invite/results");
   await expect(
-    page.getByRole("heading", { name: "This plan couldn't be found." }),
+    page.getByRole("heading", { name: "План не найден." }),
   ).toBeVisible();
   const url = await createPlan(page);
   await page
-    .getByRole("link", { name: "Find a time together", exact: true })
+    .getByRole("link", { name: "Найти общее время", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "A little more availability." }),
+    page.getByRole("heading", { name: "Нужно ещё немного свободного времени." }),
   ).toBeVisible();
   await page
-    .getByRole("link", { name: "Add availability", exact: true })
+    .getByRole("link", { name: "Указать свободное время", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Add your availability", exact: true }),
+    page.getByRole("button", { name: "Указать свободное время", exact: true }),
   ).toBeVisible();
   const slug = new URL(url).pathname.split("/").pop()!;
   expect(
@@ -213,11 +213,11 @@ test("empty, invalid and expired results provide a useful next step", async ({
     ),
   ).toBe(200);
   await page.goto(`${url}/results`);
-  await expect(page.getByRole("status")).toContainText("expired");
+  await expect(page.getByRole("status")).toContainText("Срок приглашения истёк");
   await expect(
-    page.getByRole("button", { name: "YES", exact: true }),
+    page.getByRole("button", { name: "ДА", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Create your own plan" }),
+    page.getByRole("link", { name: "Создать свой план" }),
   ).toBeVisible();
 });

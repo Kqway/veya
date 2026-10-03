@@ -3,16 +3,16 @@ import { IntentComposer } from "@/features/intents/components/intent-composer";
 
 const steps = [
   {
-    title: "Say the thing",
-    copy: "Dinner, a game night, a little adventure. Start with what you want to do.",
+    title: "Расскажите об идее",
+    copy: "Шахматы, прогулка, ужин или небольшое приключение. Начните с того, чем хотите заняться.",
   },
   {
-    title: "Bring your people",
-    copy: "Find people who want the same activity. Send Interested; a private chat opens after they accept.",
+    title: "Найдите компанию",
+    copy: "Найдите людей с похожими планами. Отправьте запрос — после принятия откроется личный чат.",
   },
   {
-    title: "Find your moment",
-    copy: "Choose Plan it in your chat, add availability, and agree on a time. Or invite friends to your own plan.",
+    title: "Договоритесь о встрече",
+    copy: "Нажмите «Организовать встречу» в чате, укажите свободное время и выберите подходящий вариант. Или пригласите друзей в свой план.",
   },
 ];
 
@@ -24,23 +24,22 @@ export default function HomePage() {
         <PlanDoodle variant="orbit" />
         <p className="hero-badge">
           <span aria-hidden="true" />
-          Less planning. More living.
+          Меньше планирования. Больше жизни.
         </p>
         <h1 id="hero-title">
-          Less “we should.”
+          От «надо бы»
           <br />
-          More <span>“let’s do it.”</span>
+          к <span>«давай сделаем».</span>
         </h1>
         <p className="hero-description">
-          Something you want to do?
-          <br className="mobile-break" /> Find your people. Make it happen
-          together.
+          Есть идея, чем заняться?
+          <br className="mobile-break" /> Найдите компанию и воплотите её вместе.
         </p>
         <div className="composer-container">
           <IntentComposer />
         </div>
         <p className="hero-postscript">
-          For the plans that deserve to leave the group chat.
+          Для планов, которым пора выйти за пределы переписки.
         </p>
       </section>
       <section
@@ -49,11 +48,11 @@ export default function HomePage() {
         aria-labelledby="how-title"
       >
         <div className="how-heading">
-          <p className="eyebrow">From a thought to a good time</p>
+          <p className="eyebrow">От идеи к хорошей встрече</p>
           <h2 id="how-title">
-            Big on possibility.
+            Больше возможностей.
             <br />
-            Small on planning.
+            Меньше хлопот.
           </h2>
         </div>
         <ol className="steps">

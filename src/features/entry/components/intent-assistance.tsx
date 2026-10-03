@@ -5,6 +5,7 @@ import type { TaskResult } from "@/lib/ai/types";
 import { requestApi } from "../client";
 import { dateKey } from "../form-values";
 import { IntentHints } from "./intent-hints";
+import { activityLabel, intentTypeLabels } from "@/features/intents/labels";
 export function IntentAssistance({
   idea,
   disabled,
@@ -56,7 +57,7 @@ export function IntentAssistance({
     button.current?.focus();
   }
   return (
-    <section className="intent-assistance" aria-label="Optional idea details">
+    <section className="intent-assistance" aria-label="Дополнительные детали идеи">
       <button
         className="button button-secondary"
         type="button"
@@ -64,27 +65,27 @@ export function IntentAssistance({
         ref={button}
         onClick={() => void help()}
       >
-        {busy ? "Finding a starting point…" : "Help with details"}
+        {busy ? "Подбираем детали…" : "Помочь с деталями"}
       </button>
       <p className="quiet-copy">
-        Optional suggestions may use AI. Check them before sharing.
+        Подсказки могут быть созданы с помощью ИИ. Проверьте их перед отправкой.
       </p>
       {error && (
         <p className="quiet-copy" role="status">
-          You can keep adding details yourself, or try the helper again.
+          Добавьте детали сами или попробуйте помощника ещё раз.
         </p>
       )}
       {suggested && (
         <div className="assistance-preview">
           <h3 ref={heading} tabIndex={-1}>
-            Suggested details
+            Предложенные детали
           </h3>
-          <p>Kind of plan: {suggested.type}</p>
+          <p>Тип встречи: {intentTypeLabels[suggested.type]}</p>
           <p>
-            Activities:{" "}
-            {suggested.activities.join(", ") || "Choose what sounds good"}
+            Занятия:{" "}
+            {suggested.activities.map(activityLabel).join(", ") || "Выберите занятие"}
           </p>
-          <p>Place: {suggested.location || "Choose together"}</p>
+          <p>Место: {suggested.location || "Выберите вместе"}</p>
           <IntentHints
             dateHint={suggested.dateHint}
             budgetHint={suggested.budgetHint}
@@ -99,7 +100,7 @@ export function IntentAssistance({
                 setSuggested(null);
               }}
             >
-              Apply details
+              Применить детали
             </button>
             <button
               type="button"
@@ -107,7 +108,7 @@ export function IntentAssistance({
               disabled={disabled}
               onClick={dismiss}
             >
-              Keep my details
+              Оставить мои детали
             </button>
           </div>
         </div>

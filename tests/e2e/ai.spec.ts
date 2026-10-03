@@ -12,30 +12,30 @@ test("reviewed local assistance persists hints and enriches a deterministic vote
   });
   await page.goto("/");
   await page.getByRole("textbox").fill("Coffee in Bristol tomorrow under $20");
-  await page.getByRole("button", { name: "Make it happen" }).click();
-  await page.getByLabel("Your name").fill("Maya");
-  await page.getByLabel("Place or area (optional)").fill("My manual place");
+  await page.getByRole("button", { name: "Создать план" }).click();
+  await page.getByLabel("Ваше имя").fill("Maya");
+  await page.getByLabel("Место или район (необязательно)").fill("My manual place");
   await page
-    .getByRole("button", { name: "Help with details", exact: true })
+    .getByRole("button", { name: "Помочь с деталями", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Suggested details" }),
+    page.getByRole("heading", { name: "Предложенные детали" }),
   ).toBeVisible();
-  await expect(page.getByLabel("Place or area (optional)")).toHaveValue(
+  await expect(page.getByLabel("Место или район (необязательно)")).toHaveValue(
     "My manual place",
   );
   await page
-    .getByRole("button", { name: "Apply details", exact: true })
+    .getByRole("button", { name: "Применить детали", exact: true })
     .click();
-  await expect(page.getByLabel("Your name")).toHaveValue("Maya");
-  await expect(page.getByLabel("Place or area (optional)")).toHaveValue(
+  await expect(page.getByLabel("Ваше имя")).toHaveValue("Maya");
+  await expect(page.getByLabel("Место или район (необязательно)")).toHaveValue(
     "Bristol",
   );
   await expect(
-    page.getByRole("button", { name: "Coffee", exact: true }),
+    page.getByRole("button", { name: "Кофе", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
-    page.getByText("Budget mentioned: under $20", { exact: true }),
+    page.getByText("Указанный бюджет: under $20", { exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(
@@ -47,7 +47,7 @@ test("reviewed local assistance persists hints and enriches a deterministic vote
     fullPage: true,
   });
   await page
-    .getByRole("button", { name: "Create invite", exact: true })
+    .getByRole("button", { name: "Создать приглашение", exact: true })
     .click();
   await expect(page).toHaveURL(/\/i\/[A-Za-z0-9_-]{24}$/);
   const url = page.url(),
@@ -67,42 +67,42 @@ test("reviewed local assistance persists hints and enriches a deterministic vote
   expect(saved.dateHint.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   await page.reload();
   await expect(
-    page.getByText("Budget mentioned: under $20", { exact: true }),
+    page.getByText("Указанный бюджет: under $20", { exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Add your availability", exact: true })
+    .getByRole("button", { name: "Указать свободное время", exact: true })
     .click();
-  await page.getByLabel("Display name").fill("Maya");
+  await page.getByLabel("Ваше имя").fill("Maya");
   await page
-    .getByRole("button", { name: /Evening / })
+    .getByRole("button", { name: /Вечер / })
     .nth(1)
     .click();
   await page
-    .getByRole("button", { name: "Join the plan", exact: true })
+    .getByRole("button", { name: "Присоединиться к встрече", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "You're in, Maya." }),
+    page.getByRole("heading", { name: "Вы с нами, Maya." }),
   ).toBeVisible();
   await page
-    .getByRole("link", { name: "Find a time together", exact: true })
+    .getByRole("link", { name: "Найти общее время", exact: true })
     .click();
-  const best = page.getByRole("region", { name: "Best match", exact: true });
-  await expect(best).toContainText("1 of 1");
+  const best = page.getByRole("region", { name: "Лучший вариант", exact: true });
+  await expect(best).toContainText("1 из 1");
   await best
-    .getByRole("button", { name: "Get a meetup idea", exact: true })
+    .getByRole("button", { name: "Предложить идею встречи", exact: true })
     .click();
   await expect(
-    best.getByRole("region", { name: "Meetup idea", exact: true }),
-  ).toContainText("coffee");
+    best.getByRole("region", { name: "Идея встречи", exact: true }),
+  ).toContainText("Кофе");
   await expect(
-    best.getByRole("button", { name: "YES", exact: true }),
+    best.getByRole("button", { name: "ДА", exact: true }),
   ).toBeEnabled();
-  await best.getByRole("button", { name: "YES", exact: true }).click();
+  await best.getByRole("button", { name: "ДА", exact: true }).click();
   await expect(
-    best.getByRole("button", { name: "YES", exact: true }),
+    best.getByRole("button", { name: "ДА", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
-    best.getByRole("region", { name: "Meetup idea", exact: true }),
+    best.getByRole("region", { name: "Идея встречи", exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(
@@ -115,30 +115,30 @@ test("reviewed local assistance persists hints and enriches a deterministic vote
   });
   await page.reload();
   await expect(
-    best.getByRole("button", { name: "YES", exact: true }),
+    best.getByRole("button", { name: "ДА", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
-    best.getByRole("region", { name: "Meetup idea", exact: true }),
+    best.getByRole("region", { name: "Идея встречи", exact: true }),
   ).toHaveCount(0);
   await best
-    .getByRole("button", { name: "Choose this plan", exact: true })
+    .getByRole("button", { name: "Выбрать этот план", exact: true })
     .click();
-  await page.getByRole("button", { name: "Confirm plan", exact: true }).click();
+  await page.getByRole("button", { name: "Подтвердить план", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "It's a plan." }),
+    page.getByRole("heading", { name: "Встреча запланирована." }),
   ).toBeVisible();
   const confirmed = page.getByRole("region", {
-    name: "Confirmed plan",
+    name: "Подтверждённый план",
     exact: true,
   });
   await confirmed
-    .getByRole("button", { name: "Get a meetup idea", exact: true })
+    .getByRole("button", { name: "Предложить идею встречи", exact: true })
     .click();
   await expect(
-    confirmed.getByRole("region", { name: "Meetup idea", exact: true }),
+    confirmed.getByRole("region", { name: "Идея встречи", exact: true }),
   ).toBeVisible();
   await expect(
-    confirmed.getByRole("button", { name: "YES", exact: true }),
+    confirmed.getByRole("button", { name: "ДА", exact: true }),
   ).toHaveCount(0);
   const parseRequest = requests.find((req) => req.path === "/api/ai/intent")!;
   expect(Object.keys(parseRequest.body as object).sort()).toEqual([
@@ -163,18 +163,18 @@ test("helper request failure preserves manual creation", async ({ page }) => {
   );
   await page.goto("/");
   await page.getByRole("textbox").fill("A simple coffee");
-  await page.getByRole("button", { name: "Make it happen" }).click();
-  await page.getByLabel("Your name").fill("Alex");
+  await page.getByRole("button", { name: "Создать план" }).click();
+  await page.getByLabel("Ваше имя").fill("Alex");
   await page
-    .getByRole("button", { name: "Help with details", exact: true })
+    .getByRole("button", { name: "Помочь с деталями", exact: true })
     .click();
   await expect(
-    page.getByText(/You can keep adding details yourself/),
+    page.getByText(/Добавьте детали сами/),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Create invite", exact: true })
+    .getByRole("button", { name: "Создать приглашение", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Your plan is ready to invite people." }),
+    page.getByRole("heading", { name: "План готов. Приглашайте друзей." }),
   ).toBeVisible();
 });

@@ -1,6 +1,47 @@
-# Veya Development Progress
+# Intavro Development Progress
 
-## Current release: Closed Beta Readiness
+## Current release: Russian interface and Intavro branding
+
+Starting/published baseline: `447fb2ec96ea9b6ed19198ee5a234d39b2af4f14` (closed-beta
+candidate, 684 tests/77 files, 56 browser cases). The public website is now **Intavro**:
+Russian screens, forms/options, accessibility copy, validation/error/empty states,
+privacy/recovery/delete UX, chat, disclosures, planning/results/voting, notifications/
+generic push, moderation, metadata and date formatting. New profile/seeking language
+inputs default to `ru`; existing user data and language choices remain unchanged.
+
+- Licensed local DejaVu fonts render Russian share images offline, including em dash.
+- Known activity display labels and optional AI human suggestions are Russian;
+  activity keys, enums, API identifiers and deterministic matching stay unchanged.
+- Internal Veya cookies, storage/events, recovery model, SQL/listener/lock namespaces,
+  repository and invite links retain compatibility. No migration was added; applied
+  migrations 0001–0018 are unchanged.
+- Independent read-only review reproduced one Important regression: changing engine
+  explanations changed legacy fingerprints and could erase votes. Engine bytes remain
+  identical to the starting HEAD; Russian results are projected from structured facts
+  outside the versioned engine. Native PostgreSQL regression preserves old fingerprint,
+  suggestion keys/revision and yes votes, including Russian frozen/expired presentation.
+  Browser transport fallbacks and share-image punctuation findings were corrected.
+  Re-review found no remaining Important/Critical issue in the diff. See
+  [review](docs/russian-interface-review.md).
+
+**Local evidence, Node 24.19.0:** fresh `npm ci` and full `npm run check` PASS; lint
+zero warnings, strict TypeScript, **689 tests / 77 files** (+5 meaningful cases),
+production build PASS. Final full `npm run test:e2e`: **56/56 PASS**, 28 desktop +28
+mobile including 320px, no retries. `npm audit --json`: zero vulnerabilities. Both
+normal Docker target builds PASS; non-root UID1000 web/operations smoke PASS. Isolated
+PostgreSQL18 smoke: 18 migrations/idempotence/checksums, concurrent workers, readiness,
+actual no-store Cyrillic OG PNG, retention preview and backup/empty-database restore PASS.
+Earlier translation selector failures were corrected without loosening behavioral
+assertions. A container smoke hit local VFS ENOSPC; only old task-owned images/cache
+were removed and the complete database smoke reran successfully.
+
+**Remote evidence for this change:** pending the new commit/push; prior release evidence
+below remains separate. No production deployment/domain purchase occurred. Intavro is
+an invented international brand candidate: available GitHub repository-name search
+returned no match, but public search was blocked here. Domain/trademark availability
+still requires owner verification; no universal/legal uniqueness is asserted.
+
+## Previous release: Closed Beta Readiness
 
 The independently verified starting HEAD is `b3b2dcd8dffc6ab8a9276774532343a55df47673`.
 Clean baseline: npm ci/check/build passed, **586 tests / 68 files**, **48/48 desktop/mobile

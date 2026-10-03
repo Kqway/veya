@@ -75,6 +75,11 @@ docker exec "$smoke_prefix-web" node --input-type=module -e '
     await new Promise(resolve=>setTimeout(resolve,500));
   }
   if(!ready?.ok || (await ready.json()).status!=="ready")process.exit(1);
+  const preview=await fetch("http://127.0.0.1:3000/opengraph-image");
+  const image=new Uint8Array(await preview.arrayBuffer());
+  if(!preview.ok || !preview.headers.get("content-type")?.includes("image/png") ||
+      !preview.headers.get("cache-control")?.includes("no-store") || image.byteLength<1000 ||
+      image.slice(0,8).join(",")!=="137,80,78,71,13,10,26,10")process.exit(1);
 '
 # Rehearse the actual protected-service tooling against an empty, separate DB.
 docker exec "$smoke_prefix-db" createdb --username=veya_smoke veya_restore

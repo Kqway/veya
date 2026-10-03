@@ -1,7 +1,13 @@
-# Veya
+# Intavro
 
-**Tell Veya what you want to do. Veya finds compatible people. You decide what
-to reveal. Then Veya helps you actually meet.**
+**Tell Intavro what you want to do. Intavro finds compatible people. You decide what
+to reveal. Then Intavro helps you actually meet.**
+
+Интерфейс сайта полностью на русском: от создания занятия до чата и подтверждения
+встречи, включая уведомления, ошибки, модерацию и картинки приглашений. Новый
+публичный бренд — **Intavro**; технический репозиторий остаётся `Kqway/veya`.
+Имена, сообщения и другие введённые пользователями данные не переводятся.
+Существующие приглашения, сессии и ключи восстановления продолжают работать.
 
 ## Current scope
 
@@ -9,7 +15,7 @@ to reveal. Then Veya helps you actually meet.**
 create a seeking post, discover compatible posts, send Interested, and open a
 private conversation after the recipient accepts. Plan it connects the match to
 the existing availability/results/voting/confirmation flow. The original no-account
-friend invitation flow remains available from Make it happen and `/i/<slug>`.
+friend invitation flow remains available from «Создать план» and `/i/<slug>`.
 
 PostgreSQL is required for persistent social/plan APIs; the landing, build and
 stateless optional intent parsing work without credentials. AI is optional:
@@ -22,7 +28,7 @@ The [social API contract](docs/social-api-contract.md) documents exact bounded D
 
 1. Enter an idea such as “Play chess with someone” and choose Find compatible
    people. Create an 18+ social profile with an alias and privacy mode. Save the
-   one-time Veya Key privately; anyone holding it can recover the social profile.
+   one-time Intavro Key privately; anyone holding it can recover the social profile.
 2. Fill the activity, in-person/online mode, format, city/coarse area, languages,
    skill and future availability. Optional Help structure parses **your own text**
    into reviewed suggestions; manually filling every field also works.
@@ -33,7 +39,7 @@ The [social API contract](docs/social-api-contract.md) documents exact bounded D
    optional match-only first-name/contact disclosure with an irreversible warning.
    Nothing is shared automatically. Blocking closes new messages/disclosures,
    hides both profiles from discovery and prevents further requests.
-5. Choose Plan it, then both participants manually join the ordinary Veya invite
+5. Choose Plan it, then both participants manually join the ordinary Intavro invite
    and add availability. The existing deterministic scheduler, votes and organizer
    confirmation select the final time. A copied invite remains a bearer link;
    blocking cannot retract it or erase an existing coordination plan.
@@ -44,11 +50,11 @@ Other pairs cannot join those identities through API profile IDs or global alias
 lookup. All candidate cards are minimal even in OPEN: activity, format, compatibility
 reasons and coarse time hints; raw text, exact location/windows and profile IDs are
 never sent to candidates. There is no profile directory, online status or last seen.
-People you meet through Veya only see what you choose to reveal. Incognito is not
+People you meet through Intavro only see what you choose to reveal. Incognito is not
 absolute anonymity: your behavior, disclosures and real-world meeting can identify
 you. Server operators still hold the internal relational identity.
 
-**Veya Key:** cryptographically random, hash-only at rest, shown only on explicit
+**Intavro Key:** cryptographically random, hash-only at rest, shown only on explicit
 create/recover/rotate. The in-memory recovery banner survives client navigation,
 warns before full navigation and disappears after saved/discard acknowledgement.
 Recovery from a new active unbound guest rotates the key and detaches old social
@@ -79,7 +85,7 @@ Live updates use authenticated SSE and a PostgreSQL outbox; reconnect reloads th
 persistent APIs. Notifications have a private inbox/unread count and optional,
 explicitly enabled Web Push with generic lock-screen text. Saved posts queue actual
 deterministic future-candidate work, run by an **operator-scheduled** bounded worker;
-Veya never sends Interested automatically. Run `npm run social:process` periodically
+Intavro never sends Interested automatically. Run `npm run social:process` periodically
 for candidate notices, confirmed-plan reminders and opted-in push delivery.
 Production limits are shared through PostgreSQL and fail closed; no Redis, IP
 fingerprinting or additional realtime/chat provider is required.
@@ -603,11 +609,10 @@ identity/chat/avatar providers, Redis, GPS, remote fonts and paid AI are not req
 A public production launch still needs a configured HTTPS host, managed database,
 backups, host/gateway connection controls, scheduled workers and human report
 handling. Shared PostgreSQL limits are implemented. Closed-beta application source
-passed local Node24 gates: 684 tests / 77 files, 56/56 first-attempt desktop/mobile
-E2E and audit0 after the 2026-10-03 lint dependency advisory correction. Source
-`7561967` also passed both hosted jobs, including container/database smokes; see
-[run 37101005678](https://github.com/Kqway/veya/actions/runs/37101005678). See CODEX_PROGRESS.md
-for the exact source SHA, workflow and the separate baseline/failure history.
+passed local Node24 gates: **689 tests / 77 files**, **56/56 first-attempt desktop/mobile
+E2E**, production build and audit0. Both normal Docker builds, non-root execution,
+Cyrillic image rendering and isolated PostgreSQL migration/worker/backup/restore smokes
+passed. See CODEX_PROGRESS.md for separate remote CI evidence and baseline/failure history.
 Actual deployment, optional live OpenAI/
 push and device/browser compatibility remain host checks. No deployment occurred.
 

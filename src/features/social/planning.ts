@@ -21,7 +21,7 @@ export class PlanningService {
       if (ctx.closed) fail("CONFLICT");
       if (ctx.match.plan_slug) return { publicSlug: ctx.match.plan_slug };
       const identity = await pairIdentity(tx, ctx.pair, ctx.own);
-      const title = `${ctx.match.activity_label} together`;
+      const title = `${ctx.match.activity_label} — вместе`;
       const view = await createIntentInTransaction(
         tx,
         token,

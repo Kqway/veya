@@ -57,7 +57,7 @@ export class ProfileDeletionService {
   for(const plan of plans.rows){
    const removed=await tx.query<{id:string}>(`DELETE FROM participants WHERE intent_id=$1 AND guest_id IN(
     SELECT guest_id FROM social_profile_bindings WHERE profile_id=$2) RETURNING id`,[plan.id,profile]);
-   await tx.query(`UPDATE intents SET creator_display_name='Deleted participant' WHERE id=$1
+   await tx.query(`UPDATE intents SET creator_display_name='Удалённый участник' WHERE id=$1
     AND creator_guest_id IN(SELECT guest_id FROM social_profile_bindings WHERE profile_id=$2)`,[plan.id,profile]);
    if(removed.rows.length){
     await tx.query('UPDATE intents SET scheduling_revision=scheduling_revision+1,suggestions_fingerprint=NULL WHERE id=$1',[plan.id]);
@@ -96,9 +96,10 @@ export class ProfileDeletionService {
   await tx.query('DELETE FROM discovery_handles WHERE viewer_profile_id=$1',[profile]);
   // Cascade subscriptions and delivery jobs before any later worker can recheck.
   await tx.query('DELETE FROM social_profile_bindings WHERE profile_id=$1',[profile]);
-  await tx.query(`UPDATE pairwise_identities identity SET alias='Deleted participant',avatar_seed=replace(gen_random_uuid()::text,'-','')
+  await tx.query(`UPDATE pairwise_identities identity SET alias='Удалённый участник',avatar_seed=replace(gen_random_uuid()::text,'-','')
    FROM social_pairs pair WHERE identity.pair_id=pair.id AND
    ((pair.low_profile_id=$1 AND identity.side='low') OR (pair.high_profile_id=$1 AND identity.side='high'))`,[profile]);
+  // Migration 0018 requires this internal tombstone value; public pair aliases are localized above.
   await tx.query(`UPDATE social_profiles SET alias='Deleted participant',privacy_mode='INCOGNITO',avatar_seed=$2,
    age_band=NULL,languages='{}',recovery_key_hash=NULL,can_seek=false,can_connect=false,moderation_status='suspended',
    deleted_at=clock_timestamp(),updated_at=clock_timestamp() WHERE id=$1`,[profile,randomBytes(16).toString('hex')]);

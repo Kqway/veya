@@ -2,22 +2,22 @@ import { devices, expect, test, type Page } from "@playwright/test";
 async function createPlan(page: Page) {
   await page.goto("/");
   await page.getByRole("textbox").fill("Coffee and a walk this week?");
-  await page.getByRole("button", { name: "Make it happen" }).click();
-  await page.getByLabel("Your name").fill("Maya");
-  await page.getByRole("button", { name: "Coffee", exact: true }).click();
+  await page.getByRole("button", { name: "Создать план" }).click();
+  await page.getByLabel("Ваше имя").fill("Maya");
+  await page.getByRole("button", { name: "Кофе", exact: true }).click();
   await page
-    .getByLabel("Place or area (optional)", { exact: true })
+    .getByLabel("Место или район (необязательно)", { exact: true })
     .fill("Riverside");
-  await page.getByRole("button", { name: "Create invite" }).click();
+  await page.getByRole("button", { name: "Создать приглашение" }).click();
   await expect(page).toHaveURL(/\/i\/[A-Za-z0-9_-]{24}$/);
   await expect(
-    page.getByRole("heading", { name: "Your plan is ready to invite people." }),
+    page.getByRole("heading", { name: "План готов. Приглашайте друзей." }),
   ).toBeVisible();
   return page.url();
 }
 async function addAvailability(page: Page) {
   await page
-    .getByRole("button", { name: /Evening / })
+    .getByRole("button", { name: /Вечер / })
     .nth(1)
     .click();
 }
@@ -28,8 +28,8 @@ test("creator shares, a separate guest joins, refreshes, edits and joins only on
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   const url = await createPlan(page);
-  await page.getByRole("button", { name: "Copy link" }).click();
-  await expect(page.getByLabel("Invite link")).toHaveValue(url);
+  await page.getByRole("button", { name: "Скопировать ссылку" }).click();
+  await expect(page.getByLabel("Ссылка на приглашение")).toHaveValue(url);
   const context = await browser.newContext({
     ...(testInfo.project.name === "mobile"
       ? devices["Pixel 7"]
@@ -42,20 +42,20 @@ test("creator shares, a separate guest joins, refreshes, edits and joins only on
     friend.on("pageerror", (e) => errors.push(e.message));
     await friend.goto(url);
     await expect(
-      friend.getByRole("heading", { name: "Maya wants to make a plan." }),
+      friend.getByRole("heading", { name: "Maya предлагает встретиться." }),
     ).toBeVisible();
-    await friend.getByRole("button", { name: "Add yourself" }).click();
-    await friend.getByLabel("Display name").fill("Sam");
+    await friend.getByRole("button", { name: "Присоединиться" }).click();
+    await friend.getByLabel("Ваше имя").fill("Sam");
     await addAvailability(friend);
     await friend
-      .getByText("Budget, preferences & a note (optional)", { exact: true })
+      .getByText("Бюджет, предпочтения и заметка (необязательно)", { exact: true })
       .click();
-    await friend.getByLabel("Maximum budget").fill("10.29");
-    await friend.getByLabel("Activities", { exact: true }).fill("Coffee");
-    await friend.getByLabel("Optional note").fill("I can bring snacks.");
-    await friend.getByRole("button", { name: "Join the plan" }).click();
+    await friend.getByLabel("Максимальный бюджет").fill("10.29");
+    await friend.getByLabel("Занятия", { exact: true }).fill("Coffee");
+    await friend.getByLabel("Заметка (необязательно)").fill("I can bring snacks.");
+    await friend.getByRole("button", { name: "Присоединиться к встрече" }).click();
     await expect(
-      friend.getByRole("heading", { name: "You're in, Sam." }),
+      friend.getByRole("heading", { name: "Вы с нами, Sam." }),
     ).toBeVisible();
     expect(
       await friend.evaluate(
@@ -64,15 +64,15 @@ test("creator shares, a separate guest joins, refreshes, edits and joins only on
     ).toBe(true);
     await friend.reload();
     await expect(
-      friend.getByRole("heading", { name: "You're in, Sam." }),
+      friend.getByRole("heading", { name: "Вы с нами, Sam." }),
     ).toBeVisible();
-    await friend.getByRole("button", { name: "Edit your details" }).click();
+    await friend.getByRole("button", { name: "Изменить данные" }).click();
     await friend
-      .getByText("Budget, preferences & a note (optional)", { exact: true })
+      .getByText("Бюджет, предпочтения и заметка (необязательно)", { exact: true })
       .click();
-    await expect(friend.getByLabel("Maximum budget")).toHaveValue("10.29");
-    await friend.getByLabel("Optional note").fill("Bring a jacket.");
-    await friend.getByRole("button", { name: "Save changes" }).click();
+    await expect(friend.getByLabel("Максимальный бюджет")).toHaveValue("10.29");
+    await friend.getByLabel("Заметка (необязательно)").fill("Bring a jacket.");
+    await friend.getByRole("button", { name: "Сохранить изменения" }).click();
     await expect(
       friend.getByText("Bring a jacket.", { exact: true }),
     ).toBeVisible();
@@ -90,7 +90,7 @@ test("creator shares, a separate guest joins, refreshes, edits and joins only on
     expect(result.body.ownParticipant.displayName).toBe("Sam");
     await page.reload();
     await expect(
-      page.getByText("1 person has added availability", { exact: false }),
+      page.getByText("Свободное время указали: 1", { exact: false }),
     ).toBeVisible();
     await expect(
       page.getByText("Bring a jacket.", { exact: true }),
@@ -109,7 +109,7 @@ test("invalid and closed invites have a useful way forward", async ({
 }) => {
   await page.goto("/i/not-an-invite");
   await expect(
-    page.getByRole("heading", { name: "This invite couldn't be found." }),
+    page.getByRole("heading", { name: "Приглашение не найдено." }),
   ).toBeVisible();
   const url = await createPlan(page);
   const slug = new URL(url).pathname.split("/").pop()!;
@@ -122,37 +122,37 @@ test("invalid and closed invites have a useful way forward", async ({
   ).toBe(200);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "This invite has expired." }),
+    page.getByRole("heading", { name: "Срок приглашения истёк." }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Add your availability" }),
+    page.getByRole("button", { name: "Указать свободное время" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Start a new plan", exact: true }),
+    page.getByRole("link", { name: "Создать новый план", exact: true }),
   ).toBeVisible();
 });
 test("revoked membership cannot silently replace its identity on edit", async ({
   page,
 }) => {
   await createPlan(page);
-  await page.getByRole("button", { name: "Add your availability" }).click();
-  await page.getByLabel("Display name").fill("Maya");
+  await page.getByRole("button", { name: "Указать свободное время" }).click();
+  await page.getByLabel("Ваше имя").fill("Maya");
   await addAvailability(page);
-  await page.getByRole("button", { name: "Join the plan" }).click();
+  await page.getByRole("button", { name: "Присоединиться к встрече" }).click();
   await expect(
-    page.getByRole("heading", { name: "You're in, Maya." }),
+    page.getByRole("heading", { name: "Вы с нами, Maya." }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Edit your details" }).click();
+  await page.getByRole("button", { name: "Изменить данные" }).click();
   expect(
     await page.evaluate(
       async () => (await fetch("/api/session", { method: "DELETE" })).status,
     ),
   ).toBe(200);
-  await page.getByRole("button", { name: "Save changes" }).click();
+  await page.getByRole("button", { name: "Сохранить изменения" }).click();
   await expect(
-    page.getByRole("alert").filter({ hasText: "Your session has ended." }),
+    page.getByRole("alert").filter({ hasText: "Сеанс завершён." }),
   ).toBeVisible();
-  await expect(page.getByLabel("Display name")).toHaveValue("Maya");
+  await expect(page.getByLabel("Ваше имя")).toHaveValue("Maya");
 });
 
 test("enabled analytics follows entry actions without personal properties", async ({
@@ -169,8 +169,8 @@ test("enabled analytics follows entry actions without personal properties", asyn
       events.push(request.postDataJSON());
   });
   await createPlan(page);
-  await page.getByRole("button", { name: "Copy link" }).click();
-  await expect(page.getByRole("status").filter({hasText:"Link copied. Bring your people!"})).toBeVisible();
+  await page.getByRole("button", { name: "Скопировать ссылку" }).click();
+  await expect(page.getByRole("status").filter({hasText:"Ссылка скопирована. Приглашайте друзей!"})).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(page.url());
   await expect
     .poll(() => events.map((event) => event.name))
@@ -190,36 +190,36 @@ test("custom local ranges save UTC instants and reject overlapping selections", 
   page,
 }) => {
   await createPlan(page);
-  await page.getByRole("button", { name: "Add your availability" }).click();
-  await page.getByLabel("Display name").fill("Alex");
+  await page.getByRole("button", { name: "Указать свободное время" }).click();
+  await page.getByLabel("Ваше имя").fill("Alex");
   const date = await page.evaluate(() => {
     const day = new Date();
     day.setDate(day.getDate() + 1);
     return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
   });
-  await page.getByText("Choose custom times", { exact: true }).click();
-  await page.getByLabel("Date", { exact: true }).fill(date);
-  await page.getByLabel("Start time", { exact: true }).fill("09:30");
-  await page.getByLabel("End time", { exact: true }).fill("11:00");
-  await page.getByRole("button", { name: "Add time", exact: true }).click();
+  await page.getByText("Указать другое время", { exact: true }).click();
+  await page.getByLabel("Дата", { exact: true }).fill(date);
+  await page.getByLabel("Время начала", { exact: true }).fill("09:30");
+  await page.getByLabel("Время окончания", { exact: true }).fill("11:00");
+  await page.getByRole("button", { name: "Добавить время", exact: true }).click();
   await expect(
-    page.getByRole("list", { name: "Selected availability" }).getByRole("listitem"),
+    page.getByRole("list", { name: "Выбранное свободное время" }).getByRole("listitem"),
   ).toHaveCount(1);
   await page
-    .getByRole("button", { name: /Morning / })
+    .getByRole("button", { name: /Утро / })
     .nth(1)
     .click();
   await expect(
-    page.getByRole("alert").filter({ hasText: "Your time ranges overlap." }),
+    page.getByRole("alert").filter({ hasText: "Промежутки времени пересекаются." }),
   ).toBeVisible();
   await expect(
     page
-      .getByRole("list", { name: "Selected availability" })
+      .getByRole("list", { name: "Выбранное свободное время" })
       .getByRole("listitem"),
   ).toHaveCount(1);
-  await page.getByRole("button", { name: "Join the plan" }).click();
+  await page.getByRole("button", { name: "Присоединиться к встрече" }).click();
   await expect(
-    page.getByRole("heading", { name: "You're in, Alex." }),
+    page.getByRole("heading", { name: "Вы с нами, Alex." }),
   ).toBeVisible();
   const saved = await page.evaluate(
     async () =>

@@ -5,20 +5,20 @@ export class ApiError extends Error {
   ) {
     super(
       code === "PLAN_LIMIT_REACHED"
-        ? "This plan is full or has too many time ranges. Try fewer times or start a new plan."
+        ? "В плане уже слишком много участников или промежутков времени. Выберите меньше промежутков или создайте новый план."
         : code === "RATE_LIMITED"
-          ? "A few too many requests. Your details are saved here; wait a minute and try again."
+          ? "Слишком много запросов. Ваши данные сохранены здесь; подождите минуту и попробуйте ещё раз."
           : code === "UNAUTHORIZED"
-            ? "Your session has ended. Reload this page to continue."
+            ? "Сеанс завершён. Обновите страницу, чтобы продолжить."
             : code === "STALE_RESULTS"
-              ? "These suggestions changed. Reload the latest results before choosing."
+              ? "Варианты встречи изменились. Обновите результаты перед выбором."
               : code === "INVITE_EXPIRED"
-                ? "This invite has expired. Start a new plan together."
+                ? "Срок приглашения истёк. Создайте новый совместный план."
                 : code === "INTENT_CLOSED"
-                  ? "This plan is closed to changes."
+                  ? "Этот план больше нельзя изменить."
                   : code === "INVALID_INPUT"
-                    ? "Check your details and future availability, then try again."
-                    : "We couldn't save that right now. Your details are still here — please try again.",
+                    ? "Проверьте данные и свободное время в будущем, затем попробуйте ещё раз."
+                    : "Не удалось сохранить изменения. Ваши данные остались здесь — попробуйте ещё раз.",
     );
   }
 }

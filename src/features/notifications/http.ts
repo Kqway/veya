@@ -13,7 +13,7 @@ export function createNotificationHandler(options:{origin:string;db:()=>Database
   const origin=new URL(options.origin).origin;
   return async(request:Request,path:string[]=[])=>{
     try{
-      if(request.method!=='GET'&&request.headers.get('origin')!==origin)throw new HttpError(403,'ORIGIN_REJECTED','Use the application origin.');
+      if(request.method!=='GET'&&request.headers.get('origin')!==origin)throw new HttpError(403,'ORIGIN_REJECTED','Отправьте запрос с адреса приложения.');
       if(request.method!=='GET')assertBetaOperationAllowed(request.method==='DELETE'&&path.length===1&&path[0]==='push'?'safety':'mutation',options.getBetaControls?.()??getBetaControls());
       await enforceRateLimit(options.limiter,path[0]==='push'&&request.method!=='GET'?'push':request.method==='GET'?'socialRead':'socialWrite',request);
       const token=tokenFrom(request),method=request.method;

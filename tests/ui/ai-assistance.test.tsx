@@ -26,33 +26,33 @@ describe("optional reviewed assistance", () => {
     vi.stubGlobal("fetch", fetcher);
     const user = userEvent.setup();
     render(<CreateDetails idea={parseInput.text} onEdit={() => {}} />);
-    await user.type(screen.getByLabelText("Your name"), "Sam");
+    await user.type(screen.getByLabelText("Ваше имя"), "Sam");
     await user.type(
-      screen.getByLabelText("Place or area (optional)"),
+      screen.getByLabelText("Место или район (необязательно)"),
       "Manual town",
     );
-    await user.selectOptions(screen.getByLabelText("Collect replies for"), "3");
-    await user.click(screen.getByRole("button", { name: "Help with details" }));
+    await user.selectOptions(screen.getByLabelText("Срок сбора ответов"), "3");
+    await user.click(screen.getByRole("button", { name: "Помочь с деталями" }));
     expect(
-      await screen.findByRole("heading", { name: "Suggested details" }),
+      await screen.findByRole("heading", { name: "Предложенные детали" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Place or area (optional)")).toHaveValue(
+    expect(screen.getByLabelText("Место или район (необязательно)")).toHaveValue(
       "Manual town",
     );
-    await user.click(screen.getByRole("button", { name: "Apply details" }));
-    expect(screen.getByLabelText("Your name")).toHaveValue("Sam");
-    expect(screen.getByLabelText("Collect replies for")).toHaveValue("3");
-    expect(screen.getByLabelText("Kind of plan (optional)")).toHaveValue(
+    await user.click(screen.getByRole("button", { name: "Применить детали" }));
+    expect(screen.getByLabelText("Ваше имя")).toHaveValue("Sam");
+    expect(screen.getByLabelText("Срок сбора ответов")).toHaveValue("3");
+    expect(screen.getByLabelText("Тип встречи (необязательно)")).toHaveValue(
       "meet",
     );
-    expect(screen.getByLabelText("Place or area (optional)")).toHaveValue(
+    expect(screen.getByLabelText("Место или район (необязательно)")).toHaveValue(
       "Bristol",
     );
-    expect(screen.getByRole("button", { name: "Movie" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Кино" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    await user.click(screen.getByRole("button", { name: "Create invite" }));
+    await user.click(screen.getByRole("button", { name: "Создать приглашение" }));
     await waitFor(() =>
       expect(push).toHaveBeenCalledWith("/i/abcdefghijklmnopqrstuvwx"),
     );
@@ -76,19 +76,19 @@ describe("optional reviewed assistance", () => {
     );
     const user = userEvent.setup();
     render(<CreateDetails idea={parseInput.text} onEdit={() => {}} />);
-    await user.click(screen.getByRole("button", { name: "Coffee" }));
-    await user.click(screen.getByRole("button", { name: "Help with details" }));
+    await user.click(screen.getByRole("button", { name: "Кофе" }));
+    await user.click(screen.getByRole("button", { name: "Помочь с деталями" }));
     await user.click(
-      await screen.findByRole("button", { name: "Keep my details" }),
+      await screen.findByRole("button", { name: "Оставить мои детали" }),
     );
     expect(
-      screen.queryByRole("heading", { name: "Suggested details" }),
+      screen.queryByRole("heading", { name: "Предложенные детали" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Coffee" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Кофе" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(screen.getByLabelText("Kind of plan (optional)")).toHaveValue(
+    expect(screen.getByLabelText("Тип встречи (необязательно)")).toHaveValue(
       "general",
     );
   });
@@ -103,13 +103,13 @@ describe("optional reviewed assistance", () => {
     );
     const user = userEvent.setup();
     render(<CreateDetails idea="Coffee" onEdit={() => {}} />);
-    await user.type(screen.getByLabelText("Your name"), "Maya");
-    await user.click(screen.getByRole("button", { name: "Help with details" }));
+    await user.type(screen.getByLabelText("Ваше имя"), "Maya");
+    await user.click(screen.getByRole("button", { name: "Помочь с деталями" }));
     expect(
-      await screen.findByText(/You can keep adding details yourself/),
+      await screen.findByText(/Добавьте детали сами/),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Your name")).toHaveValue("Maya");
-    expect(screen.getByRole("button", { name: "Create invite" })).toBeEnabled();
+    expect(screen.getByLabelText("Ваше имя")).toHaveValue("Maya");
+    expect(screen.getByRole("button", { name: "Создать приглашение" })).toBeEnabled();
   });
   it("does not wait for a slow helper before ordinary creation", async () => {
     let release!: (value: Response) => void;
@@ -130,10 +130,10 @@ describe("optional reviewed assistance", () => {
     const { unmount } = render(
       <CreateDetails idea="Coffee" onEdit={() => {}} />,
     );
-    await user.type(screen.getByLabelText("Your name"), "Maya");
-    await user.click(screen.getByRole("button", { name: "Help with details" }));
-    expect(screen.getByRole("button", { name: "Create invite" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: "Create invite" }));
+    await user.type(screen.getByLabelText("Ваше имя"), "Maya");
+    await user.click(screen.getByRole("button", { name: "Помочь с деталями" }));
+    expect(screen.getByRole("button", { name: "Создать приглашение" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Создать приглашение" }));
     await waitFor(() => expect(push).toHaveBeenCalled());
     unmount();
     release(response({ data: parsedIntent, source: "mock" }));
@@ -168,7 +168,7 @@ describe("optional reviewed assistance", () => {
       />,
     );
     expect(fetcher).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Get a meetup idea" }));
+    await user.click(screen.getByRole("button", { name: "Предложить идею встречи" }));
     expect(
       await screen.findByText("Coffee <script>not HTML</script>"),
     ).toBeInTheDocument();
@@ -193,12 +193,12 @@ describe("optional reviewed assistance", () => {
         disabled={false}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "Get a meetup idea" }));
+    await user.click(screen.getByRole("button", { name: "Предложить идею встречи" }));
     expect(await screen.findByRole("status")).toHaveTextContent(
-      /Refresh results/,
+      /Обновите результаты/,
     );
     expect(
-      screen.getByRole("button", { name: "Get a meetup idea" }),
+      screen.getByRole("button", { name: "Предложить идею встречи" }),
     ).toBeEnabled();
     expect(fetcher.mock.calls[0]![0]).toBe(
       "/api/intents/abcdefghijklmnopqrstuvwx/assist",

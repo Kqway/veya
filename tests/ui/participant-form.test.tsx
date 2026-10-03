@@ -32,13 +32,13 @@ describe("participant form", () => {
       <ParticipantForm view={view} onSaved={() => {}} onCancel={() => {}} />,
     );
     await user.type(
-      screen.getByRole("textbox", { name: "Display name" }),
+      screen.getByRole("textbox", { name: "Ваше имя" }),
       "Alex",
     );
-    await user.click(screen.getByRole("button", { name: "Join the plan" }));
-    expect(screen.getByRole("alert")).toHaveTextContent(/at least one time/i);
+    await user.click(screen.getByRole("button", { name: "Присоединиться к встрече" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(/хотя бы один подходящий промежуток/i);
     expect(fetcher).not.toHaveBeenCalled();
-    expect(screen.getByRole("textbox", { name: "Display name" })).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "Ваше имя" })).toHaveValue(
       "Alex",
     );
   });
@@ -69,11 +69,11 @@ describe("participant form", () => {
       <ParticipantForm view={view} onSaved={onSaved} onCancel={() => {}} />,
     );
     await user.type(
-      screen.getByRole("textbox", { name: "Display name" }),
+      screen.getByRole("textbox", { name: "Ваше имя" }),
       "Sam",
     );
-    await user.click(screen.getAllByRole("button", { name: /Evening / })[1]!);
-    await user.click(screen.getByRole("button", { name: "Join the plan" }));
+    await user.click(screen.getAllByRole("button", { name: /Вечер / })[1]!);
+    await user.click(screen.getByRole("button", { name: "Присоединиться к встрече" }));
     expect(onSaved).toHaveBeenCalledWith(saved);
   });
   it("does not create a new identity when an existing guest's session is revoked", async () => {
@@ -105,8 +105,8 @@ describe("participant form", () => {
         onCancel={() => {}}
       />,
     );
-    expect(screen.getByLabelText("Maximum budget")).toHaveValue("10.29");
-    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(screen.getByLabelText("Максимальный бюджет")).toHaveValue("10.29");
+    await user.click(screen.getByRole("button", { name: "Сохранить изменения" }));
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(fetcher).toHaveBeenCalledWith(
       expect.stringContaining("/participants/me"),
@@ -115,7 +115,7 @@ describe("participant form", () => {
         body: expect.stringContaining('"budgetMin":0'),
       }),
     );
-    expect(screen.getByRole("alert")).toHaveTextContent(/session has ended/i);
-    expect(screen.getByLabelText("Optional note")).toHaveValue("original");
+    expect(screen.getByRole("alert")).toHaveTextContent(/Сеанс завершён/i);
+    expect(screen.getByLabelText("Заметка (необязательно)")).toHaveValue("original");
   });
 });

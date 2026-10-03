@@ -77,7 +77,7 @@ async function observe(page: Page, errors: string[]) {
         const json = JSON.stringify(payload.body);
         if (payload.method === "GET") {
           for (const secret of secrets)
-            expect(json.includes(secret), "GET leaked a Veya Key").toBe(false);
+            expect(json.includes(secret), "GET leaked a Intavro Key").toBe(false);
         }
         if (!/^\/api\/social\/(?:profile|seeking)(?:\/|$)/.test(payload.path)) {
           for (const value of privateValues)
@@ -147,52 +147,52 @@ function responseFor(page: Page, path: string, method = "POST") {
 async function createProfile(page: Page, alias: string, language: string) {
   await page.goto("/discover");
   await expect(
-    page.getByRole("heading", { name: "Choose how you appear" }),
+    page.getByRole("heading", { name: "Выберите, как вас будут видеть" }),
   ).toBeVisible();
-  await page.getByLabel("Alias", { exact: true }).fill(alias);
+  await page.getByLabel("Псевдоним", { exact: true }).fill(alias);
   await page
-    .getByRole("combobox", { name: "Privacy", exact: true })
+    .getByRole("combobox", { name: "Приватность", exact: true })
     .selectOption("INCOGNITO");
   await page
-    .getByRole("combobox", { name: "Age band (optional)", exact: true })
+    .getByRole("combobox", { name: "Возрастная группа (необязательно)", exact: true })
     .selectOption("25-29");
-  await page.getByLabel("Profile languages (optional)").fill(language);
+  await page.getByLabel("Языки профиля (необязательно)").fill(language);
   await page
-    .getByRole("button", { name: "Create profile", exact: true })
+    .getByRole("button", { name: "Создать профиль", exact: true })
     .click();
   await expect(page.locator(".social-shell").getByRole("alert")).toContainText(
-    "Confirm that you are 18 or older",
+    "подтвердите, что вам исполнилось 18 лет",
   );
-  await page.getByLabel("I am 18 or older").check();
+  await page.getByLabel("Мне исполнилось 18 лет").check();
   const created = responseFor(page, "/api/social/profile");
   await page
-    .getByRole("button", { name: "Create profile", exact: true })
+    .getByRole("button", { name: "Создать профиль", exact: true })
     .click();
   expect((await created).status()).toBe(201);
   await expect(
-    page.getByRole("heading", { name: "Save Veya Key privately" }),
+    page.getByRole("heading", { name: "Сохраните Ключ Intavro в надёжном месте" }),
   ).toBeVisible();
   await expect(
-    page.getByText("This is shown once.", { exact: false }),
+    page.getByText("Этот ключ показывается только один раз.", { exact: false }),
   ).toBeVisible();
-  const key = await page.getByLabel("Veya Key", { exact: true }).inputValue();
+  const key = await page.getByLabel("Ключ Intavro", { exact: true }).inputValue();
   expect(key).toMatch(/^[A-Za-z0-9_-]{43}$/);
   await page
-    .getByRole("button", { name: "I saved my key", exact: true })
+    .getByRole("button", { name: "Ключ сохранён", exact: true })
     .click();
-  await expect(page.getByLabel("Veya Key", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Ключ Intavro", { exact: true })).toHaveCount(0);
   return key;
 }
 
 async function customTime(page: Page, date: string) {
-  await page.getByText("Choose custom times", { exact: true }).click();
-  await page.getByLabel("Date", { exact: true }).fill(date);
-  await page.getByLabel("Start time", { exact: true }).fill("18:00");
-  await page.getByLabel("End time", { exact: true }).fill("20:00");
-  await page.getByRole("button", { name: "Add time", exact: true }).click();
+  await page.getByText("Указать другое время", { exact: true }).click();
+  await page.getByLabel("Дата", { exact: true }).fill(date);
+  await page.getByLabel("Время начала", { exact: true }).fill("18:00");
+  await page.getByLabel("Время окончания", { exact: true }).fill("20:00");
+  await page.getByRole("button", { name: "Добавить время", exact: true }).click();
   await expect(
     page
-      .getByRole("list", { name: "Selected availability" })
+      .getByRole("list", { name: "Выбранное свободное время" })
       .getByRole("listitem"),
   ).toHaveCount(1);
 }
@@ -213,17 +213,17 @@ async function joinPlan(
 ) {
   await page
     .getByRole("button", {
-      name: creator ? "Add your availability" : "Add yourself",
+      name: creator ? "Указать свободное время" : "Присоединиться",
       exact: true,
     })
     .click();
-  await page.getByLabel("Display name", { exact: true }).fill(name);
+  await page.getByLabel("Ваше имя", { exact: true }).fill(name);
   await customTime(page, date);
   await page
-    .getByRole("button", { name: "Join the plan", exact: true })
+    .getByRole("button", { name: "Присоединиться к встрече", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: `You're in, ${name}.`, exact: true }),
+    page.getByRole("heading", { name: `Вы с нами, ${name}.`, exact: true }),
   ).toBeVisible();
 }
 
@@ -263,30 +263,30 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
   try {
     const key = await createProfile(page, aliasA, language);
     await page
-      .getByRole("link", { name: "Create a seeking post", exact: true })
+      .getByRole("link", { name: "Создать заявку на занятие", exact: true })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Your activity, your terms" }),
+      page.getByRole("heading", { name: "Ваше занятие на ваших условиях" }),
     ).toBeVisible();
     const rawText = `Private chess notes ${testInfo.project.name}`;
     await page
-      .getByLabel("What do you want to do?", { exact: true })
+      .getByLabel("Чем хотите заняться?", { exact: true })
       .fill(rawText);
-    await page.getByLabel("Activity key", { exact: true }).fill("chess");
-    await page.getByLabel("Activity label", { exact: true }).fill("Chess");
-    await page.getByLabel("City", { exact: true }).fill("Moscow");
-    await page.getByLabel("Coarse area (optional)").fill("North");
+    await page.getByLabel("Код занятия", { exact: true }).fill("chess");
+    await page.getByLabel("Название занятия", { exact: true }).fill("Chess");
+    await page.getByLabel("Город", { exact: true }).fill("Moscow");
+    await page.getByLabel("Район (необязательно)").fill("North");
     await page
-      .getByRole("combobox", { name: "Skill", exact: true })
+      .getByRole("combobox", { name: "Уровень опыта", exact: true })
       .selectOption("intermediate");
-    await page.getByLabel("Languages", { exact: true }).fill(language);
+    await page.getByLabel("Языки", { exact: true }).fill(language);
     // Retrying/repeating a failed journey retains its DB fixture. Keep actual
     // chess/Moscow/language matching, with disjoint future windows per attempt.
     const date = await tomorrow(page, 1 + testInfo.retry + testInfo.repeatEachIndex * 2);
     await customTime(page, date);
     const postResponse = responseFor(page, "/api/social/seeking");
     await page
-      .getByRole("button", { name: "Create seeking post", exact: true })
+      .getByRole("button", { name: "Создать заявку на занятие", exact: true })
       .click();
     const own = await json<OwnPost>(await postResponse);
     await expect(page).toHaveURL(/\/seek\/[A-Za-z0-9_-]{24}$/);
@@ -364,14 +364,14 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
       201,
     );
 
-    await page.getByRole("link", { name: "Find people", exact: true }).click();
+    await page.getByRole("article").getByRole("link", { name: "Найти людей", exact: true }).click();
     const discovery = page.waitForResponse(
       (r) =>
         new URL(r.url()).pathname === "/api/social/discover" &&
         r.request().method() === "GET",
     );
     await page
-      .getByRole("button", { name: "Find people", exact: true })
+      .getByRole("button", { name: "Найти людей", exact: true })
       .click();
     const cards = (await json<{ cards: Card[] }>(await discovery)).cards;
     expect(cards).toHaveLength(1);
@@ -388,7 +388,7 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
     expect(card.identity.alias).not.toBe(aliasB);
     expect(JSON.stringify(cards)).not.toContain(bPost.publicKey);
     const candidates = page.getByRole("region", {
-      name: "Compatible people",
+      name: "Подходящие люди",
       exact: true,
     });
     await expect(candidates.getByRole("article")).toHaveCount(1);
@@ -413,16 +413,16 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
     );
     const interest = responseFor(page, "/api/social/connections");
     await candidates
-      .getByRole("button", { name: "Interested", exact: true })
+      .getByRole("button", { name: "Хочу присоединиться", exact: true })
       .click();
     const request = await json<{ publicKey: string }>(await interest);
     await expect(
-      page.getByRole("status").filter({ hasText: "Interest sent." }),
+      page.getByRole("status").filter({ hasText: "Запрос отправлен." }),
     ).toBeVisible();
 
     await b.page.goto("/connections");
     const incoming = b.page.getByRole("region", {
-      name: "Incoming requests",
+      name: "Входящие запросы",
       exact: true,
     });
     await expect(incoming.getByRole("article")).toHaveCount(1);
@@ -436,21 +436,21 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
       b.page,
       `/api/social/connections/${request.publicKey}/respond`,
     );
-    await incoming.getByRole("button", { name: "Accept", exact: true }).click();
+    await incoming.getByRole("button", { name: "Принять", exact: true }).click();
     const accepted = await json<{ matchKey: string }>(await accept);
     const matchPath = `/api/social/matches/${accepted.matchKey}`;
     await incoming
-      .getByRole("link", { name: "View conversation", exact: true })
+      .getByRole("link", { name: "Открыть чат", exact: true })
       .click();
     await expect(
-      b.page.getByRole("heading", { name: "Your conversation", exact: true }),
+      b.page.getByRole("heading", { name: "Ваш чат", exact: true }),
     ).toBeVisible();
     await page.goto("/connections");
     await page
-      .getByRole("link", { name: "View conversation", exact: true })
+      .getByRole("link", { name: "Открыть чат", exact: true })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Your conversation", exact: true }),
+      page.getByRole("heading", { name: "Ваш чат", exact: true }),
     ).toBeVisible();
     const aMatch = await api<Match>(context, matchPath),
       bMatch = await api<Match>(b.context, matchPath);
@@ -472,18 +472,18 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
 
     const xss =
       '<img src=x onerror="window.__socialXss=1"><script>window.__socialXss=1</script> Chess tomorrow?';
-    await page.getByLabel("Message", { exact: true }).fill(xss);
+    await page.getByLabel("Сообщение", { exact: true }).fill(xss);
     await page
-      .getByRole("button", { name: "Send message", exact: true })
+      .getByRole("button", { name: "Отправить сообщение", exact: true })
       .click();
     await expect(
-      page.getByRole("list", { name: "Conversation messages" }),
+      page.getByRole("list", { name: "Сообщения чата" }),
     ).toContainText(xss);
     await b.page
-      .getByRole("button", { name: "Refresh messages", exact: true })
+      .getByRole("button", { name: "Обновить сообщения", exact: true })
       .click();
     const messagesB = b.page.getByRole("list", {
-      name: "Conversation messages",
+      name: "Сообщения чата",
     });
     await expect(messagesB).toContainText(xss);
     await expect(messagesB.locator("img, script")).toHaveCount(0);
@@ -491,38 +491,38 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
       await b.page.evaluate(() => Object.hasOwn(window, "__socialXss")),
     ).toBe(false);
     await b.page
-      .getByLabel("Message", { exact: true })
+      .getByLabel("Сообщение", { exact: true })
       .fill("Yes, let's play tomorrow.");
     await b.page
-      .getByRole("button", { name: "Send message", exact: true })
+      .getByRole("button", { name: "Отправить сообщение", exact: true })
       .click();
     await expect(messagesB).toContainText("Yes, let's play tomorrow.");
     await page
-      .getByRole("button", { name: "Refresh messages", exact: true })
+      .getByRole("button", { name: "Обновить сообщения", exact: true })
       .click();
     await expect(
-      page.getByRole("list", { name: "Conversation messages" }),
+      page.getByRole("list", { name: "Сообщения чата" }),
     ).toContainText("Yes, let's play tomorrow.");
 
-    await page.getByLabel("Disclosure value", { exact: true }).fill("Alex");
+    await page.getByLabel("Сведения для передачи", { exact: true }).fill("Alex");
     await page
-      .getByRole("button", { name: "Share disclosure", exact: true })
+      .getByRole("button", { name: "Поделиться сведениями", exact: true })
       .click();
     await expect(
       page.locator(".social-shell").getByRole("alert"),
-    ).toContainText("Confirm your consent");
+    ).toContainText("Подтвердите согласие");
     expect((await api<Match>(b.context, matchPath)).disclosures).toEqual([]);
-    await page.getByLabel("I understand and consent", { exact: true }).check();
+    await page.getByLabel("Я понимаю и даю согласие", { exact: true }).check();
     await page
-      .getByRole("button", { name: "Share disclosure", exact: true })
+      .getByRole("button", { name: "Поделиться сведениями", exact: true })
       .click();
     await expect(
-      page.getByRole("status").filter({ hasText: "Detail shared" }),
+      page.getByRole("status").filter({ hasText: "Сведения переданы собеседнику" }),
     ).toBeVisible();
     await b.page
-      .getByRole("button", { name: "Refresh messages", exact: true })
+      .getByRole("button", { name: "Обновить сообщения", exact: true })
       .click();
-    await expect(b.page.getByText(/First name: Alex/)).toBeVisible();
+    await expect(b.page.getByText(/Имя: Alex/)).toBeVisible();
     expect((await api<Match>(b.context, matchPath)).disclosures).toEqual([
       { kind: "first_name", value: "Alex", isMine: false },
     ]);
@@ -531,11 +531,11 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
         .matches,
     ).toEqual([]);
 
-    await page.getByRole("button", { name: "Plan it", exact: true }).click();
+    await page.getByRole("button", { name: "Организовать встречу", exact: true }).click();
     await page
-      .getByRole("button", { name: "Create plan", exact: true })
+      .getByRole("button", { name: "Создать план", exact: true })
       .click();
-    const open = page.getByRole("link", { name: "Open plan", exact: true });
+    const open = page.getByRole("link", { name: "Открыть план", exact: true });
     await expect(open).toHaveAttribute("href", /^\/i\/[A-Za-z0-9_-]{24}$/);
     const planPath = (await open.getAttribute("href"))!;
     const plan = await api<{
@@ -551,65 +551,65 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
     await open.click();
     await joinPlan(page, true, "Plan A", date);
     await b.page
-      .getByRole("button", { name: "Refresh messages", exact: true })
+      .getByRole("button", { name: "Обновить сообщения", exact: true })
       .click();
-    await b.page.getByRole("link", { name: "Open plan", exact: true }).click();
+    await b.page.getByRole("link", { name: "Открыть план", exact: true }).click();
     await joinPlan(b.page, false, "Plan B", date);
     for (const member of [page, b.page]) {
       await member
-        .getByRole("link", { name: "Find a time together", exact: true })
+        .getByRole("link", { name: "Найти общее время", exact: true })
         .click();
       const best = member.getByRole("region", {
-        name: "Best match",
+        name: "Лучший вариант",
         exact: true,
       });
-      await expect(best).toContainText("2 of 2");
-      await best.getByRole("button", { name: "YES", exact: true }).click();
+      await expect(best).toContainText("2 из 2");
+      await best.getByRole("button", { name: "ДА", exact: true }).click();
       await expect(
-        best.getByRole("button", { name: "YES", exact: true }),
+        best.getByRole("button", { name: "ДА", exact: true }),
       ).toHaveAttribute("aria-pressed", "true");
     }
     await page.reload();
-    const best = page.getByRole("region", { name: "Best match", exact: true });
-    await expect(best.getByLabel("Group votes")).toContainText("YES 2");
+    const best = page.getByRole("region", { name: "Лучший вариант", exact: true });
+    await expect(best.getByLabel("Голоса участников")).toContainText("ДА 2");
     await best
-      .getByRole("button", { name: "Choose this plan", exact: true })
+      .getByRole("button", { name: "Выбрать этот план", exact: true })
       .click();
     await page
-      .getByRole("button", { name: "Confirm plan", exact: true })
+      .getByRole("button", { name: "Подтвердить план", exact: true })
       .click();
     await expect(
-      page.getByRole("heading", { name: "It's a plan.", exact: true }),
+      page.getByRole("heading", { name: "Встреча запланирована.", exact: true }),
     ).toBeVisible();
     await b.page
-      .getByRole("button", { name: "Refresh results", exact: true })
+      .getByRole("button", { name: "Обновить результаты", exact: true })
       .click();
     await expect(
-      b.page.getByRole("heading", { name: "It's a plan.", exact: true }),
+      b.page.getByRole("heading", { name: "Встреча запланирована.", exact: true }),
     ).toBeVisible();
 
     await page.goto(`/m/${accepted.matchKey}`);
     await expect(
-      page.getByRole("button", { name: "Send message", exact: true }),
+      page.getByRole("button", { name: "Отправить сообщение", exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Block", exact: true }).click();
+    await page.getByRole("button", { name: "Заблокировать", exact: true }).click();
     await page
-      .getByRole("button", { name: "Confirm block", exact: true })
+      .getByRole("button", { name: "Подтвердить блокировку", exact: true })
       .click();
     await expect(
-      page.getByRole("status").filter({ hasText: "Blocked." }),
+      page.getByRole("status").filter({ hasText: "Пользователь заблокирован." }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Send message", exact: true }),
+      page.getByRole("button", { name: "Отправить сообщение", exact: true }),
     ).toHaveCount(0);
     await b.page.goto(`/m/${accepted.matchKey}`);
     await expect(
       b.page
         .getByRole("status")
-        .filter({ hasText: "This conversation is closed" }),
+        .filter({ hasText: "Этот чат закрыт" }),
     ).toBeVisible();
     await expect(
-      b.page.getByRole("button", { name: "Send message", exact: true }),
+      b.page.getByRole("button", { name: "Отправить сообщение", exact: true }),
     ).toHaveCount(0);
     for (const member of [context, b.context]) {
       await api(
@@ -647,14 +647,14 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
       );
       await memberPage.goto("/discover");
       await memberPage
-        .getByRole("combobox", { name: "Your active activity", exact: true })
+        .getByRole("combobox", { name: "Ваша активная заявка", exact: true })
         .selectOption(fresh.publicKey);
       await memberPage
-        .getByRole("button", { name: "Find people", exact: true })
+        .getByRole("button", { name: "Найти людей", exact: true })
         .click();
       await expect(
-        memberPage.getByRole("region", { name: "Compatible people" }),
-      ).toContainText("No compatible people found");
+        memberPage.getByRole("region", { name: "Подходящие люди" }),
+      ).toContainText("Пока не удалось найти подходящих людей");
       expect(
         (
           await api<{ cards: Card[] }>(
@@ -692,7 +692,7 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
     await expect(
       page
         .getByRole("status")
-        .filter({ hasText: "This conversation is closed" }),
+        .filter({ hasText: "Этот чат закрыт" }),
     ).toBeVisible();
     await overflow(page);
     await page.screenshot({
@@ -724,7 +724,7 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
   }
 });
 
-test("Veya Key recovery rotates secrets, detaches social sessions and preserves coordination identity", async ({
+test("Intavro Key recovery rotates secrets, detaches social sessions and preserves coordination identity", async ({
   page,
   context,
   browser,
@@ -748,14 +748,14 @@ test("Veya Key recovery rotates secrets, detaches social sessions and preserves 
       .getByRole("textbox")
       .fill("Keep my original coordination identity");
     await page
-      .getByRole("button", { name: "Make it happen", exact: true })
+      .getByRole("button", { name: "Создать план", exact: true })
       .click();
     await page
-      .getByLabel("Your name", { exact: true })
+      .getByLabel("Ваше имя", { exact: true })
       .fill("Original planner");
-    await page.getByRole("button", { name: "Coffee", exact: true }).click();
+    await page.getByRole("button", { name: "Кофе", exact: true }).click();
     await page
-      .getByRole("button", { name: "Create invite", exact: true })
+      .getByRole("button", { name: "Создать приглашение", exact: true })
       .click();
     await expect(page).toHaveURL(/\/i\/[A-Za-z0-9_-]{24}$/);
     const planUrl = page.url(),
@@ -771,17 +771,17 @@ test("Veya Key recovery rotates secrets, detaches social sessions and preserves 
 
     await recovered.page.goto("/discover");
     await recovered.page
-      .getByRole("button", { name: "Recover with a Veya Key", exact: true })
+      .getByRole("button", { name: "Восстановить с помощью Ключа Intavro", exact: true })
       .click();
     await recovered.page
-      .getByLabel("Recovery key", { exact: true })
+      .getByLabel("Ключ восстановления", { exact: true })
       .fill(oldKey);
     const recoverResponse = responseFor(
       recovered.page,
       "/api/social/profile/recover",
     );
     await recovered.page
-      .getByRole("button", { name: "Recover profile", exact: true })
+      .getByRole("button", { name: "Восстановить профиль", exact: true })
       .click();
     const recovery = await json<{ profile: Profile; recoveryKey: string }>(
       await recoverResponse,
@@ -789,10 +789,10 @@ test("Veya Key recovery rotates secrets, detaches social sessions and preserves 
     expect(recovery.profile).toEqual(originalProfile);
     expect(recovery.recoveryKey).not.toBe(oldKey);
     await expect(
-      recovered.page.getByLabel("Veya Key", { exact: true }),
+      recovered.page.getByLabel("Ключ Intavro", { exact: true }),
     ).toHaveValue(recovery.recoveryKey);
     await recovered.page
-      .getByRole("button", { name: "I saved my key", exact: true })
+      .getByRole("button", { name: "Ключ сохранён", exact: true })
       .click();
     expect(
       (await api<{ profile: Profile | null }>(context, "/api/social/profile"))
@@ -816,20 +816,20 @@ test("Veya Key recovery rotates secrets, detaches social sessions and preserves 
     await page.reload();
     await expect(
       page.getByRole("heading", {
-        name: "You're in, Original planner.",
+        name: "Вы с нами, Original planner.",
         exact: true,
       }),
     ).toBeVisible();
 
     await probe.page.goto("/discover");
     await probe.page
-      .getByRole("button", { name: "Recover with a Veya Key", exact: true })
+      .getByRole("button", { name: "Восстановить с помощью Ключа Intavro", exact: true })
       .click();
     async function rejectKey(key: string) {
-      await probe.page.getByLabel("Recovery key", { exact: true }).fill(key);
+      await probe.page.getByLabel("Ключ восстановления", { exact: true }).fill(key);
       const rejected = responseFor(probe.page, "/api/social/profile/recover");
       await probe.page
-        .getByRole("button", { name: "Recover profile", exact: true })
+        .getByRole("button", { name: "Восстановить профиль", exact: true })
         .click();
       const response = await rejected;
       expect(response.status()).toBe(404);
@@ -837,7 +837,7 @@ test("Veya Key recovery rotates secrets, detaches social sessions and preserves 
       projection(body);
       await expect(
         probe.page.locator(".social-shell").getByRole("alert"),
-      ).toContainText("This Veya Key is invalid or no longer active.");
+      ).toContainText("Этот Ключ Intavro недействителен или больше не активен.");
       expect(
         (
           await api<{ profile: Profile | null }>(
@@ -852,23 +852,23 @@ test("Veya Key recovery rotates secrets, detaches social sessions and preserves 
     expect(await rejectKey(oldKey)).toEqual(wrong);
     const rotation = responseFor(recovered.page, "/api/social/profile/key");
     await recovered.page
-      .getByRole("button", { name: "Rotate Veya Key", exact: true })
+      .getByRole("button", { name: "Заменить Ключ Intavro", exact: true })
       .click();
     const rotated = await json<{ recoveryKey: string }>(await rotation);
     expect(rotated.recoveryKey).not.toBe(recovery.recoveryKey);
     await expect(
-      recovered.page.getByLabel("Veya Key", { exact: true }),
+      recovered.page.getByLabel("Ключ Intavro", { exact: true }),
     ).toHaveValue(rotated.recoveryKey);
     await recovered.page
-      .getByRole("button", { name: "I saved my key", exact: true })
+      .getByRole("button", { name: "Ключ сохранён", exact: true })
       .click();
     expect(await rejectKey(recovery.recoveryKey)).toEqual(wrong);
     await recovered.page.reload();
     await expect(
-      recovered.page.getByLabel("Veya Key", { exact: true }),
+      recovered.page.getByLabel("Ключ Intavro", { exact: true }),
     ).toHaveCount(0);
     await recovered.page
-      .getByRole("button", { name: "Revoke Veya Key", exact: true })
+      .getByRole("button", { name: "Отозвать Ключ Intavro", exact: true })
       .click();
     const revoke = responseFor(
       recovered.page,
@@ -876,12 +876,12 @@ test("Veya Key recovery rotates secrets, detaches social sessions and preserves 
       "DELETE",
     );
     await recovered.page
-      .getByRole("button", { name: "Confirm revoke", exact: true })
+      .getByRole("button", { name: "Подтвердить отзыв", exact: true })
       .click();
     expect(await json(await revoke)).toEqual({ revoked: true });
     await expect(
       recovered.page.getByRole("button", {
-        name: "Revoke Veya Key",
+        name: "Отозвать Ключ Intavro",
         exact: true,
       }),
     ).toBeDisabled();

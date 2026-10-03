@@ -43,10 +43,10 @@ export function PlanAssistance({
       if (active.current)
         setError(
           e instanceof ApiError && e.code === "STALE_RESULTS"
-            ? "These suggestions changed. Refresh results before asking for an idea."
+            ? "Варианты встречи изменились. Обновите результаты перед запросом идеи."
             : e instanceof ApiError && e.code === "UNAUTHORIZED"
-              ? "Your session has ended. Reload this page to continue."
-              : "We couldn't add a suggestion. Your plan still works; try again when you're ready.",
+              ? "Сеанс завершён. Обновите страницу, чтобы продолжить."
+              : "Не удалось предложить идею. План сохранён; попробуйте ещё раз, когда будет удобно.",
         );
     } finally {
       if (active.current) setBusy(false);
@@ -62,10 +62,10 @@ export function PlanAssistance({
             disabled={busy || disabled}
             onClick={() => void help()}
           >
-            {busy ? "Thinking of an idea…" : "Get a meetup idea"}
+            {busy ? "Придумываем идею…" : "Предложить идею встречи"}
           </button>
           <p className="quiet-copy">
-            Optional ideas may use AI. Your group decides the details.
+            Идеи могут быть созданы с помощью ИИ. Детали решаете вы вместе.
           </p>
         </>
       )}
@@ -75,8 +75,8 @@ export function PlanAssistance({
         </p>
       )}
       {result && (
-        <section className="meetup-idea" aria-label="Meetup idea">
-          <h3>A meetup idea</h3>
+        <section className="meetup-idea" aria-label="Идея встречи">
+          <h3>Идея для встречи</h3>
           <p className="meetup-title">{result.idea.data.title}</p>
           <p>{result.idea.data.idea}</p>
           <p className="quiet-copy">{result.explanation.data.explanation}</p>

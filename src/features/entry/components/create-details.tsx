@@ -6,6 +6,7 @@ import { IntentAssistance } from "./intent-assistance";
 import { IntentHints } from "./intent-hints";
 import type { IntentView } from "@/features/backend/types";
 import { ensureGuest, requestApi } from "../client";
+import { activityLabel } from "@/features/intents/labels";
 const activities = ["Coffee", "Dinner", "Walk", "Games", "Study", "Adventure"];
 export function CreateDetails({
   idea,
@@ -41,7 +42,7 @@ export function CreateDetails({
     event.preventDefault();
     if (busy) return;
     if (!name.trim() || name.trim().length > 60) {
-      setError("Add your name, up to 60 characters.");
+      setError("Укажите имя, не более 60 символов.");
       requestAnimationFrame(() => alert.current?.focus());
       return;
     }
@@ -63,7 +64,7 @@ export function CreateDetails({
       });
       if (active.current) router.push(`/i/${result.intent.publicSlug}`);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Please try again.");
+      setError(error instanceof Error ? error.message : "Попробуйте ещё раз.");
       requestAnimationFrame(() => alert.current?.focus());
       if (active.current) setBusy(false);
     }
@@ -75,7 +76,7 @@ export function CreateDetails({
       noValidate
       aria-busy={busy}
     >
-      <p className="eyebrow">A little detail. A real plan.</p>
+      <p className="eyebrow">Пара деталей — и план готов.</p>
       <h2 className="draft-title" tabIndex={-1} ref={heading}>
         {idea}
       </h2>
@@ -99,40 +100,40 @@ export function CreateDetails({
       />
       <fieldset disabled={busy} className="plain-fieldset">
         <label className="field">
-          Your name
+          Ваше имя
           <input
             value={name}
             maxLength={60}
             autoComplete="given-name"
             onChange={(e) => setName(e.target.value)}
-            placeholder="What should your friends call you?"
+            placeholder="Как вас называть?"
             required
           />
         </label>
         <label className="field">
-          Collect replies for
+          Срок сбора ответов
           <select value={days} onChange={(e) => setDays(e.target.value)}>
-            <option value="3">3 days</option>
-            <option value="7">7 days</option>
-            <option value="14">14 days</option>
+            <option value="3">3 дня</option>
+            <option value="7">7 дней</option>
+            <option value="14">14 дней</option>
           </select>
         </label>
         <label className="field">
-          Kind of plan (optional)
+          Тип встречи (необязательно)
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as ParsedIntent["type"])}
           >
-            <option value="general">Anything together</option>
-            <option value="meet">Meet up</option>
-            <option value="travel">Travel</option>
-            <option value="game">Games</option>
-            <option value="study">Study</option>
+            <option value="general">Что угодно вместе</option>
+            <option value="meet">Встреча</option>
+            <option value="travel">Поездка</option>
+            <option value="game">Игры</option>
+            <option value="study">Учёба</option>
           </select>
         </label>
         <fieldset className="tag-fieldset">
           <legend>
-            What sounds good? <span>(optional)</span>
+            Чем хотите заняться? <span>(необязательно)</span>
           </legend>
           <div className="tag-list">
             {availableActivities.map((a) => (
@@ -150,18 +151,18 @@ export function CreateDetails({
                   )
                 }
               >
-                {a}
+                {activityLabel(a)}
               </button>
             ))}
           </div>
         </fieldset>
         <label className="field">
-          Place or area (optional)
+          Место или район (необязательно)
           <input
             value={place}
             maxLength={120}
             onChange={(e) => setPlace(e.target.value)}
-            placeholder="A neighbourhood, city, or anywhere"
+            placeholder="Район, город или любое место"
           />
         </label>
       </fieldset>
@@ -177,7 +178,7 @@ export function CreateDetails({
             disabled={busy}
             onClick={() => setHints(null)}
           >
-            Remove date/budget hints
+            Убрать подсказки о датах и бюджете
           </button>
         </div>
       )}
@@ -188,7 +189,7 @@ export function CreateDetails({
       )}
       <div className="form-actions">
         <button className="button button-primary" disabled={busy} type="submit">
-          {busy ? "Creating your invite…" : "Create invite"}
+          {busy ? "Создаём приглашение…" : "Создать приглашение"}
         </button>
         <button
           className="button button-secondary"
@@ -196,11 +197,11 @@ export function CreateDetails({
           type="button"
           onClick={onEdit}
         >
-          Edit your idea
+          Изменить идею
         </button>
       </div>
       <p className="quiet-copy">
-        No account needed. Your friends add their own availability.
+        Регистрация не нужна. Друзья сами укажут свободное время.
       </p>
     </form>
   );

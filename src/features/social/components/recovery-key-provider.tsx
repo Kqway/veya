@@ -26,21 +26,17 @@ export function RecoveryKeyProvider({ children }: { children: ReactNode }) {
   }, [oneTimeKey]);
 
   return <RecoveryContext.Provider value={{ key: oneTimeKey, clearKey, showKey: (key) => { copyAttempt.current++; setCopyStatus(""); setDiscard(false); setOneTimeKey(key); } }}>
-    {oneTimeKey && <section className="social-card social-recovery-banner" aria-label="Save your recovery key">
+    {oneTimeKey && <section className="social-card social-recovery-banner" aria-label="Сохраните ключ восстановления">
         <div className="social-key">
-          <h3>Save Veya Key privately</h3>
+          <h3>Сохраните Ключ Intavro в надёжном месте</h3>
           <p>
-            This is shown once. Save it somewhere private to recover your
-            profile. Anyone with this key can take control of your social
-            profile. Recovery replaces the key and disconnects other social
-            sessions; it does not transfer your old plan ownership.
+            Этот ключ показывается только один раз. Сохраните его в месте, доступном только вам, чтобы восстановить профиль. Любой, у кого есть ключ, может получить контроль над вашим профилем Intavro. Восстановление заменяет ключ и отключает другие сессии профиля, но не переносит права организатора ваших прежних планов.
           </p>
           <p className="social-warning">
-            Your key is not saved yet. If you lose both this key and your browser session,
-            your profile cannot be recovered. Veya cannot show the key again.
+            Вы ещё не сохранили ключ. Если вы потеряете и ключ, и сессию браузера, восстановить профиль будет невозможно. Intavro не сможет показать ключ повторно.
           </p>
           <label className="field">
-            Veya Key
+            Ключ Intavro
             <input
               readOnly
               value={oneTimeKey}
@@ -57,39 +53,38 @@ export function RecoveryKeyProvider({ children }: { children: ReactNode }) {
                 try {
                   if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
                   await navigator.clipboard.writeText(oneTimeKey);
-                  if (copyAttempt.current === attempt) setCopyStatus("Key copied. Save it privately, then acknowledge below.");
+                  if (copyAttempt.current === attempt) setCopyStatus("Ключ скопирован. Сохраните его в надёжном месте и подтвердите это ниже.");
                 } catch {
-                  if (copyAttempt.current === attempt) setCopyStatus("Select the key and copy it manually, then save it privately.");
+                  if (copyAttempt.current === attempt) setCopyStatus("Выделите ключ и скопируйте его вручную, затем сохраните в надёжном месте.");
                 }
               }}
             >
-              Copy Veya Key
+              Скопировать Ключ Intavro
             </button>
             <button
               className="button button-primary"
               onClick={clearKey}
             >
-              I saved my key
+              Ключ сохранён
             </button>
             <button
               className="button button-secondary"
               onClick={() => setDiscard(true)}
             >
-              Discard key
+              Закрыть без сохранения
             </button>
           </div>
           {copyStatus && <p role="status">{copyStatus}</p>}
           {discard && (
             <div role="alert">
               <p>
-                Discarding this key without saving it may prevent recovery. It
-                cannot be shown again.
+                Если закрыть ключ без сохранения, восстановление профиля может стать невозможным. Показать ключ повторно нельзя.
               </p>
               <button
                 className="button button-secondary"
                 onClick={clearKey}
               >
-                Discard without saving
+                Закрыть ключ без сохранения
               </button>
             </div>
           )}

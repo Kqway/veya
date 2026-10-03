@@ -17,8 +17,8 @@ export const currencies = ["USD", "EUR", "GBP", "RUB", "JPY", "KWD"];
 const supportedCurrencies = new Set(Intl.supportedValuesOf("currency"));
 export function currencyDigits(currency: string): number {
   if (!supportedCurrencies.has(currency))
-    throw new Error("Choose a supported currency.");
-  return new Intl.NumberFormat("en", {
+    throw new Error("Выберите поддерживаемую валюту.");
+  return new Intl.NumberFormat("ru-RU", {
     style: "currency",
     currency,
   }).resolvedOptions().maximumFractionDigits!;
@@ -27,15 +27,15 @@ export function parseMoney(value: string, currency: string): number | null {
   if (!value.trim()) return null;
   const digits = currencyDigits(currency);
   if (!/^\d+(\.\d+)?$/.test(value.trim()))
-    throw new Error("Enter a positive budget amount, or leave it blank.");
+    throw new Error("Введите положительную сумму бюджета или оставьте поле пустым.");
   const [whole, fraction = ""] = value.trim().split(".");
   if (fraction.length > digits || whole!.length > 12)
-    throw new Error(`Use at most ${digits} decimal places for ${currency}.`);
+    throw new Error(`Для ${currency} укажите не более ${digits} знаков после точки.`);
   const minor =
     BigInt(whole!) * 10n ** BigInt(digits) +
     BigInt(fraction.padEnd(digits, "0") || "0");
   if (minor > 100_000_000n)
-    throw new Error("That budget is too large. Please use a smaller amount.");
+    throw new Error("Сумма бюджета слишком велика. Укажите меньшую сумму.");
   return Number(minor);
 }
 export function formatMoney(
@@ -62,8 +62,8 @@ export function nextDays(now = new Date()): { date: string; label: string }[] {
       date: dateKey(date),
       label:
         index === 0
-          ? "Today"
-          : date.toLocaleDateString("en", {
+          ? "Сегодня"
+          : date.toLocaleDateString("ru-RU", {
               weekday: "short",
               month: "short",
               day: "numeric",
@@ -79,7 +79,7 @@ export function localWindow(
 ): Availability {
   function instant(time: string, localDate = date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate) || !/^\d{2}:\d{2}$/.test(time))
-      throw new Error("Choose a valid date and time.");
+      throw new Error("Укажите корректные дату и время.");
     const value = new Date(`${localDate}T${time}:00`);
     if (
       !Number.isFinite(value.getTime()) ||
@@ -87,13 +87,13 @@ export function localWindow(
       `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}` !==
         time
     )
-      throw new Error("That local time doesn't exist. Choose another time.");
+      throw new Error("Такого местного времени не существует. Выберите другое время.");
     return value;
   }
   const startAt = instant(start),
     endAt = instant(end, endDate);
   if (endAt <= startAt || endAt.getTime() - startAt.getTime() > 86_400_000)
-    throw new Error("End time must be after start time, within 24 hours.");
+    throw new Error("Время окончания должно быть позже начала, в пределах 24 часов.");
   return { startAt: startAt.toISOString(), endAt: endAt.toISOString() };
 }
 export function validateEntryAvailability(
@@ -103,8 +103,8 @@ export function validateEntryAvailability(
   saved: Availability[] = [],
 ): void {
   if (!windows.length)
-    throw new Error("Choose at least one time that works for you.");
-  if (windows.length > 28) throw new Error("Choose at most 28 time ranges.");
+    throw new Error("Выберите хотя бы один подходящий промежуток времени.");
+  if (windows.length > 28) throw new Error("Можно выбрать не более 28 промежутков времени.");
   const unchanged = new Set(
     saved.map((w) => `${Date.parse(w.startAt)}:${Date.parse(w.endAt)}`),
   );
@@ -121,11 +121,11 @@ export function validateEntryAvailability(
       w.end > Math.min(Date.parse(expiresAt), now.getTime() + 30 * 86_400_000)
     )
       throw new Error(
-        "Choose future times before this invite expires, within 24 hours each.",
+        "Выберите время в будущем до окончания срока приглашения. Каждый промежуток — не более 24 часов.",
       );
     if (w.start < previousEnd)
       throw new Error(
-        "Your time ranges overlap. Remove or adjust one of them.",
+        "Промежутки времени пересекаются. Удалите или измените один из них.",
       );
     previousEnd = w.end;
   }
@@ -157,17 +157,17 @@ export function parsePreferenceText(text: string): string[] {
     else if (char === '"') {
       if (value.trim() || closed)
         throw new Error(
-          "Put quotes around an entire preference containing commas.",
+          "Возьмите в кавычки всё предпочтение, если оно содержит запятые.",
         );
       value = "";
       quoted = true;
     } else {
       if (closed && char.trim())
-        throw new Error("Separate preferences with commas.");
+        throw new Error("Разделяйте предпочтения запятыми.");
       value += char;
     }
   }
-  if (quoted) throw new Error("Close the quote around your preference.");
+  if (quoted) throw new Error("Закройте кавычки в предпочтении.");
   commit();
   return [...new Set(values)];
 }
@@ -184,7 +184,7 @@ export function participantFromForm(
   const budgetMin = parseMoney(fields.budgetMin, fields.currency),
     budgetMax = parseMoney(fields.budgetMax, fields.currency);
   if (budgetMin !== null && budgetMax !== null && budgetMin > budgetMax)
-    throw new Error("Minimum budget cannot exceed maximum budget.");
+    throw new Error("Минимальный бюджет не может превышать максимальный.");
   const originalFields = own ? fieldsFromParticipant(own) : null;
   const preferences = (["activity", "dietary", "location"] as const).flatMap(
     (category) => {
@@ -207,7 +207,7 @@ export function participantFromForm(
   });
   if (!parsed.success)
     throw new Error(
-      "Add your name (up to 60 characters), short preferences and a note up to 1000 characters.",
+      "Укажите имя (до 60 символов), краткие предпочтения и заметку до 1000 символов.",
     );
   return parsed.data;
 }

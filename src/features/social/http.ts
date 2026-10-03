@@ -40,7 +40,7 @@ export function createSocialHandler(options: {
         throw new HttpError(
           403,
           "ORIGIN_REJECTED",
-          "Use the application origin.",
+          "Отправьте запрос с адреса приложения.",
         );
       let action: RateAction = mutation ? "socialWrite" : "socialRead";
       const [resource, key, operation] = path;

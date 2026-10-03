@@ -10,14 +10,14 @@ export type BackendErrorCode =
 
 const messages: Record<BackendErrorCode, string> = {
   PLAN_LIMIT_REACHED:
-    "This plan has reached its group or availability limit. Reduce time ranges or start another plan.",
-  STALE_RESULTS: "These suggestions changed. Reload the latest results.",
-  INVALID_INPUT: "Check the submitted fields.",
-  UNAUTHORIZED: "A valid guest session is required.",
-  FORBIDDEN: "You do not have permission for this action.",
-  NOT_FOUND: "The requested plan or membership was not found.",
-  INVITE_EXPIRED: "This invitation has expired.",
-  INTENT_CLOSED: "This plan no longer accepts changes.",
+    "В этом плане достигнут лимит участников или промежутков свободного времени. Уменьшите число временных интервалов или создайте другой план.",
+  STALE_RESULTS: "Варианты встречи изменились. Обновите результаты перед выбором.",
+  INVALID_INPUT: "Проверьте заполненные поля.",
+  UNAUTHORIZED: "Нужна действующая гостевая сессия.",
+  FORBIDDEN: "У вас нет разрешения на это действие.",
+  NOT_FOUND: "План или участие в нём не найдены.",
+  INVITE_EXPIRED: "Срок действия приглашения истёк.",
+  INTENT_CLOSED: "Этот план больше нельзя изменить.",
 };
 
 export class BackendError extends Error {

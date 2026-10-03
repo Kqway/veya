@@ -33,8 +33,11 @@ describe("participant form conversion", () => {
   });
   it("builds seven local calendar dates across DST", () => {
     process.env.TZ = "America/New_York";
+    const days = nextDays(new Date("2026-03-07T23:00:00-05:00"));
+    expect(days[0]?.label).toBe("Сегодня");
+    expect(days[1]?.label).toBe("вс, 8 мар.");
     expect(
-      nextDays(new Date("2026-03-07T23:00:00-05:00")).map((day) => day.date),
+      days.map((day) => day.date),
     ).toEqual([
       "2026-03-07",
       "2026-03-08",
@@ -62,10 +65,10 @@ describe("participant form conversion", () => {
     const b = { startAt: "2026-10-01T12:00Z", endAt: "2026-10-01T13:00Z" };
     expect(() => validateEntryAvailability([a, b], expiry, now)).not.toThrow();
     expect(() => validateEntryAvailability([], expiry, now)).toThrow(
-      /at least one/i,
+      /хотя бы один/i,
     );
     expect(() => validateEntryAvailability([a, a], expiry, now)).toThrow(
-      /overlap/i,
+      /пересекаются/i,
     );
     expect(() =>
       validateEntryAvailability(

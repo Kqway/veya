@@ -8,9 +8,9 @@ import {
   type Availability,
 } from "../form-values";
 const presets = [
-  { name: "Morning", start: "09:00", end: "12:00" },
-  { name: "Afternoon", start: "12:00", end: "17:00" },
-  { name: "Evening", start: "17:00", end: "22:00" },
+  { name: "Утро", start: "09:00", end: "12:00" },
+  { name: "День", start: "12:00", end: "17:00" },
+  { name: "Вечер", start: "17:00", end: "22:00" },
 ];
 export function formatWindow(window: Availability): string {
   const start = new Date(window.startAt),
@@ -22,7 +22,7 @@ export function formatWindow(window: Availability): string {
     hour: "numeric",
     minute: "2-digit",
   } as const;
-  return `${start.toLocaleString("en", options)} – ${start.toDateString() === end.toDateString() ? end.toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" }) : end.toLocaleString("en", options)}`;
+  return `${start.toLocaleString("ru-RU", options)} – ${start.toDateString() === end.toDateString() ? end.toLocaleTimeString("ru-RU", { hour: "numeric", minute: "2-digit" }) : end.toLocaleString("ru-RU", options)}`;
 }
 export function AvailabilityPicker({
   value,
@@ -57,16 +57,16 @@ export function AvailabilityPicker({
   }
   return (
     <fieldset className="availability-picker">
-      <legend>When are you free?</legend>
+      <legend>Когда у вас есть свободное время?</legend>
       <p className="quiet-copy">
-        Next 7 days · Times in{" "}
-        {Intl.DateTimeFormat().resolvedOptions().timeZone}. Morning 9–12,
-        afternoon 12–17, evening 17–22.
+        Ближайшие 7 дней · Часовой пояс:{" "}
+        {Intl.DateTimeFormat().resolvedOptions().timeZone}. Утро 9–12,
+        день 12–17, вечер 17–22.
       </p>
       <p className="availability-feedback" role="status">
         {value.length
-          ? `${value.length} ${value.length === 1 ? "time" : "times"} selected. You can add more.`
-          : "Tap a time below. One is enough to get started."}
+          ? `Выбрано промежутков: ${value.length}. Можно добавить ещё.`
+          : "Выберите время ниже. Для начала достаточно одного промежутка."}
       </p>
       <div className="day-list">
         {days.map((day) => (
@@ -119,10 +119,10 @@ export function AvailabilityPicker({
         ))}
       </div>
       <details className="custom-times">
-        <summary>Choose custom times</summary>
+        <summary>Указать другое время</summary>
         <div className="custom-time-fields">
           <label className="field">
-            Date
+            Дата
             <input
               type="date"
               value={date}
@@ -132,7 +132,7 @@ export function AvailabilityPicker({
             />
           </label>
           <label className="field">
-            Start time
+            Время начала
             <input
               type="time"
               value={start}
@@ -140,7 +140,7 @@ export function AvailabilityPicker({
             />
           </label>
           <label className="field">
-            End time
+            Время окончания
             <input
               type="time"
               value={end}
@@ -154,7 +154,7 @@ export function AvailabilityPicker({
             checked={overnight}
             onChange={(e) => setOvernight(e.target.checked)}
           />{" "}
-          Ends the next day
+          Заканчивается на следующий день
         </label>
         <button
           className="button button-secondary"
@@ -162,7 +162,7 @@ export function AvailabilityPicker({
           onClick={() => {
             try {
               if (date < days[0]!.date || date > days[6]!.date)
-                throw new Error("Choose a date in the next 7 days.");
+                throw new Error("Выберите дату в ближайшие 7 дней.");
               const next = new Date(`${date}T12:00:00`);
               next.setDate(next.getDate() + 1);
               add(
@@ -173,7 +173,7 @@ export function AvailabilityPicker({
             }
           }}
         >
-          Add time
+          Добавить время
         </button>
       </details>
       {error && (
@@ -182,16 +182,16 @@ export function AvailabilityPicker({
         </p>
       )}
       {value.length > 0 && (
-        <ul className="selected-times" aria-label="Selected availability">
+        <ul className="selected-times" aria-label="Выбранное свободное время">
           {value.map((w, index) => (
             <li key={`${w.startAt}-${w.endAt}`}>
               <span>{formatWindow(w)}</span>
               <button
                 type="button"
-                aria-label={`Remove time ${index + 1}`}
+                aria-label={`Удалить промежуток ${index + 1}`}
                 onClick={() => onChange(value.filter((_, i) => i !== index))}
               >
-                Remove
+                Удалить
               </button>
             </li>
           ))}

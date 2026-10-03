@@ -1,7 +1,7 @@
 import { runtimeLimiter } from "@/lib/security/rate-limit";
 import { getInvitePreview } from "@/features/entry/preview";
 import { shareImage } from "@/components/share-image";
-export const alt = "Bring your people together with Veya";
+export const alt = "Соберите друзей с Intavro";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const dynamic = "force-dynamic";

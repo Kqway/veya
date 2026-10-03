@@ -19,7 +19,12 @@ function forbidden() {
 
 async function expectPaused(response: Response, code = "BETA_READ_ONLY") {
   expect(response.status).toBe(503);
-  expect(await response.json()).toMatchObject({ error: { code } });
+  const messages: Record<string, string> = {
+    BETA_READ_ONLY: "Приложение временно доступно только для просмотра. Попробуйте позже.",
+    BETA_SIGNUPS_PAUSED: "Создание новых профилей временно приостановлено. Попробуйте позже.",
+    BETA_SEEKING_PAUSED: "Создание новых объявлений о поиске компании временно приостановлено. Попробуйте позже.",
+  };
+  expect(await response.json()).toEqual({ error: { code, message: messages[code] } });
   expect(response.headers.get("cache-control")).toBe("no-store");
 }
 

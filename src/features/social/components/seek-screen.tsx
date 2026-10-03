@@ -5,6 +5,10 @@ import { ApiError } from "@/features/entry/client";
 import { formatWindow } from "@/features/entry/components/availability-picker";
 import {
   socialApi,
+  privacyLabels,
+  formatLabels,
+  skillLabels,
+  postStatusLabels,
   useSocialAction,
   type OwnPost,
   type Profile,
@@ -35,8 +39,8 @@ export function NewSeekScreen() {
     });
   }, [run]);
   return (
-    <SocialShell title="What do you want to do?">
-      {!loaded && <p role="status">Loading your profile…</p>}
+    <SocialShell title="Чем хотите заняться?">
+      {!loaded && <p role="status">Загружаем ваш профиль…</p>}
       <SocialError message={action.error} focusRef={action.errorRef} />
       {loaded && (
         <>
@@ -60,45 +64,45 @@ export function OwnSeekScreen({ postKey }: { postKey: string }) {
     });
   }, [postKey, run]);
   return (
-    <SocialShell title="Your seeking post">
+    <SocialShell title="Ваша заявка на занятие">
       <SocialError message={action.error} focusRef={action.errorRef} />
-      {!post && !action.error && <p role="status">Loading your activity…</p>}
+      {!post && !action.error && <p role="status">Загружаем ваше занятие…</p>}
       {post && (
         <article className="social-card">
           <h2>{post.activityLabel}</h2>
           <p className="social-plain">{post.rawText}</p>
           <p>
-            Status: {post.status} · Privacy: {post.privacyMode}
+            Статус: {postStatusLabels[post.status]} · Приватность: {privacyLabels[post.privacyMode]}
           </p>
           <dl>
-            <dt>Interaction</dt>
+            <dt>Способ встречи</dt>
             <dd>
               {post.interactionMode === "in_person"
-                ? "In person"
+                ? "Вживую"
                 : post.interactionMode === "online"
-                  ? "Online"
-                  : "Either"}
+                  ? "Онлайн"
+                  : "Любой вариант"}
             </dd>
-            <dt>Format</dt>
-            <dd>{post.format === "one_to_one" ? "One to one" : post.format}</dd>
-            <dt>City / coarse area</dt>
+            <dt>Формат</dt>
+            <dd>{formatLabels[post.format]}</dd>
+            <dt>Город / район</dt>
             <dd>
-              {[post.city, post.area].filter(Boolean).join(" / ") || "Online"}
+              {[post.city, post.area].filter(Boolean).join(" / ") || "Онлайн"}
             </dd>
-            <dt>Skill</dt>
-            <dd>{post.skill}</dd>
-            <dt>Languages</dt>
+            <dt>Уровень опыта</dt>
+            <dd>{skillLabels[post.skill]}</dd>
+            <dt>Языки</dt>
             <dd>{post.languages.join(", ")}</dd>
-            <dt>Tags</dt>
-            <dd>{post.tags.join(", ") || "None"}</dd>
-            <dt>Desired age bands</dt>
-            <dd>{post.desiredAgeBands.join(", ") || "No restriction"}</dd>
-            <dt>Group size</dt>
-            <dd>{post.groupSize ?? "Flexible"}</dd>
-            <dt>Expires</dt>
-            <dd>{new Date(post.expiresAt).toLocaleString()}</dd>
+            <dt>Теги</dt>
+            <dd>{post.tags.join(", ") || "Нет"}</dd>
+            <dt>Предпочтительные возрастные группы</dt>
+            <dd>{post.desiredAgeBands.join(", ") || "Без ограничений"}</dd>
+            <dt>Размер группы</dt>
+            <dd>{post.groupSize ?? "Любой"}</dd>
+            <dt>Срок действия</dt>
+            <dd>{new Date(post.expiresAt).toLocaleString("ru-RU")}</dd>
           </dl>
-          <h3>Your private availability</h3>
+          <h3>Ваше свободное время — только для вас</h3>
           <ul>
             {post.availability.map((w) => (
               <li key={w.startAt}>{formatWindow(w)}</li>
@@ -108,7 +112,7 @@ export function OwnSeekScreen({ postKey }: { postKey: string }) {
             {post.status === "active" && (
               <>
                 <Link className="button button-primary" href="/discover">
-                  Find people
+                  Найти людей
                 </Link>
                 <button
                   className="button button-secondary"
@@ -123,12 +127,12 @@ export function OwnSeekScreen({ postKey }: { postKey: string }) {
                     });
                   }}
                 >
-                  Close post
+                  Закрыть заявку
                 </button>
               </>
             )}
             <Link className="button button-secondary" href="/seek/new">
-              Create another activity
+              Создать ещё одно занятие
             </Link>
           </div>
         </article>

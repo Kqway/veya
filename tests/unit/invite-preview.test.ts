@@ -36,7 +36,7 @@ describe("public invite preview", () => {
     }));
     const result = await getInvitePreview(slug, load);
     expect(result).toEqual({
-      title: "Artem wants to make a plan 👀",
+      title: "Artem предлагает встретиться 👀",
       description: previewDescription,
     });
     expect(JSON.stringify(result)).not.toContain("PRIVATE");
@@ -48,7 +48,7 @@ describe("public invite preview", () => {
       status: "expired" as const,
     }));
     expect((await getInvitePreview("bad", load)).title).toBe(
-      "Your next good time starts here",
+      "Здесь начинается ваша следующая встреча",
     );
     expect(load).not.toHaveBeenCalled();
     expect((await getInvitePreview(slug, load)).title).not.toContain("Secret");
@@ -57,7 +57,7 @@ describe("public invite preview", () => {
         throw new Error("internal db secret");
       }),
     ).toEqual({
-      title: "Your next good time starts here",
+      title: "Здесь начинается ваша следующая встреча",
       description: previewDescription,
     });
   });

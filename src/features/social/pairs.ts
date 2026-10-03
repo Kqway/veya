@@ -75,7 +75,7 @@ export async function ensurePair(
       [
         pair.id,
         side,
-        `Quiet ${randomBytes(6).toString("hex")}`,
+        `Тихий ${randomBytes(6).toString("hex")}`,
         randomBytes(16).toString("hex"),
       ],
     );

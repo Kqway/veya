@@ -11,6 +11,10 @@ import {
   ageBands,
   csv,
   privacyModes,
+  privacyLabels,
+  interactionLabels,
+  formatLabels,
+  skillLabels,
   socialApi,
   useSocialAction,
   type OwnPost,
@@ -20,6 +24,18 @@ import {
   type Suggestion,
 } from "../client";
 import { PrivacyCopy, SocialError } from "./common";
+const suggestionLabels: Record<keyof Suggestion, string> = {
+  activityKey: "Код занятия",
+  activityLabel: "Название занятия",
+  interactionMode: "Способ встречи",
+  format: "Формат",
+  city: "Город",
+  area: "Район",
+  skill: "Уровень опыта",
+  languages: "Языки",
+  tags: "Теги",
+  timeHint: "Подсказка по времени",
+};
 const empty = {
   rawText: "",
   activityKey: "",
@@ -29,7 +45,7 @@ const empty = {
   city: "",
   area: "",
   skill: "any" as SeekingInput["skill"],
-  languages: "en",
+  languages: "ru",
   tags: "",
   groupSize: "",
   expiry: "",
@@ -86,7 +102,7 @@ export function SeekingForm({ profile }: { profile: Profile }) {
       date.getTime() <= Date.now() ||
       date.getTime() > Date.now() + 30 * 86_400_000
     )
-      throw new Error("Choose an expiry within the next 30 days.");
+      throw new Error("Выберите срок действия в пределах следующих 30 дней.");
     return date.toISOString();
   }
   function submit(e: FormEvent) {
@@ -95,9 +111,9 @@ export function SeekingForm({ profile }: { profile: Profile }) {
       const expiry = expiresAt();
       validateEntryAvailability(availability, expiry);
       if (availability.length > 14)
-        throw new Error("Choose at most 14 time ranges.");
+        throw new Error("Выберите не более 14 временных интервалов.");
       if (!fields.rawText.trim() || fields.rawText.trim().length > 500)
-        throw new Error("Describe your activity in up to 500 characters.");
+        throw new Error("Опишите занятие, используя не более 500 символов.");
       if (
         !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(fields.activityKey) ||
         fields.activityKey.length > 40 ||
@@ -105,13 +121,13 @@ export function SeekingForm({ profile }: { profile: Profile }) {
         fields.activityLabel.trim().length > 80
       )
         throw new Error(
-          "Add an activity key (lowercase words joined by hyphens) and an activity label.",
+          "Укажите код занятия (строчные латинские слова через дефис) и название занятия.",
         );
       if (fields.interactionMode !== "online" && !fields.city.trim())
-        throw new Error("Choose a city for in-person activities.");
+        throw new Error("Укажите город для занятия вживую.");
       const languages = csv(fields.languages, 5, 20, true);
       if (languages.some((v) => !/^[a-z]{2}(?:-[a-z]{2})?$/.test(v)))
-        throw new Error("Use language codes, for example en, es or en-us.");
+        throw new Error("Используйте коды языков, например ru, en или en-us.");
       const groupSize = fields.groupSize ? Number(fields.groupSize) : null;
       if (
         groupSize !== null &&
@@ -121,7 +137,7 @@ export function SeekingForm({ profile }: { profile: Profile }) {
           fields.format === "one_to_one")
       )
         throw new Error(
-          "Choose a group size from 2 to 12 for a group activity.",
+          "Для занятия в группе выберите от 2 до 12 участников.",
         );
       const input: SeekingInput = {
         rawText: fields.rawText.trim(),
@@ -150,15 +166,13 @@ export function SeekingForm({ profile }: { profile: Profile }) {
   const order = { OPEN: 0, PRIVATE: 1, INCOGNITO: 2 };
   return (
     <form className="social-card" onSubmit={submit} noValidate>
-      <h2>Your activity, your terms</h2>
+      <h2>Ваше занятие на ваших условиях</h2>
       <p>
-        Choose what you want to do and real times you are available. No home
-        addresses or precise location. Matching uses your activity, meeting format,
-        shared language and overlapping future times.
+        Выберите занятие и время, когда вы действительно свободны. Не указывайте домашний адрес или точное местоположение. Подбор учитывает занятие, формат встречи, общий язык и совпадающее свободное время в будущем.
       </p>
       <fieldset disabled={action.busy}>
         <label className="field">
-          What do you want to do?
+          Чем хотите заняться?
           <textarea
             maxLength={500}
             rows={3}
@@ -172,7 +186,7 @@ export function SeekingForm({ profile }: { profile: Profile }) {
           onClick={() => {
             void action.run(async (alive) => {
               if (!fields.rawText.trim())
-                throw new Error("Describe your activity first.");
+                throw new Error("Сначала опишите занятие.");
               const data = await socialApi<{
                 data: Suggestion;
                 source: string;
@@ -185,28 +199,33 @@ export function SeekingForm({ profile }: { profile: Profile }) {
             });
           }}
         >
-          Help structure
+          Помочь с заполнением
         </button>
         <p className="quiet-copy">
-          Optional assistance. Review suggestions before applying them; you can
-          edit every field or fill them manually without AI. Unrecognized activities are welcome.
+          Помощь необязательна. Проверьте предложения перед применением. Вы можете изменить любое поле или заполнить всё вручную без ИИ. Можно добавить и занятие, которого нет в списке.
         </p>
         {suggestion && (
-          <section className="social-preview" aria-label="Review suggestion">
-            <h3>Suggested structure</h3>
+          <section className="social-preview" aria-label="Проверка предложения">
+            <h3>Предложенные сведения</h3>
             <dl>
               {Object.entries(suggestion).map(([key, value]) => (
                 <div key={key}>
-                  <dt>{key.replace(/([A-Z])/g, " $1")}</dt>
+                  <dt>{suggestionLabels[key as keyof Suggestion]}</dt>
                   <dd>
                     {Array.isArray(value)
-                      ? value.join(", ") || "None suggested"
-                      : (value ?? "None suggested")}
+                      ? value.join(", ") || "Нет предложений"
+                      : key === "interactionMode" && suggestion.interactionMode
+                        ? interactionLabels[suggestion.interactionMode]
+                        : key === "format" && suggestion.format
+                          ? formatLabels[suggestion.format]
+                          : key === "skill" && suggestion.skill
+                            ? skillLabels[suggestion.skill]
+                            : (value ?? "Нет предложений")}
                   </dd>
                 </div>
               ))}
             </dl>
-            <p>Time hints are advisory. Select your own availability below.</p>
+            <p>Подсказки по времени — только рекомендации. Укажите своё свободное время ниже.</p>
             <div className="social-actions">
               <button
                 className="button button-secondary"
@@ -230,22 +249,22 @@ export function SeekingForm({ profile }: { profile: Profile }) {
                   setSuggestion(null);
                 }}
               >
-                Apply reviewed suggestion
+                Применить проверенное предложение
               </button>
               <button
                 className="social-text-button"
                 type="button"
                 onClick={() => setSuggestion(null)}
               >
-                Keep my details
+                Оставить мои сведения
               </button>
             </div>
           </section>
         )}
-        <p className="quiet-copy">Activity key groups the same activity together. Use a short name such as chess or pottery; join multiple words with hyphens. Activity label is the name people see.</p>
+        <p className="quiet-copy">Код занятия объединяет одинаковые занятия. Используйте короткое название латиницей, например chess или pottery. Несколько слов соединяйте дефисами. Название занятия — это то, что увидят другие люди.</p>
         <div className="social-grid">
           <label className="field">
-            Activity key
+            Код занятия
             <input
               value={fields.activityKey}
               onChange={(e) => set("activityKey", e.target.value)}
@@ -254,16 +273,16 @@ export function SeekingForm({ profile }: { profile: Profile }) {
             />
           </label>
           <label className="field">
-            Activity label
+            Название занятия
             <input
               value={fields.activityLabel}
               onChange={(e) => set("activityLabel", e.target.value)}
               maxLength={80}
-              placeholder="Chess"
+              placeholder="Шахматы"
             />
           </label>
           <label className="field">
-            Interaction
+            Способ встречи
             <select
               value={fields.interactionMode}
               onChange={(e) =>
@@ -273,13 +292,13 @@ export function SeekingForm({ profile }: { profile: Profile }) {
                 )
               }
             >
-              <option value="in_person">In person</option>
-              <option value="online">Online</option>
-              <option value="either">Either</option>
+              <option value="in_person">Вживую</option>
+              <option value="online">Онлайн</option>
+              <option value="either">Любой вариант</option>
             </select>
           </label>
           <label className="field">
-            Format
+            Формат
             <select
               value={fields.format}
               onChange={(e) => {
@@ -291,13 +310,13 @@ export function SeekingForm({ profile }: { profile: Profile }) {
                 }));
               }}
             >
-              <option value="one_to_one">One to one</option>
-              <option value="group">Group</option>
-              <option value="either">Either</option>
+              <option value="one_to_one">Вдвоём</option>
+              <option value="group">В группе</option>
+              <option value="either">Любой вариант</option>
             </select>
           </label>
           <label className="field">
-            City
+            Город
             <input
               value={fields.city}
               onChange={(e) => set("city", e.target.value)}
@@ -305,16 +324,16 @@ export function SeekingForm({ profile }: { profile: Profile }) {
             />
           </label>
           <label className="field">
-            Coarse area (optional)
+            Район (необязательно)
             <input
               value={fields.area}
               onChange={(e) => set("area", e.target.value)}
               maxLength={60}
-              placeholder="District, not an address"
+              placeholder="Район, без точного адреса"
             />
           </label>
           <label className="field">
-            Skill
+            Уровень опыта
             <select
               value={fields.skill}
               onChange={(e) =>
@@ -329,30 +348,30 @@ export function SeekingForm({ profile }: { profile: Profile }) {
                 "advanced",
                 "expert",
               ].map((v) => (
-                <option key={v}>{v}</option>
+                <option key={v} value={v}>{skillLabels[v as SeekingInput["skill"]]}</option>
               ))}
             </select>
           </label>
           <label className="field">
-            Languages
+            Языки
             <input
               value={fields.languages}
               onChange={(e) => set("languages", e.target.value)}
               maxLength={104}
-              placeholder="en, es"
+              placeholder="ru, en"
             />
           </label>
           <label className="field">
-            Tags (optional)
+            Теги (необязательно)
             <input
               value={fields.tags}
               onChange={(e) => set("tags", e.target.value)}
               maxLength={334}
-              placeholder="casual, outdoors"
+              placeholder="для отдыха, на природе"
             />
           </label>
           <label className="field">
-            Group size (optional)
+            Размер группы (необязательно)
             <input
               type="number"
               min={2}
@@ -363,7 +382,7 @@ export function SeekingForm({ profile }: { profile: Profile }) {
             />
           </label>
           <label className="field">
-            Post privacy
+            Приватность заявки
             <select
               value={
                 order[privacy] >= order[profile.privacyMode]
@@ -375,12 +394,12 @@ export function SeekingForm({ profile }: { profile: Profile }) {
               {privacyModes
                 .filter((p) => order[p] >= order[profile.privacyMode])
                 .map((p) => (
-                  <option key={p}>{p}</option>
+                  <option key={p} value={p}>{privacyLabels[p]}</option>
                 ))}
             </select>
           </label>
           <label className="field">
-            Expires on
+            Действует до
             <input
               type="date"
               value={fields.expiry}
@@ -391,14 +410,12 @@ export function SeekingForm({ profile }: { profile: Profile }) {
           </label>
         </div>
         <p className="quiet-copy">
-          Language codes separated by commas, up to 5. Up to 8 tags. Post
-          privacy can only be stronger than your profile.
+          Укажите до 5 кодов языков через запятую и до 8 тегов. Приватность заявки может быть только такой же или более строгой, чем приватность профиля.
         </p>
         <fieldset className="social-age">
-          <legend>Desired age bands (optional)</legend>
+          <legend>Предпочтительные возрастные группы (необязательно)</legend>
           <p className="quiet-copy">
-            Leave all unchecked for no restriction. People without a known age
-            band cannot meet an age restriction.
+            Не выбирайте ничего, если ограничений нет. Люди, не указавшие возрастную группу, не подходят под возрастные ограничения.
           </p>
           {ageBands.map((b) => (
             <label className="social-check" key={b}>
@@ -422,7 +439,7 @@ export function SeekingForm({ profile }: { profile: Profile }) {
           value={availability}
           onChange={(windows) => {
             if (windows.length > 14) {
-              setAvailabilityError("Choose at most 14 time ranges.");
+              setAvailabilityError("Выберите не более 14 временных интервалов.");
               return;
             }
             setAvailability(windows);
@@ -438,11 +455,10 @@ export function SeekingForm({ profile }: { profile: Profile }) {
         />
         <SocialError message={availabilityError} />
         <p className="quiet-copy">
-          Choose 1–14 future time ranges. Your exact times stay private during
-          discovery.
+          Выберите от 1 до 14 временных интервалов в будущем. При поиске людей ваше точное расписание остаётся скрытым.
         </p>
         <button className="button button-primary" type="submit">
-          {action.busy ? "Saving…" : "Create seeking post"}
+          {action.busy ? "Сохраняем…" : "Создать заявку на занятие"}
         </button>
       </fieldset>
       <SocialError message={action.error} focusRef={action.errorRef} />

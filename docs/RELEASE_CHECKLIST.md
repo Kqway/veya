@@ -1,8 +1,20 @@
-# Veya closed beta release candidate
+# Intavro closed beta release candidate
 
 Phases 1–9 retain the action-first Intent Network and original invitation/scheduling
 flow. Local verification and hosted rollout evidence are separate. Exact local
 counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
+
+## Russian interface and brand compatibility
+
+- Verify Russian labels, metadata, dates, errors, inbox/push and moderation on desktop
+  and 320px mobile Chromium. Public branding is Intavro; stored user text remains intact.
+- Preserve the existing `veya_guest`/moderator cookies, DB/channel/lock namespaces,
+  migration checksums, recovery secrets and invite URLs. No migration is required.
+- Read an existing voted/finalized plan after upgrade: localized presentation must
+  preserve semantic fingerprints, suggestion keys, revisions and votes.
+- Verify standalone `/opengraph-image` renders a no-store PNG using bundled licensed
+  Cyrillic fonts without external requests. Domain/trademark availability still needs
+  owner verification; the GitHub-name search alone does not establish legal uniqueness.
 
 ## Repository release gates
 

@@ -336,7 +336,7 @@ describe("HTTP authorization boundary with native PostgreSQL", () => {
     expect(await response.json()).toEqual({
       error: {
         code: "SERVICE_UNAVAILABLE",
-        message: "The service is temporarily unavailable.",
+        message: "Сервис временно недоступен.",
       },
     });
   });

@@ -33,9 +33,9 @@ export function assertBetaOperationAllowed(
 ): void {
   if (operation === "read" || operation === "safety") return;
   if (controls.readOnly)
-    throw new BetaPolicyError("BETA_READ_ONLY", "The application is temporarily read-only. Please try again later.");
+    throw new BetaPolicyError("BETA_READ_ONLY", "Приложение временно доступно только для просмотра. Попробуйте позже.");
   if (operation === "signup" && !controls.signupsEnabled)
-    throw new BetaPolicyError("BETA_SIGNUPS_PAUSED", "New profiles are temporarily paused. Please try again later.");
+    throw new BetaPolicyError("BETA_SIGNUPS_PAUSED", "Создание новых профилей временно приостановлено. Попробуйте позже.");
   if (operation === "seeking" && !controls.seekingEnabled)
-    throw new BetaPolicyError("BETA_SEEKING_PAUSED", "New seeking posts are temporarily paused. Please try again later.");
+    throw new BetaPolicyError("BETA_SEEKING_PAUSED", "Создание новых объявлений о поиске компании временно приостановлено. Попробуйте позже.");
 }

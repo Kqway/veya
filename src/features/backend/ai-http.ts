@@ -35,7 +35,7 @@ export function createAiHandlers(options: {
       throw new HttpError(
         403,
         "ORIGIN_REJECTED",
-        "Use the application's origin for this request.",
+        "Отправьте запрос с адреса приложения.",
       );
     assertBetaOperationAllowed("mutation", options.getBetaControls?.() ?? getBetaControls());
   }

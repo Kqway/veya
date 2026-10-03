@@ -89,13 +89,13 @@ export function ParticipantForm({
       noValidate
       aria-busy={busy}
     >
-      <h2>{existing ? "Your details" : "Make room for yourself"}</h2>
+      <h2>{existing ? "Ваши данные" : "Присоединяйтесь к встрече"}</h2>
       <p className="quiet-copy">
-        No signup. Just your name and a time that works.
+        Без регистрации. Только имя и подходящее время.
       </p>
       <fieldset disabled={busy} className="plain-fieldset">
         <label className="field">
-          Display name
+          Ваше имя
           <input
             ref={nameInput}
             {...field("displayName")}
@@ -111,60 +111,60 @@ export function ParticipantForm({
           saved={view.ownParticipant?.availability ?? []}
         />
         <details className="optional-details">
-          <summary>Budget, preferences & a note (optional)</summary>
+          <summary>Бюджет, предпочтения и заметка (необязательно)</summary>
           <div className="budget-fields">
             <label className="field">
-              Minimum budget
+              Минимальный бюджет
               <input
                 {...field("budgetMin")}
                 inputMode="decimal"
-                placeholder="No minimum"
+                placeholder="Без минимальной суммы"
               />
             </label>
             <label className="field">
-              Maximum budget
+              Максимальный бюджет
               <input
                 {...field("budgetMax")}
                 inputMode="decimal"
-                placeholder="No limit"
+                placeholder="Без ограничений"
               />
             </label>
             <label className="field">
-              Currency
+              Валюта
               <select {...field("currency")}>
                 {[...new Set([...currencies, fields.currency])].map((c) => (
-                  <option key={c}>{c}</option>
+                  <option key={c} value={c}>{c}</option>
                 ))}
               </select>
             </label>
           </div>
           <label className="field">
-            Activities
-            <input {...field("activity")} placeholder="Coffee, games, a walk" />
+            Занятия
+            <input {...field("activity")} placeholder="Кофе, игры, прогулка" />
           </label>
           <label className="field">
-            Food preferences
-            <input {...field("dietary")} placeholder="Vegetarian, no nuts" />
+            Предпочтения в еде
+            <input {...field("dietary")} placeholder="Вегетарианское меню, без орехов" />
           </label>
           <label className="field">
-            Location preferences
+            Предпочтения по месту
             <input
               {...field("location")}
-              placeholder="Near the station, outdoors"
+              placeholder="Рядом со станцией, на свежем воздухе"
             />
           </label>
           <p className="quiet-copy">
-            Separate preferences with commas; quote values containing commas.
-            Your name and availability at suggested times are shared with this
-            group. Notes and detailed preferences stay private.
+            Разделяйте предпочтения запятыми; значения с запятыми берите в кавычки.
+            Участники увидят ваше имя и свободное время для предложенных встреч.
+            Заметки и подробные предпочтения останутся личными.
           </p>
           <label className="field">
-            Optional note
+            Заметка (необязательно)
             <textarea
               {...field("notes")}
               maxLength={1000}
               rows={3}
-              placeholder="Anything else that would help?"
+              placeholder="Что ещё стоит учесть?"
             />
           </label>
         </details>
@@ -176,7 +176,7 @@ export function ParticipantForm({
       )}
       <div className="form-actions">
         <button className="button button-primary" disabled={busy} type="submit">
-          {busy ? "Saving…" : existing ? "Save changes" : "Join the plan"}
+          {busy ? "Сохраняем…" : existing ? "Сохранить изменения" : "Присоединиться к встрече"}
         </button>
         <button
           className="button button-secondary"
@@ -184,7 +184,7 @@ export function ParticipantForm({
           type="button"
           onClick={onCancel}
         >
-          Cancel
+          Отмена
         </button>
       </div>
     </form>

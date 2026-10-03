@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { MatchScreen } from "@/features/social/components/match-screen";
 export const metadata: Metadata = {
-  title: "Conversation | Veya",
+  title: "Личный чат",
   robots: { index: false, follow: false },
 };
 export default async function MatchPage({

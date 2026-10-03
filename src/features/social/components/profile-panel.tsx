@@ -6,6 +6,7 @@ import {
   csv,
   ensureGuest,
   privacyModes,
+  privacyLabels,
   socialApi,
   useSocialAction,
   type Profile,
@@ -28,7 +29,7 @@ export function ProfilePanel({
     );
   const [adult, setAdult] = useState(false),
     [age, setAge] = useState(profile?.ageBand ?? ""),
-    [languages, setLanguages] = useState(profile?.languages.join(", ") ?? "");
+    [languages, setLanguages] = useState(profile?.languages.join(", ") ?? "ru");
   const [recovery, setRecovery] = useState(""),
     [showRecover, setShowRecover] = useState(false),
     [revoke, setRevoke] = useState(false),
@@ -43,13 +44,13 @@ export function ProfilePanel({
       setNotice("");
       if (!profile && !adult)
         throw new Error(
-          "Confirm that you are 18 or older to create a profile.",
+          "Для создания профиля подтвердите, что вам исполнилось 18 лет.",
         );
       if (!alias.trim() || alias.trim().length > 60)
-        throw new Error("Choose an alias up to 60 characters.");
+        throw new Error("Выберите псевдоним длиной до 60 символов.");
       const parsed = csv(languages, 5, 20);
       if (parsed.some((v) => !/^[a-z]{2,3}(-[a-z0-9]{2,8})*$/.test(v)))
-        throw new Error("Use language codes, for example en, es or fr.");
+        throw new Error("Используйте коды языков, например ru, en или fr.");
       if (!profile) {
         await ensureGuest();
         if (!alive()) return;
@@ -75,7 +76,7 @@ export function ProfilePanel({
     if (confirmation !== "DELETE") return;
     void action.run(async (alive) => {
       const data = await socialApi<{ deleted: true }>("/profile", "DELETE", { confirmation: "DELETE" });
-      if (data.deleted !== true) throw new Error("Deletion was not confirmed. Please try again.");
+      if (data.deleted !== true) throw new Error("Удаление не подтверждено. Попробуйте снова.");
       clearKey();
       try { sessionStorage.removeItem("veya.social.draft"); } catch {}
       window.dispatchEvent(new Event("veya:social-profile-changed"));
@@ -86,20 +87,20 @@ export function ProfilePanel({
         setAlias("");
         setAdult(false);
         setAge("");
-        setLanguages("");
+        setLanguages("ru");
         setPrivacy("PRIVATE");
         setRecovery("");
         setShowRecover(false);
-        setNotice("Your social profile was deleted.");
+        setNotice("Ваш профиль Intavro удалён.");
         onProfile(null);
       }
     });
   }
   return (
-    <section className="social-card" aria-label="Your social profile">
-      <h2>{restricted ? "Your profile is unavailable" : profile ? "Your profile" : "Choose how you appear"}</h2>
-      {restricted && <p>You can still delete the Veya profile connected to this browser session.</p>}
-      {!profile && !restricted && <p>Create an 18+ social profile, save your Veya Key, then add an activity. No email or password is needed.</p>}
+    <section className="social-card" aria-label="Ваш профиль Intavro">
+      <h2>{restricted ? "Ваш профиль недоступен" : profile ? "Ваш профиль" : "Выберите, как вас будут видеть"}</h2>
+      {restricted && <p>Вы по-прежнему можете удалить профиль Intavro, связанный с этой сессией браузера.</p>}
+      {!profile && !restricted && <p>Создайте профиль Intavro — только для взрослых (18+), сохраните Ключ Intavro и добавьте занятие. Электронная почта и пароль не нужны.</p>}
       {profile && <Person identity={profile} />}
       <PrivacyCopy />
       {notice && <p role="status">{notice}</p>}
@@ -108,7 +109,7 @@ export function ProfilePanel({
           <form onSubmit={save} noValidate>
             <fieldset disabled={action.busy}>
               <label className="field">
-                Alias
+                Псевдоним
                 <input
                   maxLength={60}
                   value={alias}
@@ -117,36 +118,35 @@ export function ProfilePanel({
                 />
               </label>
               <label className="field">
-                Privacy
+                Приватность
                 <select
                   value={privacy}
                   onChange={(e) => setPrivacy(e.target.value as PrivacyMode)}
                 >
                   {privacyModes.map((mode) => (
-                    <option key={mode}>{mode}</option>
+                    <option key={mode} value={mode}>{privacyLabels[mode]}</option>
                   ))}
                 </select>
               </label>
               <p className="quiet-copy">
-                Open shares your chosen alias and allowed coarse details.
-                Private uses your chosen pseudonym. Incognito uses pair aliases.
+                Режим «Открытый» показывает выбранный псевдоним и разрешённые общие сведения. Режим «Приватный» использует выбранный вами псевдоним. В режиме «Инкогнито» для каждой пары создаётся отдельный псевдоним.
               </p>
               <label className="field">
-                Age band (optional)
+                Возрастная группа (необязательно)
                 <select value={age} onChange={(e) => setAge(e.target.value)}>
-                  <option value="">Prefer not to say</option>
+                  <option value="">Не хочу указывать</option>
                   {ageBands.map((b) => (
                     <option key={b}>{b}</option>
                   ))}
                 </select>
               </label>
               <label className="field">
-                Profile languages (optional)
+                Языки профиля (необязательно)
                 <input
                   value={languages}
                   onChange={(e) => setLanguages(e.target.value)}
                   maxLength={104}
-                  placeholder="en, es"
+                  placeholder="ru, en"
                 />
               </label>
               {!profile && (
@@ -156,15 +156,15 @@ export function ProfilePanel({
                     checked={adult}
                     onChange={(e) => setAdult(e.target.checked)}
                   />
-                  I am 18 or older
+                  Мне исполнилось 18 лет
                 </label>
               )}
               <button className="button button-primary" type="submit">
                 {action.busy
-                  ? "Saving…"
+                  ? "Сохраняем…"
                   : profile
-                    ? "Save profile"
-                    : "Create profile"}
+                    ? "Сохранить профиль"
+                    : "Создать профиль"}
               </button>
             </fieldset>
           </form>
@@ -174,7 +174,7 @@ export function ProfilePanel({
                 className="social-text-button"
                 onClick={() => setShowRecover(!showRecover)}
               >
-                Recover with a Veya Key
+                Восстановить с помощью Ключа Intavro
               </button>
               {showRecover && (
                 <form
@@ -183,7 +183,7 @@ export function ProfilePanel({
                     void action.run(async (alive) => {
                       setNotice("");
                       if (!/^[A-Za-z0-9_-]{43}$/.test(recovery.trim()))
-                        throw new Error("Enter your 43-character Veya Key.");
+                        throw new Error("Введите Ключ Intavro из 43 символов.");
                       await ensureGuest();
                       if (!alive()) return;
                       const data = await socialApi<{
@@ -191,7 +191,7 @@ export function ProfilePanel({
                         recoveryKey: string;
                       }>("/profile/recover", "POST", { key: recovery.trim() }).catch((error: unknown) => {
                         if (error instanceof ApiError && error.status === 404)
-                          throw new Error("This Veya Key is invalid or no longer active. Check the saved key; rotation and recovery invalidate previous keys.");
+                          throw new Error("Этот Ключ Intavro недействителен или больше не активен. Проверьте сохранённый ключ: замена ключа и восстановление профиля делают предыдущие ключи недействительными.");
                         throw error;
                       });
                       window.dispatchEvent(new Event("veya:social-profile-changed"));
@@ -208,13 +208,10 @@ export function ProfilePanel({
                   }}
                 >
                   <p>
-                    Use this from a new session without a social profile.
-                    Recovery rotates your key and disconnects your other social
-                    sessions. Save the replacement key. If both your key and browser
-                    session are lost, Veya cannot recover your profile.
+                    Используйте восстановление в новой сессии без профиля Intavro. При восстановлении ключ заменяется, а другие сессии профиля отключаются. Сохраните новый ключ. Если вы потеряете и ключ, и сессию браузера, Intavro не сможет восстановить ваш профиль.
                   </p>
                   <label className="field">
-                    Recovery key
+                    Ключ восстановления
                     <input
                       type="password"
                       autoComplete="off"
@@ -227,7 +224,7 @@ export function ProfilePanel({
                     className="button button-secondary"
                     disabled={action.busy}
                   >
-                    Recover profile
+                    Восстановить профиль
                   </button>
                 </form>
               )}
@@ -235,7 +232,7 @@ export function ProfilePanel({
           )}
           {profile && (
             <>
-            <p className="quiet-copy">Rotation immediately invalidates your previous key. Save the replacement before leaving. Revoking a key disables recovery; losing your browser session afterward is unrecoverable until you issue a new key.</p>
+            <p className="quiet-copy">Замена ключа сразу делает предыдущий ключ недействительным. Сохраните новый ключ, прежде чем уходить. Отзыв ключа отключает восстановление: если после этого вы потеряете сессию браузера, восстановить профиль будет невозможно, пока вы не выпустите новый ключ.</p>
             <div className="social-actions">
               <button
                 disabled={action.busy}
@@ -254,20 +251,19 @@ export function ProfilePanel({
                   });
                 }}
               >
-                Rotate Veya Key
+                Заменить Ключ Intavro
               </button>
               <button
                 disabled={action.busy || !profile.hasRecoveryKey}
                 className="button button-secondary"
                 onClick={() => setRevoke(true)}
               >
-                Revoke Veya Key
+                Отозвать Ключ Intavro
               </button>
               {revoke && (
                 <div>
                   <p>
-                    Revoking your key disables recovery until you rotate a new
-                    key.
+                    Отзыв ключа отключает восстановление до выпуска нового ключа.
                   </p>
                   <button
                     disabled={action.busy}
@@ -282,13 +278,13 @@ export function ProfilePanel({
                       });
                     }}
                   >
-                    Confirm revoke
+                    Подтвердить отзыв
                   </button>
                   <button
                     className="social-text-button"
                     onClick={() => setRevoke(false)}
                   >
-                    Cancel revoke
+                    Отменить отзыв
                   </button>
                 </div>
               )}
@@ -299,17 +295,17 @@ export function ProfilePanel({
       )}
       {(profile || restricted) && <>
         <button className="social-text-button" disabled={action.busy} onClick={() => { setDeletion(true); setConfirmation(""); }}>
-          Delete Veya profile
+          Удалить профиль Intavro
         </button>
         {deletion && <form className="social-warning" onSubmit={remove}>
-          <p>This cannot be undone. Your personal profile details, activities, Veya Key, messages you sent and details you shared will be removed. Other participants retain their own messages in closed conversations. Moderation evidence may be retained. Separate coordination plans and information others already copied remain.</p>
+          <p>Это действие нельзя отменить. Личные сведения профиля, занятия, Ключ Intavro, отправленные вами сообщения и переданные сведения будут удалены. В закрытых чатах другие участники сохранят свои сообщения. Материалы для модерации могут быть сохранены. Отдельные планы встреч и информация, которую другие уже скопировали, останутся.</p>
           <label className="field">
-            Type DELETE to confirm
+            Введите DELETE для подтверждения
             <input autoComplete="off" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={action.busy} />
           </label>
           <div className="social-actions">
-            <button className="button button-secondary" disabled={action.busy || confirmation !== "DELETE"} type="submit">Permanently delete profile</button>
-            <button className="social-text-button" disabled={action.busy} type="button" onClick={() => { setDeletion(false); setConfirmation(""); }}>Cancel deletion</button>
+            <button className="button button-secondary" disabled={action.busy || confirmation !== "DELETE"} type="submit">Удалить профиль навсегда</button>
+            <button className="social-text-button" disabled={action.busy} type="button" onClick={() => { setDeletion(false); setConfirmation(""); }}>Отменить удаление</button>
           </div>
         </form>}
       </>}

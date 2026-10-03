@@ -9,11 +9,11 @@ import { latestSocialCursor, readSocialEvents } from './events';
 export function createRealtimeHandler(options: {db:Database;hub:EventHub;limiter?:RequestLimiter;heartbeatMs?:number;lifetimeMs?:number;bufferBytes?:number}) {
  return async (request: Request): Promise<Response> => {
   try {
-   if (request.method!=='GET') return json({error:{code:'METHOD_NOT_ALLOWED',message:'Use GET.'}},405);
+   if (request.method!=='GET') return json({error:{code:'METHOD_NOT_ALLOWED',message:'Используйте метод GET.'}},405);
    const url=new URL(request.url);
-   if ([...url.searchParams.keys()].some(key=>key!=='cursor') || url.searchParams.getAll('cursor').length>1) return json({error:{code:'INVALID_INPUT',message:'Invalid subscription.'}},400);
+   if ([...url.searchParams.keys()].some(key=>key!=='cursor') || url.searchParams.getAll('cursor').length>1) return json({error:{code:'INVALID_INPUT',message:'Некорректные параметры подписки.'}},400);
    const requestedCursor=request.headers.get('last-event-id') ?? url.searchParams.get('cursor') ?? undefined;
-   if (requestedCursor && !/^[A-Za-z0-9_-]{24}$/.test(requestedCursor)) return json({error:{code:'INVALID_INPUT',message:'Invalid cursor.'}},400);
+   if (requestedCursor && !/^[A-Za-z0-9_-]{24}$/.test(requestedCursor)) return json({error:{code:'INVALID_INPUT',message:'Некорректный курсор.'}},400);
    await enforceRateLimit(options.limiter,'realtime',request);
    const token=tokenFrom(request),profile=await requireProfile(options.db,token);
    let closed=false,unsubscribe:(()=>void)|undefined,heartbeat:ReturnType<typeof setInterval>|undefined,lifetime:ReturnType<typeof setTimeout>|undefined;
@@ -71,7 +71,7 @@ export function createRealtimeHandler(options: {db:Database;hub:EventHub;limiter
     if(reason==='sync') pendingSync=true;
     pending=true; void flush();
    };
-   try {unsubscribe=await options.hub.subscribe(profile.id,notify);} catch {return json({error:{code:'UNAVAILABLE',message:'Live updates are unavailable.'}},503);}
+   try {unsubscribe=await options.hub.subscribe(profile.id,notify);} catch {return json({error:{code:'UNAVAILABLE',message:'Обновления в реальном времени недоступны.'}},503);}
    if(request.signal.aborted || closed) {cleanup(); return new Response(null,{status:204});}
    const stream=new ReadableStream<Uint8Array>({
     start(current) {

@@ -5,9 +5,10 @@ test("renders the landing without overflow or browser errors", async ({
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
-  await expect(page).toHaveTitle("Veya — Make it happen together");
+  await expect(page).toHaveTitle("Intavro — Вместе от идеи к встрече");
+  await expect(page.locator("html")).toHaveAttribute("lang", "ru");
   await expect(
-    page.getByRole("textbox", { name: "What do you want to do?" }),
+    page.getByRole("textbox", { name: "Чем хотите заняться?" }),
   ).toBeVisible();
   expect(
     await page.evaluate(
@@ -26,16 +27,16 @@ test("example and keyboard submission collect details and allow editing", async 
   await expect(
     page
       .getByRole("alert")
-      .filter({ hasText: "Tell us what you'd like to do." }),
+      .filter({ hasText: "Расскажите, чем хотите заняться." }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Meet friends" }).click();
+  await page.getByRole("button", { name: "Встретиться с друзьями" }).click();
   await input.press("Control+Enter");
   await expect(
-    page.getByRole("heading", { name: "Let's meet somewhere this week." }),
+    page.getByRole("heading", { name: "Давайте встретимся на этой неделе." }),
   ).toBeFocused();
-  await page.getByRole("button", { name: "Edit your idea" }).click();
+  await page.getByRole("button", { name: "Изменить идею" }).click();
   await expect(page.getByRole("textbox")).toHaveValue(
-    "Let's meet somewhere this week.",
+    "Давайте встретимся на этой неделе.",
   );
 });
 test("long ideas create persistent invites inside the layout", async ({
@@ -43,9 +44,9 @@ test("long ideas create persistent invites inside the layout", async ({
 }) => {
   await page.goto("/");
   await page.getByRole("textbox").fill("a".repeat(500));
-  await page.getByRole("button", { name: "Make it happen" }).click();
-  await page.getByLabel("Your name").fill("Alex");
-  await page.getByRole("button", { name: "Create invite" }).click();
+  await page.getByRole("button", { name: "Создать план" }).click();
+  await page.getByLabel("Ваше имя").fill("Alex");
+  await page.getByRole("button", { name: "Создать приглашение" }).click();
   await expect(page).toHaveURL(/\/i\/[A-Za-z0-9_-]{24}$/);
   await expect(page.getByText("a".repeat(500), { exact: true })).toBeVisible();
   expect(
@@ -58,6 +59,6 @@ test("long ideas create persistent invites inside the layout", async ({
 });
 test("returns from a missing page to the landing", async ({ page }) => {
   expect((await page.goto("/missing-page"))?.status()).toBe(404);
-  await page.getByRole("link", { name: "Back to Veya" }).click();
+  await page.getByRole("link", { name: "На главную Intavro" }).click();
   await expect(page.getByRole("textbox")).toBeVisible();
 });

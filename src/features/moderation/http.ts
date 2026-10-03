@@ -18,10 +18,10 @@ export function createModerationHandler(options:ModerationOptions&{db:()=>Databa
  const cookie={httpOnly:true,sameSite:'strict' as const,secure:options.secureCookie,path:'/api/moderation'};
  return async(request:Request,path:string[])=>{
   try{
-   if(request.method!=='GET'&&request.headers.get('origin')!==origin)throw new HttpError(403,'ORIGIN_REJECTED','Use the application origin.');
+   if(request.method!=='GET'&&request.headers.get('origin')!==origin)throw new HttpError(403,'ORIGIN_REJECTED','Используйте адрес приложения.');
    const token=moderatorToken(request);
    const decision=await options.limiter?.check('moderation',token);
-   if(decision&&!decision.allowed)throw new HttpError(429,'RATE_LIMITED','Wait a little and try again.',decision.retryAfterSeconds);
+   if(decision&&!decision.allowed)throw new HttpError(429,'RATE_LIMITED','Немного подождите и попробуйте снова.',decision.retryAfterSeconds);
    const service=new ModerationService(options.db(),options);
    if(path.length===1&&path[0]==='session'){
     if(request.method==='POST'){
@@ -42,7 +42,7 @@ export function createModerationHandler(options:ModerationOptions&{db:()=>Databa
     if(path.length===2&&request.method==='GET')return json(await service.evidence(token,path[1]!));
     if(path.length===2&&request.method==='PATCH')return json(await service.action(token,path[1]!,await readJson(request)));
    }
-   throw new HttpError(404,'NOT_FOUND','The moderation resource is unavailable.');
+   throw new HttpError(404,'NOT_FOUND','Ресурс модерации недоступен.');
   }catch(error){return apiError(error);}
  };
 }

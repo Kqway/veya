@@ -11,6 +11,7 @@ import { formatMoney } from "../form-values";
 import { formatWindow } from "./availability-picker";
 import { ParticipantForm } from "./participant-form";
 import { SharePanel } from "./share-panel";
+import { activityLabel } from "@/features/intents/labels";
 export function InviteScreen({ slug }: { slug: string }) {
   const [view, setView] = useState<IntentView | null>(null),
     [error, setError] = useState<ApiError | null>(null),
@@ -58,16 +59,16 @@ export function InviteScreen({ slug }: { slug: string }) {
   if (error && !view)
     return (
       <section className="message-page">
-        <p className="eyebrow">A little detour</p>
+        <p className="eyebrow">Небольшая заминка</p>
         <h1>
           {error.code === "NOT_FOUND"
-            ? "This invite couldn't be found."
-            : "Your plan is taking a moment."}
+            ? "Приглашение не найдено."
+            : "План загружается чуть дольше обычного."}
         </h1>
         <p>
           {error.code === "NOT_FOUND"
-            ? "Check the link with your friend, or start something new together."
-            : "We couldn't load the plan. Please try again."}
+            ? "Уточните ссылку у друга или создайте новый совместный план."
+            : "Не удалось загрузить план. Попробуйте ещё раз."}
         </p>
         <div className="form-actions">
           {error.code !== "NOT_FOUND" && (
@@ -75,11 +76,11 @@ export function InviteScreen({ slug }: { slug: string }) {
               className="button button-primary"
               onClick={() => void retry()}
             >
-              Try again
+              Попробовать ещё раз
             </button>
           )}
           <Link className="button button-secondary" href="/">
-            Start a new plan
+            Создать новый план
           </Link>
         </div>
       </section>
@@ -90,18 +91,18 @@ export function InviteScreen({ slug }: { slug: string }) {
   return (
     <div className="invite-page">
       <section className="invite-heading">
-        <p className="eyebrow">A little idea. Your people.</p>
+        <p className="eyebrow">Ваша идея. Ваша компания.</p>
         <h1 ref={heading} tabIndex={-1}>
           {view.isCreator
-            ? "Your plan is ready to invite people."
-            : `${intent.creatorName} wants to make a plan.`}
+            ? "План готов. Приглашайте друзей."
+            : `${intent.creatorName} предлагает встретиться.`}
         </h1>
         <p className="invite-idea">{intent.rawText}</p>
         {(intent.structuredIntent.activities.length > 0 ||
           intent.structuredIntent.location) && (
           <div className="intent-tags">
             {intent.structuredIntent.activities.map((a) => (
-              <span key={a}>{a}</span>
+              <span key={a}>{activityLabel(a)}</span>
             ))}
             {intent.structuredIntent.location && (
               <span>{intent.structuredIntent.location}</span>
@@ -113,10 +114,8 @@ export function InviteScreen({ slug }: { slug: string }) {
           budgetHint={intent.structuredIntent.budgetHint}
         />
         <p className="quiet-copy">
-          <strong>{intent.participantCount}</strong>{" "}
-          {intent.participantCount === 1 ? "person has" : "people have"} added
-          availability · Replies until{" "}
-          {new Date(intent.expiresAt).toLocaleDateString("en", {
+          Свободное время указали: <strong>{intent.participantCount}</strong> · Ответить можно до{" "}
+          {new Date(intent.expiresAt).toLocaleDateString("ru-RU", {
             month: "short",
             day: "numeric",
           })}
@@ -128,25 +127,25 @@ export function InviteScreen({ slug }: { slug: string }) {
           href={`/i/${intent.publicSlug}/results`}
         >
           {intent.status === "decided"
-            ? "See the confirmed plan"
-            : "Find a time together"}
+            ? "Посмотреть подтверждённый план"
+            : "Найти общее время"}
         </Link>
         <p className="quiet-copy">
-          Shared times, useful compromises, and a say for everyone.
+          Общее время, подходящие компромиссы и право голоса для каждого.
         </p>
       </div>
       {closed ? (
         <section className="entry-card closed-plan">
           <h2>
             {intent.status === "decided"
-              ? "This plan is closed to changes."
-              : "This invite has expired."}
+              ? "Этот план больше нельзя изменить."
+              : "Срок приглашения истёк."}
           </h2>
           <p>
-            Keep the good idea going. Start a fresh plan and bring your people.
+            Сохраните хорошую идею: создайте новый план и пригласите друзей.
           </p>
           <Link className="button button-primary" href="/">
-            Start a new plan
+            Создать новый план
           </Link>
         </section>
       ) : (
@@ -168,11 +167,11 @@ export function InviteScreen({ slug }: { slug: string }) {
             />
           ) : ownParticipant ? (
             <section className="entry-card own-details">
-              <p className="eyebrow">You&apos;re part of the plan</p>
-              <h2>You&apos;re in, {ownParticipant.displayName}.</h2>
+              <p className="eyebrow">Вы участвуете во встрече</p>
+              <h2>Вы с нами, {ownParticipant.displayName}.</h2>
               <p className="quiet-copy">
-                Your availability is saved. Come back with the same browser to
-                edit it.
+                Ваше свободное время сохранено. Чтобы изменить его, откройте
+                приглашение в этом же браузере.
               </p>
               <ul className="saved-times">
                 {ownParticipant.availability.map((w) => (
@@ -181,7 +180,7 @@ export function InviteScreen({ slug }: { slug: string }) {
               </ul>
               {ownParticipant.budgetMax !== null && (
                 <p>
-                  Maximum budget:{" "}
+                  Максимальный бюджет:{" "}
                   {formatMoney(
                     ownParticipant.budgetMax,
                     ownParticipant.currency,
@@ -202,26 +201,26 @@ export function InviteScreen({ slug }: { slug: string }) {
                 className="button button-secondary"
                 onClick={() => setEditing(true)}
               >
-                Edit your details
+                Изменить данные
               </button>
             </section>
           ) : (
             <section className="entry-card join-card">
               <h2>
                 {view.isCreator
-                  ? "Make the first move."
-                  : "A good time starts with you."}
+                  ? "Сделайте первый шаг."
+                  : "Хорошая встреча начинается с вас."}
               </h2>
               <p className="quiet-copy">
-                Add a few times that work. No account, no group-chat
-                back-and-forth.
+                Укажите подходящее время. Без регистрации и долгой переписки
+                в общем чате.
               </p>
               <button
                 className="button button-primary"
                 type="button"
                 onClick={() => setEditing(true)}
               >
-                {view.isCreator ? "Add your availability" : "Add yourself"}
+                {view.isCreator ? "Указать свободное время" : "Присоединиться"}
               </button>
             </section>
           )}
@@ -232,8 +231,8 @@ export function InviteScreen({ slug }: { slug: string }) {
             />
           )}
           <p className="invite-next">
-            We&apos;re collecting everyone&apos;s availability. You can share
-            this invite while replies come in.
+            Собираем свободное время участников. Пока приходят ответы,
+            можно поделиться приглашением.
           </p>
           <RepeatPlan surface="invite" />
         </>

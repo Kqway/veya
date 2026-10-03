@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ResultsScreen } from "@/features/scheduling/components/results-screen";
 export const metadata: Metadata = {
-  title: "Your group plan",
+  title: "План встречи",
   robots: { index: false, follow: false },
 };
 export default async function ResultsPage({

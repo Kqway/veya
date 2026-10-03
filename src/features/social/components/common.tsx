@@ -11,17 +11,16 @@ export function SocialShell({
 }) {
   return (
     <section className="social-shell">
-      <nav className="social-nav" aria-label="Social navigation">
-        <Link href="/discover">Discover</Link>
-        <Link href="/connections">Connections</Link>
-        <Link href="/seek/new">New activity</Link>
+      <nav className="social-nav" aria-label="Навигация Intavro">
+        <Link href="/discover">Найти людей</Link>
+        <Link href="/connections">Запросы</Link>
+        <Link href="/seek/new">Новое занятие</Link>
       </nav>
-      <p className="eyebrow">Find your people through an activity</p>
+      <p className="eyebrow">Находите своих людей через общие занятия</p>
       <h1>{title}</h1>
       {children}
       <p className="social-safety">
-        For a first meeting, choose a public place. Keep your home address
-        private and tell someone you trust about your plans.
+        Для первой встречи выбирайте общественное место. Не сообщайте домашний адрес и расскажите о своих планах тому, кому доверяете.
       </p>
     </section>
   );
@@ -68,17 +67,15 @@ export function Person({ identity }: { identity: Identity }) {
 export function PrivacyCopy() {
   return (
     <p className="quiet-copy">
-      People you meet through Veya only see what you choose to reveal. Incognito
-      uses a different alias and avatar for each pair. Shared details and
-      real-world meetings can still identify you.
+      Люди, с которыми вы знакомитесь в Intavro, видят только то, что вы решите раскрыть. В режиме «Инкогнито» для каждой пары используются отдельные псевдоним и аватар. При этом личные сведения и встречи вживую могут раскрыть вашу личность.
     </p>
   );
 }
 
 export function SocialLiveStatus({ status, reconnect }: { status: string; reconnect: () => void }) {
   if (status !== "offline" && status !== "reconnecting" && status !== "retrying") return null;
-  return <aside className="social-live-status" aria-label="Live update status">
-    <p role="status">{status === "offline" ? "Live updates are unavailable. You can still refresh and use Veya." : "Reconnecting live updates. You can still refresh manually."}</p>
-    <button className="social-text-button" onClick={reconnect}>Retry live updates</button>
+  return <aside className="social-live-status" aria-label="Состояние обновлений в реальном времени">
+    <p role="status">{status === "offline" ? "Обновления в реальном времени недоступны. Вы можете обновлять страницу вручную и продолжать пользоваться Intavro." : "Восстанавливаем подключение для обновлений в реальном времени. Вы можете обновлять страницу вручную."}</p>
+    <button className="social-text-button" onClick={reconnect}>Восстановить обновления</button>
   </aside>;
 }

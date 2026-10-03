@@ -89,15 +89,15 @@ export const socialApi = <T>(path: string, method = "GET", body?: unknown) =>
 export function socialError(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 401)
-      return "Your session has ended. Reload to continue or recover your profile with your Veya Key.";
+      return "Ваша сессия завершена. Обновите страницу, чтобы продолжить, или восстановите профиль с помощью Ключа Intavro.";
     if (error.status === 403 || error.status === 404)
-      return "This item is unavailable to this session.";
+      return "Этот объект недоступен в этой сессии.";
     if (error.status === 409)
-      return "This action is no longer available, or your active posts or requests are full. Refresh and try again.";
+      return "Это действие больше недоступно либо достигнут лимит активных заявок или запросов. Обновите страницу и попробуйте снова.";
   }
-  return error instanceof Error
+  return error instanceof Error && /[А-Яа-яЁё]/u.test(error.message)
     ? error.message
-    : "We couldn't complete that action. Please try again.";
+    : "Не удалось выполнить действие. Попробуйте снова.";
 }
 export function useSocialAction() {
   const alive = useRef(true),
@@ -150,9 +150,44 @@ export function csv(
     new Set(values).size !== values.length
   )
     throw new Error(
-      `Use ${required ? "1–" : "up to "}${max} different comma-separated values, up to ${itemLength} characters each.`,
+      `Укажите ${required ? "от 1 до " : "до "}${max} разных значений через запятую, каждое длиной до ${itemLength} символов.`,
     );
   return values;
 }
 export const ageBands = ["18-20", "21-24", "25-29", "30-39", "40+"];
 export const privacyModes: PrivacyMode[] = ["OPEN", "PRIVATE", "INCOGNITO"];
+
+export const privacyLabels: Record<PrivacyMode, string> = {
+  OPEN: "Открытый",
+  PRIVATE: "Приватный",
+  INCOGNITO: "Инкогнито",
+};
+export const interactionLabels: Record<SeekingInput["interactionMode"], string> = {
+  in_person: "Вживую",
+  online: "Онлайн",
+  either: "Любой вариант",
+};
+export const formatLabels: Record<SeekingInput["format"], string> = {
+  one_to_one: "Вдвоём",
+  group: "В группе",
+  either: "Любой вариант",
+};
+export const skillLabels: Record<SeekingInput["skill"], string> = {
+  any: "Любой уровень",
+  beginner: "Начинающий",
+  casual: "Любитель",
+  intermediate: "Средний",
+  advanced: "Продвинутый",
+  expert: "Эксперт",
+};
+export const postStatusLabels: Record<OwnPost["status"], string> = {
+  active: "Активна",
+  closed: "Закрыта",
+  expired: "Срок действия истёк",
+};
+export const connectionStatusLabels: Record<Connection["status"], string> = {
+  pending: "Ожидает ответа",
+  accepted: "Принят",
+  declined: "Отклонён",
+  expired: "Срок действия истёк",
+};

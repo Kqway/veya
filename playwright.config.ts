@@ -24,6 +24,7 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     timezoneId: "Europe/Moscow",
+    locale: "ru-RU",
     launchOptions: systemChromium ? { executablePath: systemChromium } : {},
   },
   projects: [

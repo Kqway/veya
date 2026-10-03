@@ -26,20 +26,20 @@ export function SharePanel({
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
   const title = creatorName
-    ? `${creatorName} wants to make a plan 👀`
-    : "Let's make a plan · Veya";
+    ? `${creatorName} предлагает встретиться 👀`
+    : "Давайте встретимся · Intavro";
   const text =
-    "Add your availability and Veya will find what works for everyone. No account needed.";
+    "Укажите свободное время, и Intavro найдёт подходящий вариант для всех. Регистрация не нужна.";
   async function copy() {
     if (locked.current || !origin) return;
     locked.current = true;
     setBusy(true);
     try {
       await navigator.clipboard.writeText(url);
-      setMessage("Link copied. Bring your people!");
+      setMessage("Ссылка скопирована. Приглашайте друзей!");
       track("invite_link_copied");
     } catch {
-      setMessage("Copy the link below to invite your friends.");
+      setMessage("Скопируйте ссылку ниже, чтобы пригласить друзей.");
       input.current?.focus();
       input.current?.select();
     } finally {
@@ -58,10 +58,10 @@ export function SharePanel({
         text,
         url,
       });
-      setMessage("Invite shared. Bring your people!");
+      setMessage("Приглашение отправлено. Собирайте друзей!");
     } catch (e) {
       if (!(e instanceof Error && e.name === "AbortError"))
-        setMessage("Sharing is unavailable. Copy the link below instead.");
+        setMessage("Не удалось поделиться приглашением. Скопируйте ссылку ниже.");
     } finally {
       locked.current = false;
       setBusy(false);
@@ -70,11 +70,11 @@ export function SharePanel({
   return (
     <section
       className="entry-card share-panel"
-      aria-label="Invite your friends"
+      aria-label="Пригласите друзей"
     >
-      <h2>Good plans need good people.</h2>
+      <h2>Хороший план начинается с хорошей компании.</h2>
       <p className="quiet-copy">
-        Send this link. They can join without an account.
+        Отправьте эту ссылку. Присоединиться можно без регистрации.
       </p>
       <div className="form-actions">
         <button
@@ -83,7 +83,7 @@ export function SharePanel({
           disabled={busy || !origin}
           onClick={() => void copy()}
         >
-          Copy link
+          Скопировать ссылку
         </button>
         <a
           className="button button-secondary"
@@ -91,7 +91,7 @@ export function SharePanel({
           target="_blank"
           rel="noopener noreferrer"
         >
-          Telegram share
+          Поделиться в Telegram
         </a>
         {nativeShare && (
           <button
@@ -100,12 +100,12 @@ export function SharePanel({
             disabled={busy || !origin}
             onClick={() => void share()}
           >
-            Share invite
+            Поделиться приглашением
           </button>
         )}
       </div>
       <label className="field link-field">
-        Invite link
+        Ссылка на приглашение
         <input
           ref={input}
           value={url}

@@ -20,7 +20,7 @@ describe("preserved availability and overnight entry", () => {
     ).not.toThrow();
     expect(() =>
       validateEntryAvailability([old, future], expires, now, []),
-    ).toThrow(/future/);
+    ).toThrow(/в будущем/);
     expect(() =>
       validateEntryAvailability(
         [{ ...old, startAt: "2026-10-01T08:59:00Z" }, future],
@@ -28,14 +28,14 @@ describe("preserved availability and overnight entry", () => {
         now,
         [old],
       ),
-    ).toThrow(/future/);
+    ).toThrow(/в будущем/);
   });
   it("accepts an explicit next-day end without silently guessing overnight", () => {
     const result = localWindow("2026-10-01", "22:00", "01:00", "2026-10-02");
     expect(Date.parse(result.endAt) - Date.parse(result.startAt)).toBe(
       3 * 3600000,
     );
-    expect(() => localWindow("2026-10-01", "22:00", "01:00")).toThrow(/after/);
+    expect(() => localWindow("2026-10-01", "22:00", "01:00")).toThrow(/позже начала/);
     expect(() =>
       localWindow("2026-10-01", "09:00", "10:00", "2026-10-02"),
     ).toThrow(/24/);

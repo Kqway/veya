@@ -24,7 +24,7 @@ export function SafetyControls({
           className="social-text-button"
           onClick={() => setConfirmBlock(true)}
         >
-          Block
+          Заблокировать
         </button>
         <button
           type="button"
@@ -32,14 +32,13 @@ export function SafetyControls({
           className="social-text-button"
           onClick={() => setReport(!report)}
         >
-          Report
+          Пожаловаться
         </button>
       </div>
       {confirmBlock && (
         <div className="social-warning">
           <p>
-            Blocking closes social contact with this person. Received history
-            and any copied plan invitation links remain accessible.
+            Блокировка прекращает общение с этим человеком. Полученная история сообщений и скопированные ссылки-приглашения в планы остаются доступными.
           </p>
           <div className="social-actions">
             <button
@@ -50,21 +49,21 @@ export function SafetyControls({
                 void action.run(async (alive) => {
                   await socialApi("/block", "POST", target);
                   if (alive()) {
-                    setStatus("Blocked. Social contact is closed.");
+                    setStatus("Пользователь заблокирован. Общение прекращено.");
                     setConfirmBlock(false);
                     onBlocked?.();
                   }
                 });
               }}
             >
-              Confirm block
+              Подтвердить блокировку
             </button>
             <button
               type="button"
               className="social-text-button"
               onClick={() => setConfirmBlock(false)}
             >
-              Cancel block
+              Отменить блокировку
             </button>
           </div>
         </div>
@@ -75,14 +74,14 @@ export function SafetyControls({
             e.preventDefault();
             void action.run(async (alive) => {
               if (text.length > 1000)
-                throw new Error("Use at most 1000 characters.");
+                throw new Error("Используйте не более 1000 символов.");
               await socialApi("/reports", "POST", {
                 ...target,
                 reason,
                 ...(text.trim() ? { text: text.trim() } : {}),
               });
               if (alive()) {
-                setStatus("Report received.");
+                setStatus("Жалоба получена.");
                 setReport(false);
                 setText("");
               }
@@ -90,17 +89,17 @@ export function SafetyControls({
           }}
         >
           <label className="field">
-            Report reason
+            Причина жалобы
             <select value={reason} onChange={(e) => setReason(e.target.value)}>
-              <option value="spam">Spam</option>
-              <option value="harassment">Harassment</option>
-              <option value="unsafe_meeting">Unsafe meeting</option>
-              <option value="impersonation">Impersonation</option>
-              <option value="other">Other</option>
+              <option value="spam">Спам</option>
+              <option value="harassment">Преследование или оскорбления</option>
+              <option value="unsafe_meeting">Небезопасная встреча</option>
+              <option value="impersonation">Выдаёт себя за другого человека</option>
+              <option value="other">Другое</option>
             </select>
           </label>
           <label className="field">
-            Report details (optional)
+            Подробности жалобы (необязательно)
             <textarea
               maxLength={1000}
               rows={3}
@@ -109,7 +108,7 @@ export function SafetyControls({
             />
           </label>
           <button className="button button-secondary" disabled={action.busy}>
-            Send report
+            Отправить жалобу
           </button>
         </form>
       )}

@@ -17,7 +17,7 @@ export const dateHintSchema = z
   .strict()
   .refine(
     (value) => value.startDate <= value.endDate,
-    "Date hint is reversed.",
+    "Начальная дата должна быть не позже конечной.",
   );
 const budgetHint = z.string().trim().min(1).max(80).nullable();
 export const structuredIntentSchema = z

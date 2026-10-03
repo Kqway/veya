@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { OwnSeekScreen } from "@/features/social/components/seek-screen";
 export const metadata: Metadata = {
-  title: "Your activity | Veya",
+  title: "Ваша заявка",
   robots: { index: false, follow: false },
 };
 export default async function SeekPage({

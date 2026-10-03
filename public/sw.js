@@ -1,7 +1,7 @@
 /* Push content and navigation are deliberately fixed: no private context is shown. */
 self.addEventListener('push', event => {
-  event.waitUntil(self.registration.showNotification('Veya', {
-    body: 'You have a new update in Veya', data: {url: '/notifications'},
+  event.waitUntil(self.registration.showNotification('Intavro', {
+    body: 'У вас новое уведомление в Intavro', data: {url: '/notifications'},
   }));
 });
 self.addEventListener('notificationclick', event => {

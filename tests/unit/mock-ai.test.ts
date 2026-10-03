@@ -133,7 +133,7 @@ describe("deterministic structured mock assistance", () => {
         signal(),
       ),
     ).toMatchObject({
-      title: expect.stringMatching(/coffee/i),
+      title: expect.stringMatching(/кофе/i),
       idea: expect.any(String),
     });
     expect(
@@ -148,7 +148,7 @@ describe("deterministic structured mock assistance", () => {
         },
         signal(),
       ),
-    ).toMatchObject({ title: "A little time together" });
+    ).toMatchObject({ title: "Немного времени вместе" });
   });
   it("selects only grounded explanation reasons", async () => {
     const result = await new MockAiProvider().complete(

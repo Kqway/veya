@@ -22,7 +22,7 @@ describe("repeat creation", () => {
         </AnalyticsProvider>,
       );
       expect(track).not.toHaveBeenCalled();
-      const link = screen.getByRole("link", { name: "Create your own plan" });
+      const link = screen.getByRole("link", { name: "Создать свой план" });
       expect(link).toHaveAttribute("href", "/");
       await userEvent.setup().click(link);
       expect(track).toHaveBeenCalledWith(
@@ -37,7 +37,7 @@ describe("repeat creation", () => {
     render(<RepeatPlan surface="invite" />);
     await userEvent
       .setup()
-      .click(screen.getByRole("link", { name: "Create your own plan" }));
+      .click(screen.getByRole("link", { name: "Создать свой план" }));
     expect(track).not.toHaveBeenCalled();
   });
 });

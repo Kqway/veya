@@ -8,6 +8,9 @@ import {
   it,
   vi,
 } from "vitest";
+import { loadPeople } from "@/features/backend/results-repository";
+import type { IntentRow } from "@/features/backend/types";
+import { ENGINE_VERSION, suggest } from "@/features/scheduling/engine";
 import { VeyaBackend } from "@/features/backend/service";
 import { applyMigrations } from "@/lib/db/migrations";
 import { startTestDatabase } from "../support/postgres";
@@ -52,6 +55,36 @@ describe("durable scheduling and guest decisions", () => {
     await backend.joinIntent(bob.token, slug, data("Bob"));
     return { owner, alice, bob, slug };
   }
+  it("keeps legacy English fingerprint, suggestion keys and votes when presenting results in Russian", async () => {
+    const clock = vi.spyOn(Date, "now").mockReturnValue(Date.now());
+    try {
+      const g = await group(), result = await backend.getResults(g.slug, g.alice.token);
+      await backend.vote(g.alice.token, g.slug, { suggestionKey: result.suggestions[0]!.suggestionKey, revision: result.revision, value: "yes" });
+      const intent = (await cluster.db.query<IntentRow>("SELECT * FROM intents WHERE public_slug=$1", [g.slug])).rows[0]!;
+      const people = await loadPeople(cluster.db, intent.id);
+      const legacy = suggest({ participants: people, durationMinutes: 60, from: new Date(Math.ceil(Date.now()/60000)*60000).toISOString(), until: intent.expires_at.toISOString(), activities: intent.structured_intent.activities });
+      const candidates = [legacy.bestMatch!, ...legacy.alternatives].map(candidate => {
+        expect(candidate.availableParticipantIds).toHaveLength(2);
+        expect(candidate.shortened).toBe(false);
+        expect(candidate.budgetAssessment).toBe("compatible");
+        return { ...candidate, explanation: "All 2 can make this time." };
+      });
+      const fingerprint = createHash("sha256").update(JSON.stringify({ version: ENGINE_VERSION, people, activities: intent.structured_intent.activities, candidates })).digest("hex");
+      await cluster.db.query("UPDATE intents SET suggestions_fingerprint=$2 WHERE id=$1", [intent.id, fingerprint]);
+      await cluster.db.query("UPDATE plan_suggestions SET title='Time for coffee',explanation='All 2 can make this time.' WHERE intent_id=$1", [intent.id]);
+      const repeated = await backend.getResults(g.slug, g.alice.token);
+      expect(repeated.revision).toBe(result.revision);
+      expect(repeated.suggestions.map(p => p.suggestionKey)).toEqual(result.suggestions.map(p => p.suggestionKey));
+      expect(repeated.suggestions[0]).toMatchObject({ ownVote: "yes", votes: { yes: 1, maybe: 0, no: 0 }, title: "Время для занятия «Кофе»", explanation: "Это время подходит всем (2)." });
+      expect((await cluster.db.query("SELECT suggestions_fingerprint FROM intents WHERE id=$1", [intent.id])).rows[0]!.suggestions_fingerprint).toBe(fingerprint);
+      expect(repeated.message).toBe("Это время подходит всем (2).");
+      await cluster.db.query("UPDATE intents SET status='expired' WHERE id=$1", [intent.id]);
+      const expired = await backend.getResults(g.slug, g.alice.token);
+      expect(expired.suggestions[0]!.explanation).toBe("Это время подходит всем (2).");
+      expect(expired.suggestions[0]!.title).toBe("Время для занятия «Кофе»");
+      expect(expired.suggestions[0]!.votes.yes).toBe(1);
+    } finally { clock.mockRestore(); }
+  });
   it("persists stable proposal keys and preserves votes on repeated results", async () => {
     const g = await group(),
       result = await backend.getResults(g.slug, g.alice.token),
@@ -319,7 +352,7 @@ describe("durable scheduling and guest decisions", () => {
       v = await backend.createIntent(owner.token, { rawText: "A plan" });
     const empty = await backend.getResults(v.intent.publicSlug);
     expect(empty.suggestions).toEqual([]);
-    expect(empty.message).toMatch(/availability/i);
+    expect(empty.message).toBe("Попросите друзей указать более длинные промежутки свободного времени в будущем, чтобы найти общее время.");
     expect(empty.intent.status).toBe("collecting");
     const g = await group();
     await backend.updateParticipant(g.bob.token, g.slug, {
@@ -331,7 +364,7 @@ describe("durable scheduling and guest decisions", () => {
       participantsWithAvailability: 1,
       participantsMissingAvailability: 1,
     });
-    expect(r.message).toMatch(/1 of 2/);
+    expect(r.message).toMatch(/1 из 2/);
   });
   it("preserves the selected alternative when the collection deadline passes or the organizer closes it", async () => {
     const g = await group(),

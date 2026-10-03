@@ -38,20 +38,20 @@ export const seekingSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["city"],
-        message: "Choose a city for physical meetings.",
+        message: "Выберите город для личных встреч.",
       });
     for (const key of ["languages", "tags", "desiredAgeBands"] as const)
       if (new Set(v[key]).size !== v[key].length)
         ctx.addIssue({
           code: "custom",
           path: [key],
-          message: "Remove duplicate choices.",
+          message: "Удалите повторяющиеся варианты.",
         });
     if (v.format === "one_to_one" && v.groupSize !== null)
       ctx.addIssue({
         code: "custom",
         path: ["groupSize"],
-        message: "Group size applies to group meetings.",
+        message: "Размер группы указывают только для групповых встреч.",
       });
   });
 export type SeekingInput = z.infer<typeof seekingSchema>;

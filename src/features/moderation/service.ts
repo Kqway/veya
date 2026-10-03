@@ -13,7 +13,7 @@ export interface ModerationEvidence {profiles:{role:string;label:string}[];posts
 export interface ModerationReport {publicKey:string;status:'open'|'reviewing'|'resolved'|'dismissed';reason:string;text:string|null;createdAt:string}
 interface ReportRow {id:string;public_key:string;target_profile_id:string;status:ModerationReport['status'];reason:string;text:string|null;created_at:Date;evidence:ModerationEvidence}
 const dto=(r:ReportRow):ModerationReport=>({publicKey:r.public_key,status:r.status,reason:r.reason,text:r.text,createdAt:r.created_at.toISOString()});
-const unauthorized=()=>{throw new HttpError(401,'ADMIN_UNAUTHORIZED','An authorized moderator session is required.');};
+const unauthorized=()=>{throw new HttpError(401,'ADMIN_UNAUTHORIZED','Требуется авторизованная сессия модератора.');};
 class RetryLocks extends Error {}
 export interface ModerationOptions {
  adminSecret:()=>string|undefined;
@@ -23,7 +23,7 @@ export class ModerationService {
  constructor(private readonly db:Database,private readonly options:ModerationOptions){}
  private configured():string {
   const value=this.options.adminSecret();
-  if(!value || !/^[A-Za-z0-9_-]{32,256}$/.test(value)) throw new HttpError(503,'MODERATION_UNAVAILABLE','Moderation is unavailable.');
+  if(!value || !/^[A-Za-z0-9_-]{32,256}$/.test(value)) throw new HttpError(503,'MODERATION_UNAVAILABLE','Модерация недоступна.');
   return value;
  }
  private async authorize(tx:DatabaseExecutor,token:string):Promise<void> {
@@ -66,7 +66,7 @@ export class ModerationService {
  }
  private async report(tx:DatabaseExecutor,key:string):Promise<ReportRow> {
   const r=await tx.query<ReportRow>('SELECT id,public_key,target_profile_id,status,reason,text,created_at,evidence FROM social_reports WHERE public_key=$1',[key]);
-  if(!r.rows[0])throw new HttpError(404,'NOT_FOUND','The report is unavailable.');
+  if(!r.rows[0])throw new HttpError(404,'NOT_FOUND','Жалоба недоступна.');
   return r.rows[0];
  }
  async action(token:string,key:string,input:unknown):Promise<{report:ModerationReport}> {
@@ -84,7 +84,7 @@ export class ModerationService {
     if(report.target_profile_id!==initial.target_profile_id)throw new RetryLocks();
     if(data.canSeek!==undefined||data.canConnect!==undefined||data.moderationStatus!==undefined){
      const target=await tx.query<{deleted_at:Date|null}>('SELECT deleted_at FROM social_profiles WHERE id=$1',[report.target_profile_id]);
-     if(target.rows[0]?.deleted_at)throw new HttpError(409,'PROFILE_UNAVAILABLE','This profile is unavailable. Case review remains available.');
+     if(target.rows[0]?.deleted_at)throw new HttpError(409,'PROFILE_UNAVAILABLE','Этот профиль недоступен. Рассмотрение жалобы по-прежнему доступно.');
      await tx.query('UPDATE social_profiles SET can_seek=COALESCE($2,can_seek),can_connect=COALESCE($3,can_connect),moderation_status=COALESCE($4,moderation_status),updated_at=clock_timestamp() WHERE id=$1',[report.target_profile_id,data.canSeek??null,data.canConnect??null,data.moderationStatus??null]);
      if(data.moderationStatus==='suspended'){
       await tx.query("UPDATE seeking_posts SET status='closed' WHERE profile_id=$1 AND status='active'",[report.target_profile_id]);
@@ -98,7 +98,7 @@ export class ModerationService {
     await this.audit(tx,'case_action',key,data);return {report:dto(await this.report(tx,key))};
    });}catch(error){if(!(error instanceof RetryLocks))throw error;}
   }
-  throw new HttpError(409,'CONFLICT','Try the moderation action again.');
+  throw new HttpError(409,'CONFLICT','Повторите действие модератора.');
  }
  private async peers(tx:DatabaseExecutor,target:string):Promise<string[]> {
   const r=await tx.query<{peer:string}>('SELECT CASE WHEN low_profile_id=$1 THEN high_profile_id ELSE low_profile_id END AS peer FROM social_pairs WHERE low_profile_id=$1 OR high_profile_id=$1',[target]);

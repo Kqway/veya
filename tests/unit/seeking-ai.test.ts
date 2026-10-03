@@ -26,12 +26,12 @@ const input: ParseInput = {
 const chess = {
   ...empty,
   activityKey: "chess",
-  activityLabel: "Chess",
+  activityLabel: "Шахматы",
   interactionMode: "in_person",
   format: "one_to_one",
   city: "Moscow",
   skill: "intermediate",
-  timeHint: "2027-01-01 evening",
+  timeHint: "2027-01-01 вечером",
 };
 const provider = (output: unknown): AiProvider => ({
   name: "openai",
@@ -48,21 +48,21 @@ describe("optional own-text seeking assistance", () => {
       .toEqual({ data: chess, source: "mock" });
   });
   it.each([
-    ["chess in Moscow online", "chess", "Chess"],
-    ["Зал", "gym", "Gym"],
-    ["gym", "gym", "Gym"],
-    ["Study calculus", "calculus", "Calculus study"],
-    ["Учить матанализ", "calculus", "Calculus study"],
-    ["walking", "walk", "Walking"],
-    ["прогулка", "walk", "Walking"],
-    ["board games", "board-games", "Board games"],
-    ["настолки", "board-games", "Board games"],
-    ["coffee", "coffee", "Coffee"],
-    ["кофе", "coffee", "Coffee"],
-    ["English practice", "english-practice", "English practice"],
-    ["Практика английского", "english-practice", "English practice"],
-    ["football", "football", "Football"],
-    ["футбол", "football", "Football"],
+    ["chess in Moscow online", "chess", "Шахматы"],
+    ["Зал", "gym", "Спортзал"],
+    ["gym", "gym", "Спортзал"],
+    ["Study calculus", "calculus", "Математический анализ"],
+    ["Учить матанализ", "calculus", "Математический анализ"],
+    ["walking", "walk", "Прогулка"],
+    ["прогулка", "walk", "Прогулка"],
+    ["board games", "board-games", "Настольные игры"],
+    ["настолки", "board-games", "Настольные игры"],
+    ["coffee", "coffee", "Кофе"],
+    ["кофе", "coffee", "Кофе"],
+    ["English practice", "english-practice", "Практика английского"],
+    ["Практика английского", "english-practice", "Практика английского"],
+    ["football", "football", "Футбол"],
+    ["футбол", "football", "Футбол"],
   ])("recognizes the narrow vocabulary: %s", async (text, activityKey, activityLabel) => {
     expect((await new AiTasks().parseSeeking({ ...input, text })).data)
       .toMatchObject({ activityKey, activityLabel });
@@ -77,21 +77,21 @@ describe("optional own-text seeking assistance", () => {
   });
   it("structures general study locally without requiring an AI key", async () => {
     expect((await new AiTasks().parseSeeking({ ...input, text: "study" })).data)
-      .toEqual({ ...empty, activityKey: "study", activityLabel: "Study" });
+      .toEqual({ ...empty, activityKey: "study", activityLabel: "Учёба" });
   });
   it("extracts explicitly written online and one-person preferences", async () => {
     expect((await new AiTasks().parseSeeking({
       ...input, text: "Chess online one-to-one intermediate",
     })).data).toEqual({
-      ...empty, activityKey: "chess", activityLabel: "Chess",
+      ...empty, activityKey: "chess", activityLabel: "Шахматы",
       interactionMode: "online", format: "one_to_one", skill: "intermediate",
     });
   });
   it.each([
-    ["Coffee today evening", "2026-12-31 evening"],
-    ["Кофе сегодня вечером", "2026-12-31 evening"],
+    ["Coffee today evening", "2026-12-31 вечером"],
+    ["Кофе сегодня вечером", "2026-12-31 вечером"],
     ["Coffee tomorrow", "2027-01-01"],
-    ["Coffee evening", "evening"],
+    ["Coffee evening", "вечером"],
   ])("resolves local advisory dates for %s", async (text, timeHint) => {
     expect((await new AiTasks().parseSeeking({
       ...input, text, timeZone: "Pacific/Kiritimati",

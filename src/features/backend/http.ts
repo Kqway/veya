@@ -54,7 +54,7 @@ export async function enforceRateLimit(
     throw new HttpError(
       429,
       "RATE_LIMITED",
-      "Too many requests. Wait a little and try again.",
+      "Слишком много запросов. Немного подождите и попробуйте снова.",
       decision.retryAfterSeconds,
     );
 }
@@ -67,13 +67,13 @@ export async function readJson(
     request.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() !==
     "application/json"
   )
-    throw new HttpError(415, "UNSUPPORTED_MEDIA_TYPE", "Use application/json.");
+    throw new HttpError(415, "UNSUPPORTED_MEDIA_TYPE", "Используйте формат application/json.");
   const tooLarge = () =>
-    new HttpError(413, "BODY_TOO_LARGE", "The request body exceeds 16 KiB.");
+    new HttpError(413, "BODY_TOO_LARGE", "Размер тела запроса превышает 16 КиБ.");
   if (Number(request.headers.get("content-length")) > 16384) throw tooLarge();
   const reader = request.body?.getReader();
   if (!reader)
-    throw new HttpError(400, "INVALID_JSON", "Provide a valid JSON body.");
+    throw new HttpError(400, "INVALID_JSON", "Передайте корректное тело запроса в формате JSON.");
   let timer: ReturnType<typeof setTimeout> | undefined;
   const consume = async () => {
     let size = 0,
@@ -104,7 +104,7 @@ export async function readJson(
             new HttpError(
               408,
               "REQUEST_TIMEOUT",
-              "The request took too long. Please try again.",
+              "Запрос занял слишком много времени. Попробуйте снова.",
             ),
           );
           void reader.cancel().catch(() => {});
@@ -114,7 +114,7 @@ export async function readJson(
     try {
       return JSON.parse(text);
     } catch {
-      throw new HttpError(400, "INVALID_JSON", "Provide a valid JSON body.");
+      throw new HttpError(400, "INVALID_JSON", "Передайте корректное тело запроса в формате JSON.");
     }
   } finally {
     if (timer) clearTimeout(timer);
@@ -145,7 +145,7 @@ export function createBackendHandlers(options: BackendHttpOptions) {
       throw new HttpError(
         403,
         "ORIGIN_REJECTED",
-        "Use the application's origin for this request.",
+        "Отправьте запрос с адреса приложения.",
       );
     assertBetaOperationAllowed(operation, options.getBetaControls?.() ?? getBetaControls());
     await enforceRateLimit(options.limiter, action, request);
@@ -297,7 +297,7 @@ export function apiError(error: unknown): NextResponse {
     {
       error: {
         code: "SERVICE_UNAVAILABLE",
-        message: "The service is temporarily unavailable.",
+        message: "Сервис временно недоступен.",
       },
     },
     503,

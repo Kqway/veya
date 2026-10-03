@@ -42,13 +42,13 @@ export function createAnalyticsHandler(options: {
         throw new HttpError(
           403,
           "ORIGIN_REJECTED",
-          "Use the application's origin.",
+          "Отправьте запрос с адреса приложения.",
         );
       assertBetaOperationAllowed("mutation", options.getBetaControls?.() ?? getBetaControls());
       await enforceRateLimit(options.limiter, "analytics", request);
       const parsed = eventSchema.safeParse(await readJson(request));
       if (!parsed.success)
-        throw new HttpError(400, "INVALID_INPUT", "Provide a supported event.");
+        throw new HttpError(400, "INVALID_INPUT", "Передайте поддерживаемое событие.");
       await options.client()?.track(parsed.data);
       return json({ accepted: true });
     } catch (error) {

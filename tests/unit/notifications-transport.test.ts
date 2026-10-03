@@ -13,7 +13,7 @@ describe('bounded encrypted browser push transport',()=>{
  it('never follows redirects and encrypts private-free generic payload',async()=>{
   requestMock.mockImplementation((_endpoint:unknown,options:{headers:Record<string,string>},response:(value:{statusCode:number;resume:()=>void})=>void)=>{
    expect(options.headers.Authorization??options.headers.authorization).toMatch(/^vapid /);const req=new EventEmitter() as EventEmitter&{end:(body:Buffer)=>void;destroy:()=>void};
-   req.end=body=>{expect(body.toString()).not.toContain('You have a new update');response({statusCode:302,resume:()=>{}});req.emit('close');};req.destroy=()=>{};return req;
+   req.end=body=>{expect(body.toString()).not.toContain('У вас новое уведомление');response({statusCode:302,resume:()=>{}});req.emit('close');};req.destroy=()=>{};return req;
   });
   await expect(sendBrowserPush(subscription,genericPushPayload,config)).rejects.toBeInstanceOf(PushDeliveryError);expect(requestMock).toHaveBeenCalledTimes(1);expect(requestMock.mock.calls[0]![0]).toBe(subscription.endpoint);
  });

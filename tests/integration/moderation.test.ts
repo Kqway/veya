@@ -29,12 +29,12 @@ describe('separate server-owned human moderation',()=>{
  }
  it('rejects guest tokens and role forgery, wrong secrets and unavailable configuration',async()=>{
   const guest=await createGuestSession(c.db);
-  await expect(service.queue(guest.token)).rejects.toMatchObject({code:'ADMIN_UNAUTHORIZED'});
+  await expect(service.queue(guest.token)).rejects.toMatchObject({code:'ADMIN_UNAUTHORIZED',message:'Требуется авторизованная сессия модератора.'});
   await expect(service.login('wrong')).rejects.toMatchObject({code:'ADMIN_UNAUTHORIZED'});
-  await expect(new ModerationService(c.db,{adminSecret:()=>undefined}).login(secret)).rejects.toMatchObject({code:'MODERATION_UNAVAILABLE'});
+  await expect(new ModerationService(c.db,{adminSecret:()=>undefined}).login(secret)).rejects.toMatchObject({code:'MODERATION_UNAVAILABLE',message:'Модерация недоступна.'});
   const handler=createModerationHandler({db:()=>c.db,origin:'http://localhost',adminSecret:()=>secret,secureCookie:false});
   const forged=await handler(new Request('http://localhost/api/moderation/reports',{headers:{cookie:`veya_guest=${guest.token}; role=admin`}}),['reports']);expect(forged.status).toBe(401);
-  const cross=await handler(new Request('http://localhost/api/moderation/session',{method:'POST',headers:{origin:'http://evil','content-type':'application/json'},body:JSON.stringify({secret})}),['session']);expect(cross.status).toBe(403);
+  const cross=await handler(new Request('http://localhost/api/moderation/session',{method:'POST',headers:{origin:'http://evil','content-type':'application/json'},body:JSON.stringify({secret})}),['session']);expect(cross.status).toBe(403);expect(await cross.json()).toMatchObject({error:{code:'ORIGIN_REJECTED',message:'Используйте адрес приложения.'}});
  });
  it('expires and revokes sessions and invalidates them after secret rotation',async()=>{
   const admin=await service.login(secret);expect(admin.token).toHaveLength(43);

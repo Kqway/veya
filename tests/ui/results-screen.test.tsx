@@ -75,9 +75,9 @@ describe("group results", () => {
     vi.stubGlobal("fetch", fetcher);
     const user = userEvent.setup();
     render(<ResultsScreen slug={view.intent.publicSlug} />);
-    await user.click(await screen.findByRole("button", { name: "YES" }));
+    await user.click(await screen.findByRole("button", { name: "ДА" }));
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "YES" })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: "ДА" })).toHaveAttribute(
         "aria-pressed",
         "true",
       ),
@@ -101,11 +101,11 @@ describe("group results", () => {
     vi.stubGlobal("fetch", fetcher);
     const user = userEvent.setup();
     render(<ResultsScreen slug={view.intent.publicSlug} />);
-    await user.click(await screen.findByRole("button", { name: "MAYBE" }));
+    await user.click(await screen.findByRole("button", { name: "ВОЗМОЖНО" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      /suggestions changed/i,
+      /Варианты встречи изменились/i,
     );
-    await user.click(screen.getByRole("button", { name: "Reload results" }));
+    await user.click(screen.getByRole("button", { name: "Перезагрузить результаты" }));
     await waitFor(() =>
       expect(screen.queryByRole("alert")).not.toBeInTheDocument(),
     );
@@ -125,15 +125,15 @@ describe("group results", () => {
     const user = userEvent.setup();
     render(<ResultsScreen slug={view.intent.publicSlug} />);
     await user.click(
-      await screen.findByRole("button", { name: "Choose this plan" }),
+      await screen.findByRole("button", { name: "Выбрать этот план" }),
     );
     expect(fetcher).toHaveBeenCalledTimes(1);
-    await user.click(screen.getByRole("button", { name: "Confirm plan" }));
+    await user.click(screen.getByRole("button", { name: "Подтвердить план" }));
     expect(
-      await screen.findByRole("heading", { name: "It's a plan." }),
+      await screen.findByRole("heading", { name: "Встреча запланирована." }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Choose this plan" }),
+      screen.queryByRole("button", { name: "Выбрать этот план" }),
     ).not.toBeInTheDocument();
   });
   it("gives nonmembers and empty groups a useful next action", async () => {
@@ -151,14 +151,14 @@ describe("group results", () => {
     render(<ResultsScreen slug={view.intent.publicSlug} />);
     expect(
       await screen.findByRole("heading", {
-        name: "A little more availability.",
+        name: "Нужно ещё немного свободного времени.",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Add availability" }),
+      screen.getByRole("link", { name: "Указать свободное время" }),
     ).toHaveAttribute("href", `/i/${view.intent.publicSlug}`);
     expect(
-      screen.queryByRole("button", { name: "YES" }),
+      screen.queryByRole("button", { name: "ДА" }),
     ).not.toBeInTheDocument();
   });
   it("keeps a confirmed alternative visible even with an expired collection status", async () => {
@@ -183,16 +183,16 @@ describe("group results", () => {
     );
     render(<ResultsScreen slug={view.intent.publicSlug} />);
     expect(
-      await screen.findByRole("heading", { name: "It's a plan." }),
+      await screen.findByRole("heading", { name: "Встреча запланирована." }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("region", { name: "Confirmed plan" }),
+      screen.getByRole("region", { name: "Подтверждённый план" }),
     ).toHaveTextContent("The chosen alternative");
     expect(
-      screen.queryByRole("region", { name: "Best match" }),
+      screen.queryByRole("region", { name: "Лучший вариант" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "YES" }),
+      screen.queryByRole("button", { name: "ДА" }),
     ).not.toBeInTheDocument();
   });
 });

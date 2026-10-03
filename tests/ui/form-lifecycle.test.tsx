@@ -47,8 +47,8 @@ describe("pending form lifecycle", () => {
     vi.stubGlobal("fetch", fetcher);
     const user = userEvent.setup();
     const mounted = render(<CreateDetails idea="Coffee" onEdit={() => {}} />);
-    await user.type(screen.getByLabelText("Your name"), "Artem");
-    await user.click(screen.getByRole("button", { name: "Create invite" }));
+    await user.type(screen.getByLabelText("Ваше имя"), "Artem");
+    await user.click(screen.getByRole("button", { name: "Создать приглашение" }));
     expect(fetcher).toHaveBeenCalledTimes(1);
     mounted.unmount();
     await act(async () => {
@@ -71,8 +71,8 @@ describe("pending form lifecycle", () => {
     vi.stubGlobal("fetch", fetcher);
     const user = userEvent.setup();
     const mounted = render(<CreateDetails idea="Coffee" onEdit={() => {}} />);
-    await user.type(screen.getByLabelText("Your name"), "Artem");
-    await user.click(screen.getByRole("button", { name: "Create invite" }));
+    await user.type(screen.getByLabelText("Ваше имя"), "Artem");
+    await user.click(screen.getByRole("button", { name: "Создать приглашение" }));
     await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
     mounted.unmount();
     await act(async () => {
@@ -97,9 +97,9 @@ describe("pending form lifecycle", () => {
     const mounted = render(
       <ParticipantForm view={view} onSaved={onSaved} onCancel={() => {}} />,
     );
-    await user.type(screen.getByLabelText("Display name"), "Artem");
-    await user.click(screen.getAllByRole("button", { name: /Evening / })[1]!);
-    await user.click(screen.getByRole("button", { name: "Join the plan" }));
+    await user.type(screen.getByLabelText("Ваше имя"), "Artem");
+    await user.click(screen.getAllByRole("button", { name: /Вечер / })[1]!);
+    await user.click(screen.getByRole("button", { name: "Присоединиться к встрече" }));
     expect(fetcher).toHaveBeenCalledTimes(1);
     mounted.unmount();
     await act(async () => {

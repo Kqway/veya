@@ -35,44 +35,44 @@ export function ProposalCard({
       <p className="proposal-time">{formatWindow(proposal.window)}</p>
       <p className="attendance-count">
         <strong>
-          {proposal.availableCount} of {proposal.totalCount}
+          {proposal.availableCount} из {proposal.totalCount}
         </strong>{" "}
-        available · {proposal.durationMinutes} minutes
+        могут прийти · {proposal.durationMinutes} мин.
       </p>
       {proposal.partialCount > 0 && (
         <p className="quiet-copy">
-          {proposal.partialCount} could join for part of this time.
+          Могут присоединиться на часть встречи: {proposal.partialCount}.
         </p>
       )}
       <p className="proposal-explanation">{proposal.explanation}</p>
       {proposal.budgetAssessment === "compatible" && (
-        <p className="quiet-copy">Shared budget ranges overlap.</p>
+        <p className="quiet-copy">Бюджеты участников совместимы.</p>
       )}
       {proposal.attendance && (
-        <ul className="attendance-list" aria-label="Group availability">
+        <ul className="attendance-list" aria-label="Свободное время участников">
           {proposal.attendance.map((p, index) => (
             <li key={index}>
               <span>{p.displayName}</span>
               <span className={`attendance-${p.status}`}>
                 {p.status === "available"
-                  ? "Available"
+                  ? "Может прийти"
                   : p.status === "partial"
-                    ? "Partly available"
-                    : "Unavailable"}
+                    ? "Может прийти на часть встречи"
+                    : "Не может прийти"}
               </span>
             </li>
           ))}
         </ul>
       )}
-      <p className="vote-counts" aria-label="Group votes">
-        YES {proposal.votes.yes} · MAYBE {proposal.votes.maybe} · NO{" "}
+      <p className="vote-counts" aria-label="Голоса участников">
+        ДА {proposal.votes.yes} · ВОЗМОЖНО {proposal.votes.maybe} · НЕТ{" "}
         {proposal.votes.no}
       </p>
       {canVote && (
         <div
           className="vote-buttons"
           role="group"
-          aria-label={`Vote on ${label}`}
+          aria-label={`Голосование: ${label}`}
         >
           {(["yes", "maybe", "no"] as const).map((value) => (
             <button
@@ -83,7 +83,7 @@ export function ProposalCard({
               aria-pressed={proposal.ownVote === value}
               onClick={() => onVote(value)}
             >
-              {value.toUpperCase()}
+              {{ yes: "ДА", maybe: "ВОЗМОЖНО", no: "НЕТ" }[value]}
             </button>
           ))}
         </div>
@@ -103,7 +103,7 @@ export function ProposalCard({
           type="button"
           onClick={onChoose}
         >
-          Choose this plan
+          Выбрать этот план
         </button>
       )}
     </section>

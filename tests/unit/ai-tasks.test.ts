@@ -38,7 +38,7 @@ describe("validated optional AI tasks", () => {
       (await fallback.suggestPlan(context)).data.idea.length,
     ).toBeGreaterThan(0);
     expect((await fallback.explainPlan(context)).data.explanation).toContain(
-      "2 of 3",
+      "2 из 3",
     );
     expect(fetcher).not.toHaveBeenCalled();
   });
@@ -77,8 +77,8 @@ describe("validated optional AI tasks", () => {
         provider: provider(output),
       }).explainPlan(context);
       expect(result.source).toBe("fallback");
-      expect(result.data.explanation).toContain("2 of 3");
-      expect(result.data.explanation).not.toMatch(/All 3|free/i);
+      expect(result.data.explanation).toContain("2 из 3");
+      expect(result.data.explanation).not.toMatch(/всем.*3|бесплатно/i);
     }
   });
   it("rejects invalid user input rather than hiding it with fallback", async () => {

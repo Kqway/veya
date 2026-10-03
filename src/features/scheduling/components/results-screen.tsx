@@ -85,27 +85,27 @@ export function ResultsScreen({ slug }: { slug: string }) {
         <h1>
           {error
             ? error.code === "NOT_FOUND"
-              ? "This plan couldn't be found."
-              : "Your results are taking a moment."
-            : "Finding a good time…"}
+              ? "План не найден."
+              : "Результаты загружаются чуть дольше обычного."
+            : "Ищем подходящее время…"}
         </h1>
         {error ? (
           <>
-            <p>Check the link or try loading this plan again.</p>
+            <p>Проверьте ссылку или попробуйте загрузить план ещё раз.</p>
             <button
               className="button button-primary"
               type="button"
               disabled={busy}
               onClick={() => void load()}
             >
-              Try again
+              Попробовать ещё раз
             </button>
             <Link className="new-plan-link" href="/">
-              Start a new plan
+              Создать новый план
             </Link>
           </>
         ) : (
-          <p role="status">A little less back-and-forth.</p>
+          <p role="status">Меньше переписки.</p>
         )}
       </section>
     );
@@ -122,32 +122,30 @@ export function ResultsScreen({ slug }: { slug: string }) {
   return (
     <div className="invite-page results-page">
       <div className="results-nav">
-        <Link href={`/i/${slug}`}>← Back to the invite</Link>
+        <Link href={`/i/${slug}`}>← К приглашению</Link>
         <button
           type="button"
           className="button button-secondary"
           disabled={busy}
           onClick={() => void load()}
         >
-          Refresh results
+          Обновить результаты
         </button>
       </div>
       <header className="invite-heading">
-        <p className="eyebrow">Less planning. More living.</p>
+        <p className="eyebrow">Меньше хлопот. Больше встреч.</p>
         <h1 ref={heading} tabIndex={-1}>
-          {decided ? "It's a plan." : "Your next moment, together."}
+          {decided ? "Встреча запланирована." : "Ваша следующая встреча."}
         </h1>
         <p className="invite-idea">{view.intent.rawText}</p>
         <p className="quiet-copy">
-          Times in {Intl.DateTimeFormat().resolvedOptions().timeZone} ·{" "}
-          {view.intent.participantCount}{" "}
-          {view.intent.participantCount === 1 ? "person" : "people"} in the plan
+          Часовой пояс: {Intl.DateTimeFormat().resolvedOptions().timeZone} ·{" "}
+          Участников в плане: {view.intent.participantCount}
         </p>
         {!closed && (
           <p className="quiet-copy">
-            {view.summary.participantsWithAvailability} shared future
-            availability · {view.summary.participantsMissingAvailability} still
-            need to add times
+            Указали свободное время: {view.summary.participantsWithAvailability}
+            {" · "}Ещё не ответили: {view.summary.participantsMissingAvailability}
           </p>
         )}
       </header>
@@ -162,34 +160,34 @@ export function ResultsScreen({ slug }: { slug: string }) {
             disabled={busy}
             onClick={() => void load()}
           >
-            Reload results
+            Перезагрузить результаты
           </button>
         </div>
       )}
       {expired && (
         <p className="entry-error" role="status">
-          This invite has expired. These are the saved options; start a new plan
-          to keep it going.
+          Срок приглашения истёк. Здесь сохранены варианты встречи.
+          Создайте новый план, чтобы продолжить.
         </p>
       )}
       {decided && (
         <p className="confirmed-message" role="status">
-          Your organizer confirmed this time. Availability and voting are now
-          closed.
+          Организатор подтвердил это время. Сбор свободного времени
+          и голосование завершены.
         </p>
       )}
       {pending && !closed && (
         <section
           className="entry-card confirm-plan"
-          aria-label="Confirm group plan"
+          aria-label="Подтверждение плана встречи"
         >
           <h2 ref={confirmation} tabIndex={-1}>
-            Make this the group plan?
+            Подтвердить этот вариант для всех?
           </h2>
           <p>{formatWindow(pending.window)}</p>
           <p className="quiet-copy">
-            Confirming closes availability and voting for everyone. You can keep
-            collecting replies instead.
+            После подтверждения сбор свободного времени и голосование завершатся
+            для всех. Можно пока продолжить собирать ответы.
           </p>
           <div className="form-actions">
             <button
@@ -198,7 +196,7 @@ export function ResultsScreen({ slug }: { slug: string }) {
               disabled={busy}
               onClick={() => void act(pending.suggestionKey)}
             >
-              Confirm plan
+              Подтвердить план
             </button>
             <button
               type="button"
@@ -206,7 +204,7 @@ export function ResultsScreen({ slug }: { slug: string }) {
               disabled={busy}
               onClick={() => setConfirming(null)}
             >
-              Keep collecting
+              Продолжить сбор ответов
             </button>
           </div>
         </section>
@@ -221,10 +219,10 @@ export function ResultsScreen({ slug }: { slug: string }) {
             proposal={p}
             label={
               decided
-                ? "Confirmed plan"
+                ? "Подтверждённый план"
                 : index === 0
-                  ? "Best match"
-                  : `Alternative ${index}`
+                  ? "Лучший вариант"
+                  : `Вариант ${index}`
             }
             canVote={view.canVote && !closed}
             canDecide={view.isCreator && !closed}
@@ -235,22 +233,22 @@ export function ResultsScreen({ slug }: { slug: string }) {
         ))
       ) : (
         <section className="entry-card">
-          <h2>A little more availability.</h2>
+          <h2>Нужно ещё немного свободного времени.</h2>
           <p className="quiet-copy">{view.message}</p>
           <Link className="button button-primary" href={`/i/${slug}`}>
-            Add availability
+            Указать свободное время
           </Link>
         </section>
       )}
       {!closed && proposals.length > 0 && !view.canVote && !view.isCreator && (
         <section className="entry-card">
-          <h2>Have a say in the plan.</h2>
+          <h2>Участвуйте в выборе времени.</h2>
           <p className="quiet-copy">
-            Join to see your friends&apos; availability and vote on the times
-            that work for you.
+            Присоединитесь, чтобы увидеть свободное время друзей
+            и проголосовать за подходящие варианты встречи.
           </p>
           <Link className="button button-primary" href={`/i/${slug}`}>
-            Join the plan
+            Присоединиться к встрече
           </Link>
         </section>
       )}

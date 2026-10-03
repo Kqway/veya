@@ -3,10 +3,10 @@ import { normalizeActivity, normalizeActivityKey } from "@/features/discovery/ac
 
 describe("explicit owned-text activity catalogue", () => {
   it.each(["шахматы", "поиграть в шахматы", "chess", " CHESS ", "шахматишки", "сыграть партию", "Хочу шахмат завтра", "Play chess online"])("recognizes chess: %s", (text) => {
-    expect(normalizeActivity(text)).toEqual({ key: "chess", label: "Chess" });
+    expect(normalizeActivity(text)).toEqual({ key: "chess", label: "Шахматы" });
   });
   it.each(["football", "футбол", "поиграть в футбол"])("recognizes football independently: %s", (text) => {
-    expect(normalizeActivity(text)).toEqual({ key: "football", label: "Football" });
+    expect(normalizeActivity(text)).toEqual({ key: "football", label: "Футбол" });
   });
   it.each(["", "games", "party", "play a game", "studious", "English", "coffeehouse", "chessboard", "шахматист", "footballer", "заломить"])("does not infer an activity from ambiguity or substrings: %s", (text) => {
     expect(normalizeActivity(text)).toBeNull();
@@ -21,18 +21,18 @@ describe("explicit owned-text activity catalogue", () => {
 
 describe("closed beta bilingual activity vocabulary", () => {
   it.each([
-    ["chess", "шахматы", "chess", "Chess"],
-    ["gym", "тренажёрный зал", "gym", "Gym"],
-    ["running", "пробежка", "running", "Running"],
-    ["walking", "прогулка", "walk", "Walking"],
-    ["movies", "кино", "movies", "Movies"],
-    ["gaming", "видеоигры", "gaming", "Gaming"],
-    ["study", "учёба", "study", "Study"],
-    ["programming", "программирование", "programming", "Programming"],
-    ["football", "футбол", "football", "Football"],
-    ["basketball", "баскетбол", "basketball", "Basketball"],
-    ["coffee", "кофе", "coffee", "Coffee"],
-    ["language practice", "языковая практика", "language-practice", "Language practice"],
+    ["chess", "шахматы", "chess", "Шахматы"],
+    ["gym", "тренажёрный зал", "gym", "Спортзал"],
+    ["running", "пробежка", "running", "Бег"],
+    ["walking", "прогулка", "walk", "Прогулка"],
+    ["movies", "кино", "movies", "Кино"],
+    ["gaming", "видеоигры", "gaming", "Видеоигры"],
+    ["study", "учёба", "study", "Учёба"],
+    ["programming", "программирование", "programming", "Программирование"],
+    ["football", "футбол", "football", "Футбол"],
+    ["basketball", "баскетбол", "basketball", "Баскетбол"],
+    ["coffee", "кофе", "coffee", "Кофе"],
+    ["language practice", "языковая практика", "language-practice", "Языковая практика"],
   ])("normalizes EN %s and RU %s to the same key", (en, ru, key, label) => {
     for (const text of [en, ru, `Looking for ${en} together`, `Хочу ${ru} завтра`]) {
       expect(normalizeActivity(text)).toEqual({ key, label });

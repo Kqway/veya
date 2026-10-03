@@ -1,38 +1,38 @@
 export const intentExamples = [
   {
-    label: "Meet friends",
-    idea: "Let's meet somewhere this week.",
+    label: "Встретиться с друзьями",
+    idea: "Давайте встретимся на этой неделе.",
     kind: "friends",
   },
   {
-    label: "Go somewhere tonight",
-    idea: "I want to go somewhere tonight.",
+    label: "Куда-нибудь сходить сегодня",
+    idea: "Хочу куда-нибудь сходить сегодня вечером.",
     kind: "tonight",
   },
-  { label: "Plan a trip", idea: "Let's plan a trip together.", kind: "trip" },
+  { label: "Спланировать поездку", idea: "Давайте спланируем совместное путешествие.", kind: "trip" },
   {
-    label: "Play games",
-    idea: "Find friends for a game night.",
+    label: "Поиграть",
+    idea: "Хочу собрать друзей на вечер игр.",
     kind: "games",
   },
   {
-    label: "Study together",
-    idea: "Let's find a time to study together.",
+    label: "Учиться вместе",
+    idea: "Давайте выберем время для совместной учёбы.",
     kind: "study",
   },
   {
-    label: "Play chess",
-    idea: "I want to find someone to play chess with this week.",
+    label: "Сыграть в шахматы",
+    idea: "Хочу найти партнёра для шахмат на этой неделе.",
     kind: "games",
   },
   {
-    label: "Gym partner",
-    idea: "I want a gym partner for a regular workout.",
+    label: "Компания для тренировок",
+    idea: "Хочу найти партнёра для регулярных тренировок.",
     kind: "friends",
   },
   {
-    label: "Practice English",
-    idea: "I want to practice English with someone.",
+    label: "Практиковать английский",
+    idea: "Хочу с кем-нибудь практиковать английский.",
     kind: "study",
   },
 ] as const;

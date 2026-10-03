@@ -12,10 +12,10 @@ describe("offline-safe share images", () => {
       });
       vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => String(input).startsWith("data:") ? localFetch(input, init) : network());
       const bytes = new Uint8Array(
-        await shareImage({
+        await (await shareImage({
           title: `${name} wants to make a plan 👀`,
           description: previewDescription,
-        }).arrayBuffer(),
+        })).arrayBuffer(),
       );
       expect(bytes.slice(0, 8)).toEqual(
         new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
@@ -24,4 +24,14 @@ describe("offline-safe share images", () => {
       expect(network).not.toHaveBeenCalled();
     },
   );
+  it("renders different Russian names locally rather than replacing both with the same fallback", async () => {
+    const localFetch = globalThis.fetch;
+    const network = vi.fn(async () => { throw new Error("External assets forbidden"); });
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => String(input).startsWith("data:") ? localFetch(input, init) : network());
+    const first = new Uint8Array(await (await shareImage({ title: "Алексей зовёт на встречу — вместе.", description: "Найдите время вместе." })).arrayBuffer());
+    const second = new Uint8Array(await (await shareImage({ title: "Мария зовёт на встречу — вместе.", description: "Найдите время вместе." })).arrayBuffer());
+    expect(first.slice(0, 8)).toEqual(new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]));
+    expect(first).not.toEqual(second);
+    expect(network).not.toHaveBeenCalled();
+  });
 });

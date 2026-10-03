@@ -62,7 +62,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
         olderLoaded.current=false;
         setMessages(page.messages);
         setNextBefore(page.nextBefore);
-        setNotice("New messages arrived while you were away. Load older to read earlier history.");
+        setNotice("Пока вас не было, появились новые сообщения. Нажмите «Загрузить предыдущие», чтобы прочитать более ранние сообщения.");
       }else{
         setMessages((values) => mergeMessages(values, page.messages));
         if (!olderLoaded.current) setNextBefore(page.nextBefore);
@@ -77,14 +77,14 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
     e.preventDefault();
     void run(async (alive) => {
       if (!text.trim() || text.trim().length > 2000)
-        throw new Error("Write a message from 1 to 2000 characters.");
+        throw new Error("Напишите сообщение длиной от 1 до 2000 символов.");
       const data = await socialApi<Message>(`${path}/messages`, "POST", {
         text: text.trim(),
       });
       if (alive()) {
         setMessages((values) => mergeMessages(values, [data]));
         setText("");
-        setNotice("Message sent.");
+        setNotice("Сообщение отправлено.");
       }
     });
   }
@@ -92,13 +92,13 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
     e.preventDefault();
     void run(async (alive) => {
       if (!consent)
-        throw new Error("Confirm your consent before sharing a detail.");
+        throw new Error("Подтвердите согласие, прежде чем поделиться сведениями.");
       if (
         !value.trim() ||
         value.trim().length > (kind === "first_name" ? 60 : 120)
       )
         throw new Error(
-          `Use up to ${kind === "first_name" ? 60 : 120} characters for this disclosure.`,
+          `Используйте не более ${kind === "first_name" ? 60 : 120} символов для этих сведений.`,
         );
       await socialApi(`${path}/disclosures`, "POST", {
         kind,
@@ -121,31 +121,30 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
         );
         setValue("");
         setConsent(false);
-        setNotice("Detail shared in this match.");
+        setNotice("Сведения переданы собеседнику.");
       }
     });
   }
   const closed = match?.status === "closed";
   return (
-    <SocialShell title="Your conversation">
+    <SocialShell title="Ваш чат">
       <SocialError message={action.error} focusRef={action.errorRef} />
       <SocialLiveStatus {...live} />
       {!match && !action.error && (
-        <p role="status">Loading your conversation…</p>
+        <p role="status">Загружаем ваш чат…</p>
       )}
       {match && (
         <>
           <section className="social-card">
             <Person identity={match.identity} />
             <h2>{match.activityLabel}</h2>
-            <p>You appear here as {match.ownIdentity.alias}.</p>
+            <p>Ваш псевдоним здесь — {match.ownIdentity.alias}.</p>
             <p className="quiet-copy">
-              This alias belongs to your pair context. There are no public
-              profile links. Sharing your name or contact details is optional.
+              Этот псевдоним используется только в вашей паре. Общедоступных ссылок на профиль нет. Делиться именем или контактами необязательно.
             </p>
             {closed && (
               <p className="social-warning" role="status">
-                This conversation is closed. You can read its history.
+                Этот чат закрыт. Вы можете читать историю сообщений.
               </p>
             )}
             <button
@@ -153,12 +152,12 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
               disabled={action.busy}
               onClick={refresh}
             >
-              Refresh messages
+              Обновить сообщения
             </button>
-            <h3>Messages</h3>
+            <h3>Сообщения</h3>
             {messages.length === 0 && (
               <p>
-                No messages yet. Start with the activity you have in common.
+                Сообщений пока нет. Начните с общего занятия.
               </p>
             )}
             {nextBefore && (
@@ -186,15 +185,15 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                   });
                 }}
               >
-                Load older
+                Загрузить предыдущие
               </button>
             )}
             {messages.length >= 300 && nextBefore && (
               <p>
-                Showing the loaded conversation history. New messages still appear here.
+                Показана загруженная история чата. Новые сообщения продолжат появляться здесь.
               </p>
             )}
-            <ol className="social-messages" aria-label="Conversation messages">
+            <ol className="social-messages" aria-label="Сообщения чата">
               {messages.map((message) => (
                 <li
                   key={message.publicKey}
@@ -205,11 +204,11 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                   }
                 >
                   <strong>
-                    {message.isMine ? "You" : message.identity.alias}
+                    {message.isMine ? "Вы" : message.identity.alias}
                   </strong>
                   <p className="social-plain">{message.text}</p>
                   <time dateTime={message.createdAt}>
-                    {new Date(message.createdAt).toLocaleString()}
+                    {new Date(message.createdAt).toLocaleString("ru-RU")}
                   </time>
                 </li>
               ))}
@@ -218,7 +217,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
               <form onSubmit={send} noValidate>
                 <fieldset disabled={action.busy}>
                   <label className="field">
-                    Message
+                    Сообщение
                     <textarea
                       rows={3}
                       maxLength={2000}
@@ -226,22 +225,21 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                       onChange={(e) => setText(e.target.value)}
                     />
                   </label>
-                  <p className="quiet-copy">Plain text · {text.length}/2000</p>
+                  <p className="quiet-copy">Обычный текст · {text.length}/2000</p>
                   <button className="button button-primary">
-                    Send message
+                    Отправить сообщение
                   </button>
                 </fieldset>
               </form>
             )}
           </section>
           <section className="social-card">
-            <h2>Details shared in this match</h2>
+            <h2>Сведения, которыми вы поделились</h2>
             <p>
-              Details are shared only with this person. Information already seen
-              cannot be taken back.
+              Сведения видит только ваш собеседник. То, что он уже увидел, нельзя отозвать.
             </p>
             {match.disclosures.length === 0 && (
-              <p>No personal details shared.</p>
+              <p>Личные сведения ещё не переданы.</p>
             )}
             <ul>
               {match.disclosures.map((d, index) => (
@@ -249,8 +247,8 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                   key={`${d.kind}-${d.isMine}-${index}`}
                   className="social-plain"
                 >
-                  {d.isMine ? "You" : match.identity.alias} ·{" "}
-                  {d.kind === "first_name" ? "First name" : "Contact handle"}:{" "}
+                  {d.isMine ? "Вы" : match.identity.alias} ·{" "}
+                  {d.kind === "first_name" ? "Имя" : "Контакт для связи"}:{" "}
                   {d.value}
                 </li>
               ))}
@@ -259,7 +257,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
               <form onSubmit={disclose} noValidate>
                 <fieldset disabled={action.busy}>
                   <label className="field">
-                    Detail to share
+                    Чем поделиться
                     <select
                       value={kind}
                       onChange={(e) => {
@@ -268,12 +266,12 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                         setValue("");
                       }}
                     >
-                      <option value="first_name">First name</option>
-                      <option value="contact_handle">Contact handle</option>
+                      <option value="first_name">Имя</option>
+                      <option value="contact_handle">Контакт для связи</option>
                     </select>
                   </label>
                   <label className="field">
-                    Disclosure value
+                    Сведения для передачи
                     <input
                       autoComplete="off"
                       maxLength={kind === "first_name" ? 60 : 120}
@@ -282,9 +280,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                     />
                   </label>
                   <p className="social-warning">
-                    Sharing is a deliberate disclosure. You cannot undo what
-                    this person has already seen. Share only what you are
-                    comfortable revealing.
+                    Вы сами решаете раскрыть эти сведения. То, что собеседник уже увидел, нельзя отозвать. Делитесь только тем, что готовы сообщить.
                   </p>
                   <label className="social-check">
                     <input
@@ -292,7 +288,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                       checked={consent}
                       onChange={(e) => setConsent(e.target.checked)}
                     />
-                    I understand and consent
+                    Я понимаю и даю согласие
                   </label>
                   <button
                     className="button button-secondary"
@@ -300,7 +296,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                       (d) => d.isMine && d.kind === kind,
                     )}
                   >
-                    Share disclosure
+                    Поделиться сведениями
                   </button>
                 </fieldset>
               </form>
@@ -308,20 +304,16 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
           </section>
           {!closed && (
             <section className="social-card">
-              <h2>Turn the conversation into a plan</h2>
+              <h2>Договоритесь о встрече</h2>
               <p>
-                A Veya plan has a bearer invitation link: anyone with the link
-                can access the plan. Blocking social contact cannot retract a
-                copied link. Your private availability and disclosures are not
-                copied; add availability separately. Both of you join the plan,
-                choose times, then vote on suggestions. The organizer confirms the final time.
+                У плана Intavro есть ссылка-приглашение: любой, у кого она есть, может открыть план. Блокировка собеседника не отменяет доступ по скопированной ссылке. Ваше личное расписание и переданные сведения не копируются — добавьте свободное время отдельно. Присоединитесь к плану оба, выберите время и проголосуйте за предложения. Организатор подтвердит итоговое время встречи.
               </p>
               {match.planSlug ? (
                 <Link
                   className="button button-primary"
                   href={`/i/${encodeURIComponent(match.planSlug)}`}
                 >
-                  Open plan
+                  Открыть план
                 </Link>
               ) : (
                 <>
@@ -330,13 +322,12 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                     disabled={action.busy}
                     onClick={() => setPlanConfirm(true)}
                   >
-                    Plan it
+                    Организовать встречу
                   </button>
                   {planConfirm && (
                     <div className="social-warning">
                       <p>
-                        Create an invitation that either of you can share with
-                        other people?
+                        Создать приглашение, которым каждый из вас сможет поделиться с другими людьми?
                       </p>
                       <div className="social-actions">
                         <button
@@ -354,19 +345,19 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
                                 });
                                 setPlanConfirm(false);
                                 setNotice(
-                                  "Plan created. Open it to add your availability.",
+                                  "План создан. Откройте его, чтобы добавить свободное время.",
                                 );
                               }
                             });
                           }}
                         >
-                          Create plan
+                          Создать план
                         </button>
                         <button
                           className="social-text-button"
                           onClick={() => setPlanConfirm(false)}
                         >
-                          Cancel plan
+                          Отменить создание плана
                         </button>
                       </div>
                     </div>
@@ -376,7 +367,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
             </section>
           )}
           <section className="social-card">
-            <h2>Safety</h2>
+            <h2>Безопасность</h2>
             <SafetyControls
               target={{ matchKey }}
               onBlocked={() => {

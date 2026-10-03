@@ -12,11 +12,11 @@ it("shows an end date for overnight and 24-hour saved windows", () => {
       startAt: "2026-10-01T22:00:00Z",
       endAt: "2026-10-02T02:00:00Z",
     }),
-  ).toMatch(/Oct 2/);
+  ).toMatch(/2 окт\./);
   expect(
     formatWindow({
       startAt: "2026-10-01T22:00:00Z",
       endAt: "2026-10-02T22:00:00Z",
     }),
-  ).toMatch(/Oct 2/);
+  ).toMatch(/2 окт\./);
 });

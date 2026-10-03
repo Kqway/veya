@@ -432,3 +432,12 @@ already includes it); retention preview daily, apply daily only after an explici
 reviewed policy; protected off-host backup daily, retain at least seven recent daily
 archives, and rehearse an isolated restore monthly and before major migrations.
 Monitor scheduler exit status and queue age, not just web health.
+
+## Public brand compatibility
+
+The Russian website now uses the public brand **Intavro** (formerly Veya). The repository,
+package name, existing `veya_guest` and moderator cookies, migration tracking table,
+SSE database channel/advisory-lock namespaces and draft event/storage keys remain
+unchanged for compatibility. Existing sessions, recovery keys and invitation URLs do
+not require replacement. Choose an available domain, verify trademark suitability,
+and configure the actual HTTPS origin; no domain purchase or deployment was performed.

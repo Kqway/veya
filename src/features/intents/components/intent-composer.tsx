@@ -27,7 +27,7 @@ export function IntentComposer() {
     event.preventDefault();
     const result = draftIntentSchema.safeParse(idea);
     if (!result.success) {
-      setError(result.error.issues[0]?.message ?? "Try a different idea.");
+      setError(result.error.issues[0]?.message ?? "Попробуйте другую идею.");
       inputRef.current?.focus();
       return;
     }
@@ -45,7 +45,7 @@ export function IntentComposer() {
     <div>
       <form className="composer-card" onSubmit={submitIdea} noValidate>
         <label className="composer-label" htmlFor="intent-idea">
-          What do you want to do?
+          Чем хотите заняться?
         </label>
         <textarea
           ref={inputRef}
@@ -53,7 +53,7 @@ export function IntentComposer() {
           name="idea"
           rows={2}
           value={idea}
-          placeholder="Let's meet somewhere this week…"
+          placeholder="Давайте встретимся на этой неделе…"
           aria-describedby={
             error ? "composer-hint composer-error" : "composer-hint"
           }
@@ -76,9 +76,9 @@ export function IntentComposer() {
         )}
         <div className="composer-bottom">
           <p id="composer-hint">
-            An idea is all it takes.
+            Всё начинается с идеи.
             <br />
-            <span>No email or password needed.</span>
+            <span>Почта и пароль не нужны.</span>
           </p>
           <div className="social-composer-actions">
             <button
@@ -88,7 +88,7 @@ export function IntentComposer() {
                 const result = draftIntentSchema.safeParse(idea);
                 if (!result.success) {
                   setError(
-                    result.error.issues[0]?.message ?? "Try a different idea.",
+                    result.error.issues[0]?.message ?? "Попробуйте другую идею.",
                   );
                   inputRef.current?.focus();
                   return;
@@ -97,7 +97,7 @@ export function IntentComposer() {
                   sessionStorage.setItem("veya.social.draft", result.data);
                 } catch {
                   setError(
-                    "Your browser could not save this draft. Try again.",
+                    "Браузер не смог сохранить черновик. Попробуйте ещё раз.",
                   );
                   inputRef.current?.focus();
                   return;
@@ -106,17 +106,17 @@ export function IntentComposer() {
                 router.push("/seek/new");
               }}
             >
-              Find compatible people <ArrowIcon />
+              Найти людей <ArrowIcon />
             </button>
             <button className="button button-secondary" type="submit">
-              Make it happen <ArrowIcon />
+              Создать план <ArrowIcon />
             </button>
           </div>
         </div>
       </form>
-      <p className="quiet-copy">Find compatible people starts an activity and a private request. Make it happen creates an invitation for people you already know.</p>
-      <div className="examples" aria-label="Try an idea">
-        <p>A little inspiration</p>
+      <p className="quiet-copy">«Найти людей» создаёт занятие и личный запрос на поиск компании. «Создать план» создаёт приглашение для тех, кого вы уже знаете.</p>
+      <div className="examples" aria-label="Попробуйте пример">
+        <p>Немного вдохновения</p>
         <div className="example-buttons">
           {intentExamples.map((example) => (
             <button
