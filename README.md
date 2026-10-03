@@ -604,8 +604,9 @@ A public production launch still needs a configured HTTPS host, managed database
 backups, host/gateway connection controls, scheduled workers and human report
 handling. Shared PostgreSQL limits are implemented. Closed-beta application source
 passed local Node24 gates: 684 tests / 77 files, 56/56 first-attempt desktop/mobile
-E2E and audit0 after the 2026-10-03 lint dependency advisory correction. Hosted
-verification is recorded separately by exact source commit in CODEX_PROGRESS.md. See that file
+E2E and audit0 after the 2026-10-03 lint dependency advisory correction. Source
+`7561967` also passed both hosted jobs, including container/database smokes; see
+[run 37101005678](https://github.com/Kqway/veya/actions/runs/37101005678). See CODEX_PROGRESS.md
 for the exact source SHA, workflow and the separate baseline/failure history.
 Actual deployment, optional live OpenAI/
 push and device/browser compatibility remain host checks. No deployment occurred.

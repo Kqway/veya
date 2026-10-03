@@ -68,6 +68,8 @@ Files: tests/e2e/beta.spec.ts, isolated container smoke, review document.
   non-root/actual DB migrations/workers/backup restore smoke; preserve old SQL hashes.
 - [x] Update README/progress/checklist/deployment/security with exact counts and limitations.
 - [x] Normal publication and observe exact application-source CI; no production deployment.
-  Source95187be passed hosted run37063414137 and local681/76 plus56/56 first-attempt.
+  Source7561967 passed hosted run37101005678 and local684/77 plus56/56 first-attempt,
+  audit0 and both normal Docker/non-root/actual-PG/worker/backup-restore gates.
+  The new lint advisory was fixed and independently re-reviewed without waived checks.
   The documentation-only release-evidence commit repeats CI before handoff.
 - [x] Report concrete owner env/deploy/worker/device checklist.

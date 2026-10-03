@@ -105,8 +105,23 @@ Important/Critical finding in this development-only scope.
 Fresh Node24 plain `npm ci` and `npm run check` passed: **684 tests /77 files**
 (+98 tests/+9 files over Phase9), lint/types/build PASS. Full desktop/mobile E2E
 passed **56/56 on first attempt** (3.6min); fresh `npm audit --json` reports0.
-Container and exact published-source CI follow-up must be observed separately
-before handoff; local results do not imply hosted PASS.
+Both final local normal-Dockerfile builds passed, including the scoped clean install.
+Runner `sha256:5276c8f4de76d371d918704c04fca7555e7dc6ad9a5ef2d419d4cace261c5a6f`;
+operations `sha256:ab21e52c980e7864de7949e8a4cabea9071596e153c886cb657a4982897be937`.
+Non-rootUID1000 and full isolatedPG18 migrations/idempotency/checksums/concurrent
+workers/readiness/backup-restore smokes passed. Preliminary local runs using incorrect
+workspace proxy/CA configuration and a smoke interrupted by VFS disk exhaustion
+were discarded; corrected proxy/CA secret mounts and removal of explicitly identified
+old Veya cache IDs preceded the complete successful runs. No production data was used.
+
+Exact published source `75619675f57e9a7eca07b90b37793b8c7805e3b7` passed
+[run 37101005678](https://github.com/Kqway/veya/actions/runs/37101005678), both jobs,
+independently observed2026-10-03. Hosted clean npmci/lint/types/**684tests/77files**/
+production build/audit0 and **56/56 first-attempt desktop/mobile E2E** (2.6min) passed.
+Both normal repository Docker targets, non-root and actual PG18 migration/concurrent
+worker/readiness/protected backup-restore gates also passed. Applied0001–0017 hashes
+remain unchanged. This final follow-up only records evidence in documentation;
+check its exact published SHA on the workflow page before rollout.
 
 **Earlier beta gate history (superseded by the evidence above).**
 
