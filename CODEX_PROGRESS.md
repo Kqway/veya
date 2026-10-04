@@ -1,6 +1,48 @@
 # Intavro Development Progress
 
-## Current release: Russian interface and Intavro branding
+## Current release: Vercel + Neon hosting preparation
+
+Starting HEAD: `38c9f8d7a842ee35bc1d5f90da937ae12861ea76`. The existing Russian
+Intavro closed-beta candidate now supports native Vercel Next.js hosting with
+external Neon PostgreSQL; no product/domain architecture or applied migration changed.
+
+- Node 24, Vercel config, explicit runtime SQL/font file tracing, two-query-connection
+  default on Vercel and `@vercel/functions` query-pool lifecycle attachment.
+- Authenticated SSE remains persistent-outbox-backed; 240-second streams within
+  a 300-second function budget. Shared instance hub retains subscription caps and
+  closes after the last response, including requests still authorizing; VPS lifecycle
+  remains unchanged.
+- Machine-only `/api/cron/social`, separate validated `CRON_SECRET`, timing-safe
+  bearer check before DB, five-job batches, cooperative 45-second stop, existing
+  durable leases/deduplication, read-only skip and numeric safe logs. No HTTP migration
+  or destructive retention. Daily Hobby-compatible default; a minute scheduler must
+  be configured for timely beta candidates/push/reminders.
+- [Vercel/Neon guide](docs/VERCEL_NEON.md): pooled/direct URI distinction, verified
+  TLS, production/preview isolation, manual migrations, backups, optional push/AI
+  and actual HTTPS/mobile/two-user/reconnect smoke. No database credentials in Git.
+- Independent [review](docs/security-vercel-review.md) reproduced an Important
+  initial per-request hub cap bypass. Shared response-counted hub fixes it; native
+  regression and re-review pass. No remaining confirmed Important/Critical finding.
+- CI now repeats all desktop/mobile journeys in both ordinary and isolated Vercel
+  mode, stripping inherited Cron/hosting credentials. Tests never use hosted Neon
+  or paid AI.
+
+Local evidence: fresh `npm ci`, lint/typecheck, **700 tests / 79 files** (+11),
+production build and audit0 PASS. **56/56 ordinary +56/56 Vercel-mode E2E PASS**, no
+retries. Actual NFT manifests contain all18 migrations and both OG fonts. Both normal
+Docker targets build successfully. Local VFS ENOSPC interrupted early browser and
+container smoke attempts; browser gates reran completely after task-owned cache
+cleanup. Container verification and remote CI evidence are recorded separately below
+when available; a local Docker image build is not a completed container smoke.
+
+**Publication status:** no actual Vercel deployment or Neon database has been created.
+Neon connection was suggested and is not confirmed; Vercel is installed but no callable
+deployment operations are exposed in this session. Managed environment has no hosting
+secrets/outbound identity and restricts provider networking. Owner account connection,
+production credentials and HTTPS smoke remain required. This is hosting preparation
+for a closed beta release candidate, not a claim of a live service.
+
+## Previous release: Russian interface and Intavro branding
 
 Starting/published baseline: `447fb2ec96ea9b6ed19198ee5a234d39b2af4f14` (closed-beta
 candidate, 684 tests/77 files, 56 browser cases). The public website is now **Intavro**:

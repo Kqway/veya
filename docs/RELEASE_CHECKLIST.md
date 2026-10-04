@@ -4,6 +4,21 @@ Phases 1–9 retain the action-first Intent Network and original invitation/sche
 flow. Local verification and hosted rollout evidence are separate. Exact local
 counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
 
+## Vercel + Neon hosting
+
+- Follow [VERCEL_NEON.md](VERCEL_NEON.md): Node 24/Fluid compute, trusted HTTPS origin,
+  verified-TLS pooled `DATABASE_URL` and direct `REALTIME_DATABASE_URL` for the same
+  database, shared PostgreSQL limiter and independent moderator/Cron credentials.
+- Keep preview credentials separate from production. Apply/verify 0001–0018 manually
+  using the direct endpoint before real-user rollout; never migrate during web build.
+- Reproduce full E2E twice: ordinary runtime and `VEYA_TEST_VERCEL=1` isolated runtime.
+  Verify actual SQL/font NFT assets, final LISTEN cleanup and retained stream caps.
+- Daily Hobby-compatible Cron is a configuration baseline. Use a minute scheduler
+  for beta candidates/push/reminders; do not apply destructive retention from Cron.
+- Read [security-vercel-review.md](security-vercel-review.md); verify four-minute
+  streaming/reconnect, simultaneous users, moderation, deletion, backups and mobile
+  behavior on the actual HTTPS host. Local/CI PASS does not prove hosted deployment.
+
 ## Russian interface and brand compatibility
 
 - Verify Russian labels, metadata, dates, errors, inbox/push and moderation on desktop

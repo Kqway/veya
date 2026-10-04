@@ -4,6 +4,13 @@ This release targets Node 24 and PostgreSQL. Deployment remains an operator acti
 no production service or database is provisioned by the repository. Use a non-root
 account for both the web container and native PostgreSQL test runner.
 
+## Hosting on Vercel + Neon
+
+For the managed Next.js deployment path, follow [VERCEL_NEON.md](VERCEL_NEON.md).
+It covers pooled queries/direct LISTEN, Node 24/Fluid compute, serverless connection
+cleanup, protected Cron, manual migrations, preview isolation and the HTTPS smoke
+journey. The VPS/container operations and backup procedures below remain supported.
+
 ## Server prerequisites
 
 Use a maintained Linux VPS or Node-capable host. For a small beta, start with

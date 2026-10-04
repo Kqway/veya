@@ -46,7 +46,9 @@ const serverEnvSchema = z.object({
     .refine(isPublicOrigin)
     .default("http://localhost:3000"),
   DATABASE_URL: optionalValue(z.url().refine(isPostgresUrl)),
-  DB_POOL_MAX: z.coerce.number().int().min(1).max(20).default(5),
+  VERCEL: optionalValue(z.literal("1")),
+  DB_POOL_MAX: optionalValue(z.coerce.number().int().min(1).max(20)),
+  CRON_SECRET: optionalValue(z.string().regex(/^[A-Za-z0-9_-]{32,256}$/)),
   DATABASE_SSL_MODE: optionalValue(z.enum(["verify-full"])),
   REALTIME_DATABASE_URL: optionalValue(z.url().refine(isPostgresUrl)),
   REALTIME_ENABLED: booleanSetting("true"),
@@ -100,6 +102,7 @@ const serverEnvSchema = z.object({
   }
 }).transform((env) => ({
   ...env,
+  DB_POOL_MAX: env.DB_POOL_MAX ?? (env.VERCEL === "1" ? 2 : 5),
   DATABASE_SSL_MODE: env.DATABASE_SSL_MODE ?? (env.NODE_ENV === "production" && [env.DATABASE_URL,env.REALTIME_DATABASE_URL].some(value=>{
     if(!value)return false;const url=new URL(value);return [url.hostname,...url.searchParams.getAll("host")].some(host=>!isLoopback(host));
   }) ? "verify-full" as const : undefined),

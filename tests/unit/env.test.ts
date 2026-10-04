@@ -93,6 +93,17 @@ describe("server environment", () => {
 
 
 describe("deployment environment", () => {
+  it("validates the server-only scheduler secret without reflecting it", () => {
+    expect(parseServerEnv({ CRON_SECRET: "a".repeat(32) })).toMatchObject({ CRON_SECRET: "a".repeat(32) });
+    expect(() => parseServerEnv({ CRON_SECRET: "private weak secret" })).toThrow("CRON_SECRET");
+    expect(() => parseServerEnv({ CRON_SECRET: "private weak secret" })).not.toThrow("private weak secret");
+  });
+  it("bounds the default query pool on Vercel while retaining explicit operator settings", () => {
+    expect(parseServerEnv({ VERCEL: "1" })).toMatchObject({ VERCEL: "1", DB_POOL_MAX: 2 });
+    expect(parseServerEnv({ VERCEL: "1", DB_POOL_MAX: "3" }).DB_POOL_MAX).toBe(3);
+    expect(parseServerEnv({ VERCEL: "" }).VERCEL).toBeUndefined();
+    expect(() => parseServerEnv({ VERCEL: "true" })).toThrow("VERCEL");
+  });
   it("defaults to shared limits in production without needing build-time secrets", () => {
     expect(parseServerEnv({ NODE_ENV: "production" }).RATE_LIMIT_BACKEND).toBe("postgres");
     expect(parseServerEnv({ NODE_ENV: "production" }).DATABASE_URL).toBeUndefined();

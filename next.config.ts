@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
+  // Runtime filesystem assets must also be present inside Vercel functions.
+  outputFileTracingIncludes: {
+    "/api/ready": ["./db/migrations/*.sql"],
+    "/*/opengraph-image": ["./public/fonts/*.ttf"],
+    "/opengraph-image": ["./public/fonts/*.ttf"],
+    "/i/*/opengraph-image": ["./public/fonts/*.ttf"],
+  },
   async headers() {
     return [
       {

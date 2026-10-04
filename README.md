@@ -9,6 +9,11 @@ to reveal. Then Intavro helps you actually meet.**
 Имена, сообщения и другие введённые пользователями данные не переводятся.
 Существующие приглашения, сессии и ключи восстановления продолжают работать.
 
+Для размещения на Vercel с PostgreSQL Neon есть [пошаговая инструкция](docs/VERCEL_NEON.md)
+и конфигурация `vercel.json`. Realtime работает через bounded SSE; background jobs
+запускаются защищённым Cron. Частоту scheduler и реальные HTTPS/DB smoke checks
+нужно настроить перед приглашением пользователей.
+
 ## Current scope
 
 **Closed beta release candidate, built on Phases 1–9.** Start with an activity,

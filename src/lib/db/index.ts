@@ -8,11 +8,11 @@ let database: Database | undefined;
 
 export function getDatabase(): Database {
   if (database) return database;
-  const { DATABASE_URL, DB_POOL_MAX, DATABASE_SSL_MODE } = getServerEnv();
+  const { DATABASE_URL, DB_POOL_MAX, DATABASE_SSL_MODE, VERCEL } = getServerEnv();
   if (!DATABASE_URL) {
     throw new Error("DATABASE_URL is required for database access. See .env.example.");
   }
-  database = createDatabase(DATABASE_URL, { max: DB_POOL_MAX, ...(DATABASE_SSL_MODE ? { sslMode: DATABASE_SSL_MODE } : {}) });
+  database = createDatabase(DATABASE_URL, { max: DB_POOL_MAX, serverless: VERCEL === "1", ...(DATABASE_SSL_MODE ? { sslMode: DATABASE_SSL_MODE } : {}) });
   return database;
 }
 

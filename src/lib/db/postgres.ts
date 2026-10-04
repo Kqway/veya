@@ -1,9 +1,10 @@
 import "server-only";
 import { Pool, type QueryResultRow } from "pg";
+import { attachDatabasePool } from "@vercel/functions";
 import { logOperationalEvent } from "@/lib/logging/server";
 import type { Database, DatabaseExecutor, DatabaseResult } from "./types";
 
-export interface DatabaseOptions { max?: number; sslMode?: "verify-full"; }
+export interface DatabaseOptions { max?: number; sslMode?: "verify-full"; serverless?: boolean; }
 
 class PostgresDatabase implements Database {
   private readonly pool: Pool;
@@ -32,6 +33,7 @@ class PostgresDatabase implements Database {
       // Deliberately omit driver error details, which can contain connection info.
       logOperationalEvent("database_idle_error");
     });
+    if (options.serverless) attachDatabasePool(this.pool);
   }
 
   async query<Row extends QueryResultRow = QueryResultRow>(

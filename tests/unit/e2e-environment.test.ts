@@ -12,3 +12,10 @@ it('resets inherited maintenance controls for isolated beta journeys',()=>{
  const env=isolatedBrowserEnvironment({NODE_ENV:'test',BETA_SIGNUPS_ENABLED:'false',BETA_SEEKING_ENABLED:'false',BETA_READ_ONLY:'true'},'postgresql://test@127.0.0.1/isolated');
  expect(env).toMatchObject({BETA_SIGNUPS_ENABLED:'true',BETA_SEEKING_ENABLED:'true',BETA_READ_ONLY:'false'});
 });
+it('strips inherited hosting and cron credentials, enabling Vercel mode only through an explicit test switch',()=>{
+ const inherited={NODE_ENV:'test' as const,VERCEL:'1',VERCEL_URL:'production-host',VERCEL_REGION:'production-region',CRON_SECRET:'production-secret'};
+ const env=isolatedBrowserEnvironment(inherited,'postgresql://test@127.0.0.1/isolated');
+ for(const key of ['VERCEL','VERCEL_URL','VERCEL_REGION','CRON_SECRET'])expect(env[key]).toBe('');
+ const enabled=isolatedBrowserEnvironment({...inherited,VEYA_TEST_VERCEL:'1'},'postgresql://test@127.0.0.1/isolated');
+ expect(enabled.VERCEL).toBe('1');expect(enabled.CRON_SECRET).toBe('');expect(enabled.VERCEL_REGION).toBe('');
+});

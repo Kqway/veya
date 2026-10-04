@@ -148,3 +148,4 @@ test-results/
 .superpowers/
 .worktrees/
 .local/
+.vercel/
