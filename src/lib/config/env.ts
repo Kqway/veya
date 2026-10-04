@@ -34,6 +34,19 @@ function isLoopback(host: string): boolean {
   return host === "localhost" || host === "127.0.0.1" || host === "[::1]";
 }
 
+/** Upgrade the Marketplace default only when the operator explicitly requires verified TLS. */
+function verifiedNeonUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    const modes = url.searchParams.getAll("sslmode");
+    if (url.hostname.endsWith(".neon.tech") && modes.length === 1 && modes[0] === "require") {
+      url.searchParams.set("sslmode", "verify-full");
+      return url.toString();
+    }
+  } catch { /* The schema reports malformed values without exposing credentials. */ }
+  return value;
+}
+
 const booleanSetting = (defaultValue: "true" | "false") =>
   z.enum(["true", "false"]).default(defaultValue).transform((value) => value === "true");
 
@@ -84,7 +97,7 @@ const serverEnvSchema = z.object({
     }
     for (const field of ["DATABASE_URL", "REALTIME_DATABASE_URL"] as const) {
       const value = env[field];
-      if (!value) continue;
+      if (!value || !isPostgresUrl(value)) continue;
       const url = new URL(value);
       const modes = url.searchParams.getAll("sslmode");
       const hosts = [url.hostname,...url.searchParams.getAll("host")];
@@ -92,6 +105,12 @@ const serverEnvSchema = z.object({
       if (hosts.some(host=>!isLoopback(host)) && (modes.some(mode=>mode!=="verify-full") || ssl.some(value=>value==="0"||value==="false"))) {
         context.addIssue({ code: "custom", path: [field], message: "Invalid TLS mode" });
       }
+    }
+  }
+  if (env.VERCEL === "1" && env.REALTIME_DATABASE_URL && isPostgresUrl(env.REALTIME_DATABASE_URL)) {
+    const host = new URL(env.REALTIME_DATABASE_URL).hostname;
+    if (host.endsWith(".neon.tech") && host.includes("-pooler.")) {
+      context.addIssue({ code: "custom", path: ["REALTIME_DATABASE_URL"], message: "Realtime requires a direct connection" });
     }
   }
   const pushFields = ["PUSH_VAPID_PUBLIC_KEY", "PUSH_VAPID_PRIVATE_KEY", "PUSH_VAPID_SUBJECT"] as const;
@@ -115,7 +134,19 @@ export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export function parseServerEnv(
   source: Record<string, string | undefined>,
 ): ServerEnv {
-  const result = serverEnvSchema.safeParse(source);
+  const configured = { ...source };
+  if (source.VERCEL === "1") {
+    // Marketplace secret values remain server-side; LISTEN must bypass its transaction pooler.
+    if (!configured.REALTIME_DATABASE_URL && source.DATABASE_URL_UNPOOLED) {
+      configured.REALTIME_DATABASE_URL = source.DATABASE_URL_UNPOOLED;
+    }
+    if (source.DATABASE_SSL_MODE === "verify-full") {
+      for (const field of ["DATABASE_URL", "REALTIME_DATABASE_URL"] as const) {
+        if (configured[field]) configured[field] = verifiedNeonUrl(configured[field]);
+      }
+    }
+  }
+  const result = serverEnvSchema.safeParse(configured);
   if (!result.success) {
     const fields = [
       ...new Set(result.error.issues.map((issue) => issue.path.join("."))),

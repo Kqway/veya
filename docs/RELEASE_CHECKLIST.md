@@ -7,7 +7,8 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
 ## Vercel + Neon hosting
 
 - Follow [VERCEL_NEON.md](VERCEL_NEON.md): Node 24/Fluid compute, trusted HTTPS origin,
-  verified-TLS pooled `DATABASE_URL` and direct `REALTIME_DATABASE_URL` for the same
+  verified-TLS pooled `DATABASE_URL` and direct `REALTIME_DATABASE_URL` (or the
+  Vercel Marketplace `DATABASE_URL_UNPOOLED` fallback) for the same
   database, shared PostgreSQL limiter and independent moderator/Cron credentials.
 - Keep preview credentials separate from production. Apply/verify 0001–0018 manually
   using the direct endpoint before real-user rollout; never migrate during web build.

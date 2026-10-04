@@ -172,3 +172,52 @@ describe("closed beta environment controls", () => {
     }
   });
 });
+
+describe("Vercel managed Neon connections", () => {
+  const deployment = {
+    NODE_ENV: "production", VERCEL: "1", DATABASE_SSL_MODE: "verify-full",
+    NEXT_PUBLIC_APP_URL: "https://intavro.vercel.app",
+  };
+  const pooled = "postgresql://owner:p%40ss@ep-beta-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+  const direct = "postgresql://owner:p%40ss@ep-beta.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+
+  it("uses the provider's direct connection for LISTEN and upgrades both URLs to verified TLS", () => {
+    const config = parseServerEnv({ ...deployment, DATABASE_URL: pooled, DATABASE_URL_UNPOOLED: direct });
+    for (const [actual, expected] of [[config.DATABASE_URL, pooled], [config.REALTIME_DATABASE_URL, direct]]) {
+      const url = new URL(actual!);
+      expect(url.searchParams.get("sslmode")).toBe("verify-full");
+      expect(url.searchParams.get("channel_binding")).toBe("require");
+      expect(url.password).toBe(new URL(expected!).password);
+      expect(url.hostname).toBe(new URL(expected!).hostname);
+    }
+    expect(config.DATABASE_SSL_MODE).toBe("verify-full");
+    expect(config).not.toHaveProperty("DATABASE_URL_UNPOOLED");
+  });
+
+  it("retains the explicitly configured realtime URL instead of the marketplace fallback", () => {
+    const override = "postgresql://owner:secret@custom.example/db?sslmode=verify-full";
+    expect(parseServerEnv({ ...deployment, REALTIME_DATABASE_URL: override, DATABASE_URL_UNPOOLED: direct }).REALTIME_DATABASE_URL).toBe(override);
+  });
+
+  it("does not import provider variables into VPS or local realtime configuration", () => {
+    expect(parseServerEnv({ DATABASE_URL_UNPOOLED: direct }).REALTIME_DATABASE_URL).toBeUndefined();
+  });
+
+  it.each(["mysql://owner:do-not-display-this@db.example/db", "do-not-display-this"])("validates the fallback URL without reflecting its secret value: case %#", invalid => {
+    expect(() => parseServerEnv({ ...deployment, DATABASE_URL_UNPOOLED: invalid })).toThrow("REALTIME_DATABASE_URL");
+    expect(() => parseServerEnv({ ...deployment, DATABASE_URL_UNPOOLED: invalid })).not.toThrow("do-not-display-this");
+  });
+
+  it.each(["sslmode=disable", "sslmode=no-verify", "sslmode=require&ssl=false", "sslmode=require&sslmode=verify-full"])("retains rejection of unsafe or conflicting provider TLS options: %s", query => {
+    expect(() => parseServerEnv({ ...deployment, DATABASE_URL: `${pooled.split("?")[0]}?${query}` })).toThrow("DATABASE_URL");
+  });
+
+  it("does not relax require-mode validation without explicit verified transport or for another provider", () => {
+    expect(() => parseServerEnv({ ...deployment, DATABASE_SSL_MODE: undefined, DATABASE_URL: pooled })).toThrow("DATABASE_URL");
+    expect(() => parseServerEnv({ ...deployment, DATABASE_URL: "postgresql://owner:secret@db.example/db?sslmode=require" })).toThrow("DATABASE_URL");
+  });
+
+  it("rejects a transaction pooler masquerading as the provider's realtime connection", () => {
+    expect(() => parseServerEnv({ ...deployment, DATABASE_URL_UNPOOLED: pooled })).toThrow("REALTIME_DATABASE_URL");
+  });
+});

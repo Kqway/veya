@@ -1,6 +1,40 @@
 # Intavro Development Progress
 
-## Current release: Vercel + Neon hosting preparation
+## Current release: managed Neon connection
+
+Starting HEAD: `bc0e304ffc051bae1456cbbdf50582afb3aaf9be`. Owner created and linked
+the free Neon Marketplace resource in the same `iad1` region as Vercel, then reports
+executing the 18-migration bootstrap. Vercel credentials are sensitive and cannot be
+read through the connected tools; no credentials were copied into chat, Git or tests.
+
+- Vercel server-only configuration now uses Marketplace `DATABASE_URL_UNPOOLED`
+  when no explicit realtime URL is supplied. Explicit operator configuration wins;
+  fallback URLs are validated and errors name fields without credential values.
+- Explicit verified TLS upgrades Neon's single require-mode default to verify-full
+  only on Vercel and `.neon.tech` hosts. Query/LISTEN drivers retain certificate and
+  hostname verification; weak/conflicting options and realtime pooler hosts fail closed.
+- Removed preview targets from all current provider variables; disabled automatic
+  preview deployments until an isolated synthetic database exists. Future Storage
+  connection synchronization must retain production-only credential targeting.
+- Prepared-query rejection of the initial manual bootstrap was reproduced on native
+  PostgreSQL. A single atomic DO variant preserves all 18 exact migration checksums,
+  advisory lock, repeat/concurrent safety and CLI compatibility; rollback/mismatch
+  regressions pass. No applied migration changed and no new migration was added.
+
+Fresh local `npm run check` PASS: lint, strict types, **711 tests / 79 files** (+11),
+production build; audit0. Full desktop/mobile E2E **56/56 ordinary +56/56 Vercel-mode
+PASS**, no retries. Provider fallback is cleared from isolated browser environments;
+tests never use the hosted database. Read-only security follow-up is recorded in
+[security-vercel-review.md](docs/security-vercel-review.md).
+
+The source update will trigger a production rebuild with the managed credentials.
+Hosted readiness/checksum verification and the latest source's remote CI are pending
+at this commit; owner-reported SQL execution is not presented as remote verification.
+Previous hosted checks confirmed Russian landing/health200 and correct HTTPS metadata,
+but readiness503 before the database deployment. Actual two-user/reconnect/device smoke,
+frequent scheduler and backup/restore operation remain rollout checks.
+
+## Previous release: Vercel + Neon hosting preparation
 
 Starting HEAD: `38c9f8d7a842ee35bc1d5f90da937ae12861ea76`. The existing Russian
 Intavro closed-beta candidate now supports native Vercel Next.js hosting with

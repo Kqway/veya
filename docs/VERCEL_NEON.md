@@ -22,11 +22,20 @@
    pooled (host содержит `-pooler`) и direct (без `-pooler`). Использовать server-only
    роль владельца таблиц; политика RLS не предоставляет клиентам доступ к базе.
 
-Интеграция может подставить URI с `sslmode=require`. Intavro проверяет сертификат и
-hostname: заменить этот параметр на **`sslmode=verify-full`** в обеих строках.
-Остальные параметры/пароль сохранять; не отключать проверку TLS. Это не требует
-смены драйвера `pg`. Если provider использует нестандартный CA, настроить доверенный
-CA для Node вместо `rejectUnauthorized=false`.
+До появления отдельной synthetic preview-базы автоматические preview-deployments
+проекта временно отключены. Текущие provider environment variables ограничены
+Production. Перед будущей синхронизацией/rotation проверить также environments у
+Storage connection: provider не должен вновь выдать production secrets previews.
+
+Интеграция может подставить URI с `sslmode=require`. При `VERCEL=1` и явно заданном
+`DATABASE_SSL_MODE=verify-full` Intavro автоматически меняет единственный такой
+параметр на **`sslmode=verify-full`** только для hostnames, заканчивающихся на
+`.neon.tech`. Пароль и остальные параметры сохраняются. Драйвер `pg` и realtime
+client дополнительно принудительно проверяют сертификат и hostname. Слабые или
+конфликтующие TLS flags по-прежнему отклоняются; другой provider не получает это
+преобразование. При ручной конфигурации вне Vercel задавать `sslmode=verify-full`
+в обеих строках самостоятельно. Не отключать проверку TLS. Если provider использует
+нестандартный CA, настроить доверенный CA для Node вместо `rejectUnauthorized=false`.
 
 ## 2. Environment variables
 
@@ -38,7 +47,7 @@ Production**. После изменений нужен новый deployment. С
 | --- | --- |
 | `NEXT_PUBLIC_APP_URL` | Постоянный HTTPS origin, например `https://intavro.vercel.app`, без пути/query. После подключения домена обновить и redeploy. Не использовать URL отдельной preview-сборки. |
 | `DATABASE_URL` | **Pooled** Neon PostgreSQL URI с `sslmode=verify-full`. |
-| `REALTIME_DATABASE_URL` | **Direct/session-mode** URI той же БД и роли, `sslmode=verify-full`; LISTEN не работает через transaction pooler. |
+| `REALTIME_DATABASE_URL` | **Direct/session-mode** URI той же БД и роли. На Vercel можно не копировать секрет: если переменная отсутствует, Intavro использует Marketplace `DATABASE_URL_UNPOOLED`. Явное значение имеет приоритет. Neon `-pooler` hostname отклоняется для realtime; LISTEN требует direct connection. |
 | `DATABASE_SSL_MODE` | `verify-full`. |
 | `DB_POOL_MAX` | `2` для начала; считать также одно direct LISTEN-соединение на каждый instance с активным SSE. |
 | `CRON_SECRET` | Отдельные 32+ случайных base64url символа, до 256. Vercel автоматически передаёт `Authorization: Bearer …` для Cron. |
@@ -81,6 +90,14 @@ npm run db:verify
 повторный запуск безопасен. Этот hosting pass не добавляет migrations и не меняет
 старые. При существующей БД сначала сделать backup согласно [DEPLOYMENT.md](DEPLOYMENT.md).
 Vercel web остаётся на pooled `DATABASE_URL`, realtime — на direct URL.
+
+Встроенный **Vercel Storage → Query** использует prepared statements и не принимает
+несколько отдельных SQL-команд одним запросом. Сгенерированный bootstrap должен
+быть одной командой `DO`: внутри advisory lock, неизменённые SQL migrations,
+проверка/запись SHA-256 ledger и проверка полной истории. Внешние `BEGIN`, `COMMIT`
+и итоговый `SELECT` нельзя отправлять вместе с `DO` через этот редактор. Одна команда
+атомарна; проверять ledger отдельным запросом. Предпочтительным воспроизводимым
+способом для будущих обновлений остаются существующие CLI `db:migrate` / `db:verify`.
 
 ## 4. Deploy и scheduler
 
