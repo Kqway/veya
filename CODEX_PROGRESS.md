@@ -27,12 +27,23 @@ PASS**, no retries. Provider fallback is cleared from isolated browser environme
 tests never use the hosted database. Read-only security follow-up is recorded in
 [security-vercel-review.md](docs/security-vercel-review.md).
 
-The source update will trigger a production rebuild with the managed credentials.
-Hosted readiness/checksum verification and the latest source's remote CI are pending
-at this commit; owner-reported SQL execution is not presented as remote verification.
-Previous hosted checks confirmed Russian landing/health200 and correct HTTPS metadata,
-but readiness503 before the database deployment. Actual two-user/reconnect/device smoke,
-frequent scheduler and backup/restore operation remain rollout checks.
+**Hosted verification, 2026-10-04:** source
+`5587feffcacdb87ac51bcf7b63d0c60811fada8c`, production deployment
+`dpl_BZbLFmmSDbExjZeNiXits4hX7oci`, reached READY and serves
+[intavro.vercel.app](https://intavro.vercel.app). Actual HTTPS checks: Russian
+landing200 with correct HTTPS OG metadata, health200, **readiness200** (independently
+verifies all18 migration names/checksums in the hosted database), OG image200/PNG/
+no-store, unauthenticated Cron401. Migration execution is now independently verified,
+not just owner-reported. No credentials or personal data were included in the checks.
+
+Source [CI run37223876329](https://github.com/Kqway/veya/actions/runs/37223876329):
+container job111499434209 **SUCCESS**, including both Docker builds, non-root runner/
+operations and isolated migration/worker/backup/restore smoke. Quality job111499434011
+passes lint/types/tests/build/audit and is still running its browser gates at this
+documentation update; the overall CI run is not yet claimed PASS. The follow-up
+changes only this verification record and triggers another normal production build.
+Actual hosted two-user/reconnect/device smoke, frequent scheduler and backup/restore
+operation remain rollout checks; the complete flow is verified locally in both modes.
 
 ## Previous release: Vercel + Neon hosting preparation
 
