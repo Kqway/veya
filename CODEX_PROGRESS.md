@@ -30,14 +30,28 @@ external Neon PostgreSQL; no product/domain architecture or applied migration ch
 Local evidence: fresh `npm ci`, lint/typecheck, **700 tests / 79 files** (+11),
 production build and audit0 PASS. **56/56 ordinary +56/56 Vercel-mode E2E PASS**, no
 retries. Actual NFT manifests contain all18 migrations and both OG fonts. Both normal
-Docker targets build successfully. Local VFS ENOSPC interrupted early browser and
-container smoke attempts; browser gates reran completely after task-owned cache
-cleanup. Container verification and remote CI evidence are recorded separately below
-when available; a local Docker image build is not a completed container smoke.
+Docker targets build successfully; final local non-root web/operations smoke PASS.
+Local VFS ENOSPC interrupted early browser and container smoke attempts; browser
+gates reran completely after task-owned cache cleanup. The local DB smoke reached
+migrations/concurrent workers/readiness/OG/retention, but restore could not create
+the empty database because disk filled again. This is recorded as an environment
+failure, not a local PASS. The exact source's hosted container job independently
+passes the complete isolated migrations/workers/readiness/backup/restore smoke.
+Temporary local npm dependencies were restored with `npm ci` after container checks.
+
+**Remote evidence: PASS.** Source `98ca60ed680612100552f99e55fed489b197edb4`,
+[run 37217132677](https://github.com/Kqway/veya/actions/runs/37217132677):
+quality job `111479815387` and container job `111479815302` both SUCCESS. Hosted
+Node24 repeats lint/strict types, 700 tests/79 files, production build, audit0 and
+56/56 ordinary +56/56 isolated Vercel desktop/mobile E2E. Both Docker builds,
+non-root smoke and complete isolated PostgreSQL migration/worker/readiness/OG/
+backup/restore smoke PASS. This follow-up changes documentation only and records
+the verified source commit; it does not claim a Vercel or Neon deployment.
 
 **Publication status:** no actual Vercel deployment or Neon database has been created.
-Neon connection was suggested and is not confirmed; Vercel is installed but no callable
-deployment operations are exposed in this session. Managed environment has no hosting
+Vercel and Neon installations are now confirmed, but no callable provider deployment/
+database operations are exposed in this session; account/project access is unverified.
+Managed environment has no hosting
 secrets/outbound identity and restricts provider networking. Owner account connection,
 production credentials and HTTPS smoke remain required. This is hosting preparation
 for a closed beta release candidate, not a claim of a live service.
