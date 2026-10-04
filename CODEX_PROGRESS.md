@@ -48,13 +48,27 @@ non-root smoke and complete isolated PostgreSQL migration/worker/readiness/OG/
 backup/restore smoke PASS. This follow-up changes documentation only and records
 the verified source commit; it does not claim a Vercel or Neon deployment.
 
-**Publication status:** no actual Vercel deployment or Neon database has been created.
-Vercel and Neon installations are now confirmed, but no callable provider deployment/
-database operations are exposed in this session; account/project access is unverified.
-Managed environment has no hosting
-secrets/outbound identity and restricts provider networking. Owner account connection,
-production credentials and HTTPS smoke remain required. This is hosting preparation
-for a closed beta release candidate, not a claim of a live service.
+**Publication status, 2026-10-04:** the owner reauthorized the `kqway1` Vercel team.
+Created `intavro`, linked to `Kqway/veya` / `main`; the first deployment of
+`5f4c2b2c019c6f59ce234e8d506fdacb42b5dc32` reached READY. Assigned public domain:
+[intavro.vercel.app](https://intavro.vercel.app). Hosted Russian landing and
+`/api/health` return 200. `/api/ready` returns a safe 503 because no Neon database
+has been provisioned or migrated: social/coordination functionality is not yet live.
+
+Configured Node 24, Fluid compute / 300-second default budget, production trusted
+origin `https://intavro.vercel.app`, verified TLS settings, two-connection query pool,
+PostgreSQL shared limiting and optional-AI mock provider. Independently generated
+Cron and moderator credentials are encrypted production-only Vercel variables;
+no secret is stored here. Preview deployments retain Vercel Authentication and
+receive no production credentials. A subsequent deployment picks up these settings.
+
+Neon plugin installation is confirmed, but this session exposes no Neon provisioning
+operations and has no authenticated CLI/provider credentials. Vercel reports no
+installed Marketplace integrations. Owner must connect a Neon database to this
+project (production only), or authorize callable Neon provisioning. Then configure
+pooled/direct verified-TLS URLs, apply the existing 18 migrations and verify readiness,
+live two-user/reconnect flows and scheduler. No hosted database, migration or complete
+beta journey is claimed. Backups, timely scheduler and real-device checks remain required.
 
 ## Previous release: Russian interface and Intavro branding
 
