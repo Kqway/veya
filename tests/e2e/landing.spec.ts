@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/browser-test";
 test("renders the landing without overflow or browser errors", async ({
   page,
 }) => {

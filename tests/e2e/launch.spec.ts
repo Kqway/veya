@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
+import { expect, test, type Browser, type Page, type TestInfo } from "../support/browser-test";
 import type { Card, Connection, Match, OwnPost, SeekingInput } from "../../src/features/social/client";
 const origin = "http://127.0.0.1:3100";
 async function api<T>(page: Page, path: string, method = "GET", body?: unknown, status = 200): Promise<T> {

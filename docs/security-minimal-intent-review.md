@@ -48,7 +48,7 @@ This regression is also covered by the complete browser gates below.
 
 ## Evidence and practical limits
 
-Current full local `npm run check`: PASS, **952 tests / 91 files**, lint/types/build.
+Initial full local `npm run check`: PASS, **952 tests / 91 files**, lint/types/build.
 Fresh `npm ci --offline` PASS and `npm audit --json` reports zero vulnerabilities.
 Full ordinary **66/66** and isolated Vercel-mode **66/66** desktop/mobile E2E PASS,
 no retries. Both Docker targets build; non-root and isolated PostgreSQL18 all-20
@@ -62,6 +62,21 @@ awaits block commit before checking 404; it does not weaken access assertions.
 First-failure traces were preserved. Hosted CI is separate and is not claimed for
 this source at the documentation checkpoint. Historical CI or live18 readiness
 does not verify local20 source.
+
+Hosted run37279461008 subsequently passed all container/core checks but failed two
+ordinary browser journeys with HTTP429 (64/66). Traces proved global quota coupling
+between unrelated tests, rather than a profile access bypass. The test-only fixture
+now isolates limiter buckets between journeys using a private file, native loopback
+configuration, random database capability and the actual limiter advisory lock.
+Production policy values and all within-journey enforcement remain intact. Six new
+native regressions reject unsafe configuration/wrong capabilities and prove real
+limits still deny excess reads. There is no new production route or migration;
+the marker exists only in the disposable browser database. Cleanup owns only the
+created file and empty directory. Current full tests:958/92; lint/types/build,
+audit0 and corrected ordinary66/66 and Vercel66/66 browser gates PASS. Independent
+follow-up inspected the fixture boundary and reran all 13 native fixture/limiter
+regressions PASS with no reproducible Important/Critical finding. Final hosted
+evidence is separate and will be recorded for the exact source in the PR.
 
 Operators retain internal relational identity. Incognito does not prevent behavioral
 identification or voluntary disclosure; a copied plan/message cannot be retracted.

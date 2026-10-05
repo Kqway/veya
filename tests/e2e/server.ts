@@ -2,13 +2,19 @@ import { isolatedBrowserEnvironment } from '../support/e2e-environment';
 import { spawn } from "node:child_process";
 import { startTestDatabase } from "../support/postgres";
 import { applyMigrations } from "@/lib/db/migrations";
+import { installBrowserFixtureControl } from '../support/browser-rate-isolation';
 // This owns an isolated database; never reads or reuses DATABASE_URL.
 const database = await startTestDatabase();
 let stopping = false;
+let cleanupFixture: (() => Promise<void>) | undefined;
 try {
   await applyMigrations(database.db);
+  const fixturePath = process.env.VEYA_E2E_FIXTURE_FILE;
+  if (!fixturePath) throw new Error('Browser fixture control unavailable.');
+  cleanupFixture = await installBrowserFixtureControl(fixturePath,database.connectionString,database.db);
 } catch (error) {
   await database.stop();
+  await cleanupFixture?.();
   throw error;
 }
 const server = spawn(
@@ -42,6 +48,7 @@ async function stop(code: number) {
     });
   }
   await database.stop();
+  await cleanupFixture?.();
   process.exit(code);
 }
 server.once("error", () => {

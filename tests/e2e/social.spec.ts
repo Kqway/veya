@@ -7,7 +7,7 @@ import {
   type Page,
   type Response,
   type TestInfo,
-} from "@playwright/test";
+} from "../support/browser-test";
 import type {
   Card,
   Connection,

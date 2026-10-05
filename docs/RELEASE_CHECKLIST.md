@@ -8,11 +8,14 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
 ## Current candidate gates and rollout order
 
 - Confirm `ae68914ede1923f6d93cf888403fc397e9b42cf4` as starting baseline; record the
-  final source SHA and actual evidence in CODEX_PROGRESS.md. Current check is PASS
-  (952 tests/91 files, lint/types/build), offline clean install and audit0. Full
+  final source SHA and actual evidence in CODEX_PROGRESS.md. Latest local gates PASS:
+  958 tests/92 files, lint/types/build, offline clean install and audit0. Full
   ordinary66/66 and Vercel66/66 desktop/mobile E2E, both container builds, non-root
   and isolated PG/concurrent-worker/readiness/backup-restore gates passed locally.
-  Verify hosted CI separately; do not reuse historical CI or live deployment as evidence.
+  Hosted run37279461008 exposed cross-journey browser quota coupling (64/66);
+  test-only fixture isolation now passes both full local browser gates and 13 native
+  fixture/limiter regressions without changing production budgets. Verify final
+  hosted CI separately; do not reuse historical CI or live deployment as evidence.
 - Preserve applied 0001–0018; only add 0019_profile_spaces and 0020_intent_lobbies.
   Protected backup, isolated restore, migrate/verify all 20 entries, then source
   promotion. Prepare a feature branch/PR; do not trigger production `main` deployment

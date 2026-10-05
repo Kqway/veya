@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/browser-test";
 test("reviewed local assistance persists hints and enriches a deterministic voted plan", async ({
   page,
 }, testInfo) => {

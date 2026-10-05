@@ -1,4 +1,4 @@
-import { devices, expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
+import { devices, expect, test, type Browser, type Page, type TestInfo } from "../support/browser-test";
 import type { Card, Connection, Match, Message, OwnPost, Profile } from "../../src/features/social/client";
 
 const origin = "http://127.0.0.1:3100";

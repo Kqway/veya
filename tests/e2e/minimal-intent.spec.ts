@@ -1,6 +1,6 @@
 import {
   devices, expect, test, type Browser, type Page, type TestInfo,
-} from "@playwright/test";
+} from "../support/browser-test";
 import type { Interpretation, OfferDTO, RoomDTO, SearchDTO } from "../../src/features/intent-product/schema";
 import type { NotificationDTO } from "../../src/features/notifications/schema";
 import type { SeekingInput } from "../../src/features/social/seeking-schema";

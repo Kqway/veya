@@ -8,7 +8,8 @@ Starting HEAD: `ae68914ede1923f6d93cf888403fc397e9b42cf4`. Implementation commit
 documentation checkpoint follows those verified sources on
 `codex/intent-worlds-20261005`. Production [intavro.vercel.app](https://intavro.vercel.app)
 remains the verified **18-migration** baseline. This pass has no production
-migration/deployment and no new remote CI evidence.
+migration/deployment. The initial local checkpoint is below; subsequent hosted
+CI findings and their test-isolation correction are recorded separately.
 
 - Additive **0019_profile_spaces.sql** and **0020_intent_lobbies.sql**; old 0001–0018
   are immutable. Eight Profile Worlds, explicit visibility and owner editor; stranger/
@@ -83,6 +84,33 @@ automatic Vercel deployment; this does not block production `main` deployment.
 Do not reuse live credentials in tests or previews.
 See [deployment](docs/DEPLOYMENT.md), [checklist](docs/RELEASE_CHECKLIST.md),
 [intent API](docs/intent-product-api.md) and [product design](docs/minimal-intent-product-design.md).
+
+### Hosted quota-isolation follow-up
+
+GitHub source `1b2764898e11f4532db04b4cc163f90be6038b0a`,
+[run 37279461008](https://github.com/Kqway/veya/actions/runs/37279461008): container
+job SUCCESS; quality install/lint/types/tests/build/audit SUCCESS, ordinary browser
+gate **64/66**. Preserved traces showed HTTP429 with Retry-After1/2 seconds in the
+profile Back and recovery journeys. Independent fast browser journeys shared the
+same global limiter budgets; this was fixture coupling, not an authorization failure.
+
+The corrected test-only fixture resets only limiter buckets before each unrelated
+journey. Production policies/provider are unchanged and remain enforced throughout
+each journey. Control requires a private600 file in an owner-only700 temporary
+directory, validated native loopback test URL and a random capability confirmed
+against a marker created only by the isolated test server. No production endpoint
+or inherited DATABASE_URL is used. Cleanup removes only its own file/empty directory.
+Six new native regressions prove quota rejection within a journey, isolation across
+journeys and refusal of foreign configuration/wrong capabilities; the existing
+seven shared-limiter regressions remain unchanged. Fresh lint/types and full
+**958 tests / 92 files PASS** (+247/+13 over the starting baseline). Fresh production
+build and audit0 PASS; corrected ordinary desktop/mobile browser gate **66/66 PASS**,
+no retries. Independent follow-up reviewed the fixture boundary and reran all
+**13 native fixture/shared-limiter tests PASS**, with no reproducible Important/
+Critical finding. Corrected full Vercel-mode desktop/mobile browser gate also
+**66/66 PASS**, no retries. Final hosted follow-up remains a separate gate: this
+checkpoint records local verification and the preceding failed hosted run, not
+an assumed remote PASS. The PR will record the exact final source/run result.
 
 ## Previous release: managed Neon connection
 

@@ -1,4 +1,4 @@
-import { devices, expect, test, type Page } from "@playwright/test";
+import { devices, expect, test, type Page } from "../support/browser-test";
 
 async function createPlan(page: Page) {
   await page.goto("/plan");

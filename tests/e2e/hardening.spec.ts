@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/browser-test";
 test("security headers and explicit overnight times survive join and refresh", async ({
   page,
 }, info) => {

@@ -6,7 +6,7 @@ import {
   type Locator,
   type Page,
   type TestInfo,
-} from "@playwright/test";
+} from "../support/browser-test";
 import type { Customization, ProfileSpace } from "../../src/features/profile-space/schema";
 import type { Card, Connection, OwnPost, PrivacyMode, SeekingInput } from "../../src/features/social/client";
 import { fetchAuditedResponse } from "../support/audited-response";

@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/browser-test";
 import { fetchAuditedResponse } from "../support/audited-response";
 
 test("response auditing recovers a reset GET without replaying a mutation", async ({ page }) => {

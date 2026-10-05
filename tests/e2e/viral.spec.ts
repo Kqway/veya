@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/browser-test";
 test("invite previews stay public and joining/voting lead to another plan", async ({
   page,
 }, info) => {
