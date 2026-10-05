@@ -58,3 +58,18 @@ describe("closed beta bilingual activity vocabulary", () => {
     }
   });
 });
+
+
+describe("Dota canonical activity", () => {
+  it.each(["Dota", "Dota 2", "dota2", "дота", "доту", "доты", "Нужен пятый в доту сегодня вечером"])("recognizes %s", (text) => {
+    expect(normalizeActivity(text)).toEqual({ key: "dota2", label: "Dota 2" });
+  });
+  it.each(["дота", "доту", "dota", "Dota 2"])("normalizes the exact alias %s", (text) => {
+    expect(normalizeActivityKey(text)).toBe("dota2");
+  });
+  it("preserves custom slugs and rejects ambiguous or embedded terms", () => {
+    expect(normalizeActivity("дотянуться")).toBeNull();
+    expect(normalizeActivity("Dota or chess")).toBeNull();
+    expect(normalizeActivityKey("dota2-club")).toBe("dota2-club");
+  });
+});

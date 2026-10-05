@@ -82,6 +82,7 @@ export function ConnectionsScreen() {
             .map((request) => (
               <article key={request.publicKey} className="social-card">
                 <Person identity={request.identity} />
+                {(request.status === "pending" || request.status === "accepted") && <Link className="social-text-button" href={`/profile/connection/${encodeURIComponent(request.publicKey)}`}>Посмотреть профиль</Link>}
                 <h3>{request.activityLabel}</h3>
                 <p>Статус: {connectionStatusLabels[request.status]}</p>
                 {request.status === "pending" && <p>{request.direction === "outgoing" ? "Ждём принятия запроса. После этого откроется чат." : "Примите запрос, чтобы обсудить занятие в чате, или отклоните его."}</p>}

@@ -3,6 +3,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import type { ServerEnv } from '@/lib/config/env';
 import type { Database } from '@/lib/db/types';
 import { json } from '@/features/backend/http';
+import { processIntentJobs } from '@/features/intent-product/worker';
 import { processCandidateJobs } from '@/features/discovery/candidate-jobs';
 import { processNotificationJobs } from '@/features/notifications/jobs';
 import { logOperationalEvent } from '@/lib/logging/server';
@@ -30,15 +31,17 @@ export function createSocialCronHandler(options: {config: () => ServerEnv; datab
       const signal = AbortSignal.any([request.signal, AbortSignal.timeout(45_000)]);
       const db = options.database();
       logOperationalEvent('worker_started');
+      const intents = await processIntentJobs(db, {limit: 5, signal, analyticsEnabled: config.ANALYTICS_ENABLED});
+      logOperationalEvent('worker_complete', intents);
       const candidates = await processCandidateJobs(db, {limit: 5, signal});
       const push = config.PUSH_VAPID_PUBLIC_KEY && config.PUSH_VAPID_PRIVATE_KEY && config.PUSH_VAPID_SUBJECT && new URL(config.NEXT_PUBLIC_APP_URL).protocol === 'https:'
         ? {publicKey: config.PUSH_VAPID_PUBLIC_KEY, privateKey: config.PUSH_VAPID_PRIVATE_KEY, subject: config.PUSH_VAPID_SUBJECT} : undefined;
       const notifications = await processNotificationJobs(db, {limit: 5, signal, ...(push ? {push} : {})});
       logOperationalEvent('worker_complete', candidates);
       logOperationalEvent('worker_complete', {...notifications, durationMs: Date.now() - started});
-      const failures = candidates.failed + candidates.retried + notifications.failed + notifications.retried;
+      const failures = intents.failed + intents.retried + candidates.failed + candidates.retried + notifications.failed + notifications.retried;
       if (failures) logOperationalEvent('worker_failed', {count: failures});
-      return json({ok: failures === 0, candidates, notifications}, failures ? 503 : 200);
+      return json({ok: failures === 0, intents, candidates, notifications}, failures ? 503 : 200);
     } catch {
       logOperationalEvent('worker_failed', {durationMs: Date.now() - started});
       return json({error: {code: 'UNAVAILABLE'}}, 503);

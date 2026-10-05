@@ -6,7 +6,7 @@ import { socialError } from '@/features/social/client';
 import { useSocialRefresh } from '@/features/realtime/client';
 import type { NotificationDTO } from './schema';
 const api=<T,>(path:string,method='GET',body?:unknown)=>requestApi<T>(`/api/notifications${path}`,method,body);
-const labels:Record<NotificationDTO['type'],string>={INTEREST_RECEIVED:'Получен новый отклик',INTEREST_ACCEPTED:'Отклик принят',NEW_MESSAGE:'Новое сообщение',PLAN_READY:'Ваш план готов',MEETUP_REMINDER:'Ваша встреча скоро начнётся',CANDIDATE_FOUND:'Найдена подходящая активность'};
+const labels:Record<NotificationDTO['type'],string>={INTEREST_RECEIVED:'Получен новый отклик',INTEREST_ACCEPTED:'Отклик принят',NEW_MESSAGE:'Новое сообщение',PLAN_READY:'Ваш план готов',MEETUP_REMINDER:'Ваша встреча скоро начнётся',CANDIDATE_FOUND:'Найдена подходящая активность',OFFER_RECEIVED:'Новое предложение',LOBBY_READY:'Команда собрана',ROOM_MESSAGE:'Новое сообщение в комнате'};
 /** Serialize initial/manual/live fetches and invalidate responses across profile recovery. */
 function useNotificationRefresh(work:(current:()=>boolean)=>Promise<void>,clear:()=>void,enabled=true){
   const callbacks=useRef({work,clear});

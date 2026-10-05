@@ -1,3 +1,4 @@
+import { enqueueRelevantIntentJobs } from '@/features/intent-product/worker';
 import { enqueueCandidateJob } from '@/features/discovery/candidate-jobs';
 import { normalizeActivityKey } from '@/features/discovery/activity-normalization';
 import { trackFunnel } from '@/lib/analytics/funnel';
@@ -95,6 +96,7 @@ export class SeekingService {
           [row.id, i + 1, t],
         );
       await enqueueCandidateJob(tx,row.id);
+      await enqueueRelevantIntentJobs(tx,row);
       await trackFunnel(tx,'seeking_created',this.options.analyticsEnabled ?? false);
       return projectOwnPost(tx, row, profile);
     });

@@ -15,6 +15,7 @@ import {
 } from "@/features/backend/http";
 import { validate } from "@/features/backend/validation";
 import { IdentityService } from "./identity";
+import { ProfileSpaceService } from "@/features/profile-space/service";
 import { ProfileDeletionService } from "./deletion";
 import { SeekingService } from "./seeking";
 import { DiscoveryService } from "./discovery";
@@ -106,7 +107,11 @@ export function createSocialHandler(options: {
           });
         }
       }
+      if (resource === "profiles" && path.length === 3 && method === "GET" && key && operation && ["discovery","connection","match"].includes(key))
+        return json({space: await new ProfileSpaceService(db()).context(token, key as "discovery"|"connection"|"match", operation)});
       if (resource === "profile" && path.length === 2) {
+        if (key === "space" && method === "GET") return json({space:await new ProfileSpaceService(db()).get(token)});
+        if (key === "space" && method === "PATCH") return json({space:await new ProfileSpaceService(db()).update(token,await body())});
         if (key === "recover" && method === "POST") {
           const input = await body();
           return json(await new IdentityService(db()).recover(token, input));

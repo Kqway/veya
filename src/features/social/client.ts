@@ -1,4 +1,5 @@
 "use client";
+import type { Presentation } from "@/features/profile-space/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, requestApi } from "@/features/entry/client";
 export { ensureGuest } from "@/features/entry/client";
@@ -50,6 +51,7 @@ export type Suggestion = {
 export type Card = {
   handle: string;
   identity: Identity;
+  presentation?: Presentation;
   activityLabel: string;
   interactionMode: SeekingInput["interactionMode"];
   format: SeekingInput["format"];

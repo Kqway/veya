@@ -2,6 +2,7 @@ type Activity = { key: string; label: string; aliases: string; studySubject?: bo
 
 /** Explicit, extensible vocabulary. No candidate text or profile attributes are inputs. */
 const catalogue: readonly Activity[] = [
+  { key: "dota2", label: "Dota 2", aliases: "dota(?: ?2)?|дот(?:а|у|ы|е|ой)(?: ?2)?" },
   { key: "chess", label: "Шахматы", aliases: "chess|шахмат(?:ы|ам|ах|ами)?|шахматишки|поиграть в шахматы|сыграть партию" },
   { key: "gym", label: "Спортзал", aliases: "gym|спортзал|тренаж[её]рный зал|зал" },
   { key: "calculus", label: "Математический анализ", aliases: "calculus|матанализ(?:а|у|ом|е)?|матан|математический анализ", studySubject: true },

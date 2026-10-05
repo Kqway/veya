@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { presentationSchema } from "@/features/profile-space/schema";
 import { identitySchema } from "./privacy";
 import { publicKeySchema } from "./seeking-schema";
 export const cardSchema = z
   .object({
     handle: publicKeySchema,
     identity: identitySchema,
+    presentation: presentationSchema,
     activityLabel: z.string().min(1).max(80),
     interactionMode: z.enum(["in_person", "online", "either"]),
     format: z.enum(["one_to_one", "group", "either"]),

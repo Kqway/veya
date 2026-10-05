@@ -54,7 +54,7 @@ async function time(page: Page, date: string) {
 }
 
 async function createProfile(page: Page, alias: string, copyAndNavigate = false) {
-  await page.goto("/");
+  await page.goto("/plan");
   await page.getByRole("textbox", { name: "Чем хотите заняться?", exact: true }).fill(idea);
   await page.getByRole("button", { name: "Найти людей", exact: true }).click();
   await expect(page).toHaveURL(/\/seek\/new$/);

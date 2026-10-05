@@ -1,4 +1,5 @@
 import 'server-only';
+import { eraseIntentProfile } from '@/features/intent-product/repository';
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import type { Database, DatabaseExecutor } from '@/lib/db/types';
@@ -14,7 +15,9 @@ async function boundProfile(tx:DatabaseExecutor,guest:string):Promise<string|und
  return(await tx.query<{profile_id:string}>('SELECT profile_id FROM social_profile_bindings WHERE guest_id=$1',[guest])).rows[0]?.profile_id;
 }
 async function peers(tx:DatabaseExecutor,profile:string):Promise<string[]>{
- const rows=await tx.query<{peer:string}>('SELECT CASE WHEN low_profile_id=$1 THEN high_profile_id ELSE low_profile_id END AS peer FROM social_pairs WHERE low_profile_id=$1 OR high_profile_id=$1',[profile]);
+ const rows=await tx.query<{peer:string}>(`SELECT CASE WHEN low_profile_id=$1 THEN high_profile_id ELSE low_profile_id END AS peer FROM social_pairs WHERE low_profile_id=$1 OR high_profile_id=$1
+ UNION SELECT m.profile_id FROM social_lobby_members m WHERE m.lobby_id IN(SELECT lobby_id FROM social_lobby_members WHERE profile_id=$1)
+ UNION SELECT CASE WHEN s.profile_id=$1 THEN o.recipient_profile_id ELSE s.profile_id END FROM social_candidate_offers o JOIN social_action_searches s ON s.id=o.search_id WHERE s.profile_id=$1 OR o.recipient_profile_id=$1`,[profile]);
  return [...new Set([profile,...rows.rows.map(r=>r.peer)])].sort();
 }
 
@@ -49,16 +52,18 @@ export class ProfileDeletionService {
   // The committed NOTIFY survives removal of the deleted owner's outbox rows.
   for(let i=0;i<affected.length;i+=100){
    const chunk=affected.slice(i,i+100);
-   for(const topic of ['connections','match','notifications','discovery'] as const)await publishSocialEvent(tx,chunk,{topic});
+   for(const topic of ['connections','match','notifications','discovery','intents','rooms'] as const)await publishSocialEvent(tx,chunk,{topic});
   }
   const plans=await tx.query<{id:string;status:string}>(`SELECT i.id,i.status FROM intents i WHERE i.id IN(
    SELECT m.plan_intent_id FROM social_matches m JOIN social_pairs p ON p.id=m.pair_id
-   WHERE $1 IN(p.low_profile_id,p.high_profile_id)) ORDER BY i.id FOR UPDATE`,[profile]);
+   WHERE $1 IN(p.low_profile_id,p.high_profile_id)
+   UNION SELECT r.plan_intent_id FROM social_rooms r JOIN social_lobby_members m ON m.lobby_id=r.lobby_id WHERE m.profile_id=$1
+   UNION SELECT plan_intent_id FROM social_linked_plan_identities WHERE profile_id=$1) ORDER BY i.id FOR UPDATE`,[profile]);
   for(const plan of plans.rows){
    const removed=await tx.query<{id:string}>(`DELETE FROM participants WHERE intent_id=$1 AND guest_id IN(
-    SELECT guest_id FROM social_profile_bindings WHERE profile_id=$2) RETURNING id`,[plan.id,profile]);
+    SELECT guest_id FROM social_profile_bindings WHERE profile_id=$2 UNION SELECT guest_id FROM social_linked_plan_identities WHERE profile_id=$2 AND plan_intent_id=$1) RETURNING id`,[plan.id,profile]);
    await tx.query(`UPDATE intents SET creator_display_name='Удалённый участник' WHERE id=$1
-    AND creator_guest_id IN(SELECT guest_id FROM social_profile_bindings WHERE profile_id=$2)`,[plan.id,profile]);
+    AND (creator_guest_id IN(SELECT guest_id FROM social_profile_bindings WHERE profile_id=$2) OR EXISTS(SELECT 1 FROM social_linked_plan_identities history WHERE history.plan_intent_id=$1 AND history.profile_id=$2 AND history.is_creator))`,[plan.id,profile]);
    if(removed.rows.length){
     await tx.query('UPDATE intents SET scheduling_revision=scheduling_revision+1,suggestions_fingerprint=NULL WHERE id=$1',[plan.id]);
     if(plan.status==='decided'){
@@ -92,6 +97,10 @@ export class ProfileDeletionService {
    source_post_id=CASE WHEN sender_profile_id=$1 THEN NULL ELSE source_post_id END,
    target_post_id=CASE WHEN recipient_profile_id=$1 THEN NULL ELSE target_post_id END
    WHERE sender_profile_id=$1 OR recipient_profile_id=$1`,[profile]);
+  await eraseIntentProfile(tx,profile);
+  await tx.query('DELETE FROM social_linked_plan_identities WHERE profile_id=$1',[profile]);
+  await tx.query("UPDATE social_candidate_offers SET status='cancelled' WHERE target_post_id IN(SELECT id FROM seeking_posts WHERE profile_id=$1) AND status='pending'",[profile]);
+  await tx.query('DELETE FROM social_profile_spaces WHERE profile_id=$1',[profile]);
   await tx.query('DELETE FROM seeking_posts WHERE profile_id=$1',[profile]);
   await tx.query('DELETE FROM discovery_handles WHERE viewer_profile_id=$1',[profile]);
   // Cascade subscriptions and delivery jobs before any later worker can recheck.

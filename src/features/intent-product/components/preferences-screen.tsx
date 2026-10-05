@@ -1,0 +1,27 @@
+"use client";
+import { useState, type FormEvent } from "react";
+import { useSocialAction } from "@/features/social/client";
+import { defaultPreferences, preferencesSchema, type Preference } from "../schema";
+import { ProductError, ProductRefresh, ProductShell, ProductUnavailable, productApi, useProductData, useUnsavedGuard } from "./product-common";
+import { AttributeEditor } from "./activity-attributes";
+const readPreferences = async () => (await productApi<{ preferences: Preference }>("/preferences")).preferences;
+const activityLabels: Record<string, string> = { dota2: "Dota 2", gym: "Тренировки", study: "Учёба", movies: "Кино" };
+export function PreferencesScreen() {
+  const state = useProductData(readPreferences, defaultPreferences());
+  const [edit, setEdit] = useState<Preference | null>(null);
+  const [notice, setNotice] = useState("");
+  const action = useSocialAction();
+  useUnsavedGuard(edit !== null);
+  const value = edit ?? state.data;
+  function change(next: Preference) { setEdit(next); setNotice(""); }
+  function save(event: FormEvent) {
+    event.preventDefault();
+    void action.run(async (alive) => {
+      const parsed = preferencesSchema.safeParse(value);
+      if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Проверьте правила.");
+      const result = await productApi<{ preferences: Preference }>("/preferences", "PATCH", parsed.data);
+      if (alive()) { state.setData(result.preferences); setEdit(null); setNotice("Настройки сохранены."); }
+    });
+  }
+  return <ProductShell title="Ваши правила" eyebrow="Intavro / я"><p className="intent-intro">Только то, что вы явно сохранили. Видно только вам.</p><ProductError message={action.error ?? state.error} retry={state.error ? state.refresh : undefined} />{!state.loaded && <p role="status">Загружаем настройки…</p>}{state.loaded && !state.profile && !state.error && <ProductUnavailable restricted={state.restricted} />}{notice && <p className="intent-notice" role="status">{notice}</p>}{state.loaded && state.profile && <><form className="intent-card intent-settings" onSubmit={save}><fieldset disabled={action.busy}><h2>Предложения</h2><label className="intent-check"><input type="checkbox" checked={value.offersEnabled} onChange={(event) => change({ ...value, offersEnabled: event.target.checked })} />Получать совместимые предложения</label><label className="intent-field">Часовой пояс<input value={value.timezone} autoComplete="off" placeholder="Europe/Moscow" maxLength={80} onChange={(event) => change({ ...value, timezone: event.target.value })} /></label><p className="intent-muted">Укажите часовой пояс IANA, например Europe/Moscow. Он применяется к тихим часам, без геолокации.</p><label className="intent-check"><input type="checkbox" checked={value.quietHours !== null} onChange={(event) => change({ ...value, quietHours: event.target.checked ? { startHour: 23, endHour: 8 } : null })} />Тихие часы</label>{value.quietHours && <div className="intent-time-fields"><label className="intent-field">С<select value={value.quietHours.startHour} onChange={(event) => change({ ...value, quietHours: { ...value.quietHours!, startHour: Number(event.target.value) } })}>{Array.from({ length: 24 }, (_, hour) => <option key={hour} value={hour}>{String(hour).padStart(2, "0")}:00</option>)}</select></label><label className="intent-field">До<select value={value.quietHours.endHour} onChange={(event) => change({ ...value, quietHours: { ...value.quietHours!, endHour: Number(event.target.value) } })}>{Array.from({ length: 24 }, (_, hour) => <option key={hour} value={hour}>{String(hour).padStart(2, "0")}:00</option>)}</select></label><button className="intent-text-button" type="button" onClick={() => change({ ...value, quietHours: null })}>Удалить тихие часы</button></div>}<p className="intent-muted">Тихие часы приостанавливают новые предложения. Принятые комнаты остаются доступными.</p><h2>Правила занятий</h2>{!value.activities.length && <p className="intent-muted">Пока нет правил. Можно сохранить их фразой на экране «Сейчас».</p>}{value.activities.map((rule, index) => <div className="intent-rule" key={rule.activityKey}><label className="intent-check"><input type="checkbox" checked={rule.enabled} onChange={(event) => change({ ...value, activities: value.activities.map((item, at) => at === index ? { ...item, enabled: event.target.checked } : item) })} />{activityLabels[rule.activityKey] ?? rule.activityKey}</label><AttributeEditor activityKey={rule.activityKey} attributes={rule.attributes} onChange={(attributes) => change({ ...value, activities: value.activities.map((item, at) => at === index ? { ...item, attributes } : item) })} /><button className="intent-text-button" type="button" onClick={() => change({ ...value, activities: value.activities.filter((_, at) => at !== index) })}>Удалить правило {activityLabels[rule.activityKey] ?? rule.activityKey}</button></div>)}<div className="intent-actions"><button className="intent-button" type="submit" disabled={!edit}>Сохранить правила</button>{edit && <button className="intent-text-button" type="button" onClick={() => setEdit(null)}>Отменить изменения</button>}<button className="intent-text-button" type="button" onClick={() => change(defaultPreferences(value.timezone))}>Удалить все правила</button></div></fieldset></form>{edit && <p className="intent-muted" role="status">Изменения ещё не сохранены.</p>}<ProductRefresh refresh={state.refresh} live={state.live} /></>}</ProductShell>;
+}

@@ -3,8 +3,8 @@ import type {Database} from './types';
 
 type JobStatus={pending:number;processing:number;failed:number;completed:number;expiredLeases:number;oldestPendingAgeSeconds:number|null;lastCompletionAgeSeconds:number|null};
 /** Operator-only aggregate queries. No identities, error details, URLs or content. */
-export async function readOperationalStatus(db:Database):Promise<{candidates:JobStatus;notifications:JobStatus}>{
- async function jobs(table:'social_candidate_jobs'|'social_notification_jobs',successful:'completed'|'delivered'):Promise<JobStatus>{
+export async function readOperationalStatus(db:Database):Promise<{intents:JobStatus;candidates:JobStatus;notifications:JobStatus}>{
+ async function jobs(table:'social_candidate_jobs'|'social_notification_jobs'|'social_intent_jobs',successful:'completed'|'delivered'):Promise<JobStatus>{
   const row=(await db.query<JobStatus>(`SELECT
    count(*) FILTER(WHERE status='pending')::integer AS pending,
    count(*) FILTER(WHERE status='processing')::integer AS processing,
@@ -17,5 +17,5 @@ export async function readOperationalStatus(db:Database):Promise<{candidates:Job
    FROM ${table}`,[successful])).rows[0]!;
   return row;
  }
- return{candidates:await jobs('social_candidate_jobs','completed'),notifications:await jobs('social_notification_jobs','delivered')};
+ return{intents:await jobs('social_intent_jobs','completed'),candidates:await jobs('social_candidate_jobs','completed'),notifications:await jobs('social_notification_jobs','delivered')};
 }

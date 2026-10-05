@@ -1,4 +1,7 @@
 import "server-only";
+import { readCustomization } from "@/features/profile-space/service";
+import { projectPresentation } from "@/features/profile-space/projection";
+import { strongerMode } from "./seeking-schema";
 import type { Database, DatabaseExecutor } from "@/lib/db/types";
 import { validate } from "@/features/backend/validation";
 import { rankCompatible } from "@/features/discovery/engine";
@@ -112,10 +115,14 @@ export class DiscoveryService {
           `INSERT INTO discovery_handles(public_handle,viewer_profile_id,source_post_id,target_post_id,pair_id) VALUES($1,$2,$3,$4,$5) ON CONFLICT(viewer_profile_id,source_post_id,target_post_id) DO UPDATE SET pair_id=EXCLUDED.pair_id RETURNING public_handle`,
           [opaqueKey(), actor.id, source.id, row.id, pair.id],
         );
+        const identity = await pairIdentity(tx, pair, profile);
+        const effectiveMode = strongerMode(strongerMode(profile.privacy_mode,row.privacy_mode),pair.low_profile_id===profile.id?pair.low_privacy:pair.high_privacy);
+        const presentation = projectPresentation(await readCustomization(tx,profile.id),effectiveMode,identity);
         cards.push(
           cardSchema.parse({
             handle: h.rows[0]!.public_handle,
-            identity: await pairIdentity(tx, pair, profile),
+            identity,
+            presentation,
             activityLabel: row.activity_label,
             interactionMode: row.interaction_mode,
             format: row.format,

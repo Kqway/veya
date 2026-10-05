@@ -5,17 +5,20 @@ import type { Identity } from "../client";
 export function SocialShell({
   title,
   children,
+  navigation = true,
 }: {
   title: string;
   children: ReactNode;
+  navigation?: boolean;
 }) {
   return (
     <section className="social-shell">
-      <nav className="social-nav" aria-label="Навигация Intavro">
+      {navigation && <nav className="social-nav" aria-label="Навигация Intavro">
         <Link href="/discover">Найти людей</Link>
         <Link href="/connections">Запросы</Link>
         <Link href="/seek/new">Новое занятие</Link>
-      </nav>
+        <Link href="/profile">Моё пространство</Link>
+      </nav>}
       <p className="eyebrow">Находите своих людей через общие занятия</p>
       <h1>{title}</h1>
       {children}

@@ -9,7 +9,7 @@ test("invite previews stay public and joining/voting lead to another plan", asyn
     if (new URL(r.url()).pathname === "/api/analytics")
       events.push(r.postDataJSON());
   });
-  await page.goto("/");
+  await page.goto("/plan");
   await page.getByRole("textbox").fill("PRIVATE IDEA for friends");
   await page.getByRole("button", { name: "Создать план" }).click();
   await page.getByLabel("Ваше имя").fill("Artem");
@@ -71,7 +71,7 @@ test("narrow screens retain usable controls and reduced motion", async ({
 }, info) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/");
+  await page.goto("/plan");
   await page.getByRole("textbox").fill("Coffee somewhere this week");
   await page.getByRole("button", { name: "Создать план" }).click();
   expect(

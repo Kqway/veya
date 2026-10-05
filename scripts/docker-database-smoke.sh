@@ -8,7 +8,7 @@ postgres_image="${3:-postgres:18-bookworm}"
 smoke_prefix="veya-db-smoke-$$"
 smoke_tmp="$(mktemp -d)"
 cleanup() {
-  docker rm --force "$smoke_prefix-web" "$smoke_prefix-operations" "$smoke_prefix-db" >/dev/null 2>&1 || true
+  docker rm --force --volumes "$smoke_prefix-web" "$smoke_prefix-operations" "$smoke_prefix-db" >/dev/null 2>&1 || true
   rm -rf "$smoke_tmp"
 }
 trap cleanup EXIT
@@ -66,21 +66,6 @@ operations npm run social:process
 operations npm run notifications:process
 operations npm run db:cleanup -- --dry-run
 [[ "$(docker exec "$smoke_prefix-db" psql --username=veya_smoke --dbname=veya_smoke --no-psqlrc -Atc "SELECT (SELECT count(*) FROM social_notifications WHERE type='CANDIDATE_FOUND')||':'||(SELECT count(*) FROM social_candidate_jobs WHERE status='completed')||':'||(SELECT count(*) FROM connection_requests)")" == '2:2:0' ]]
-docker run --detach --name "$smoke_prefix-web" --network "container:$smoke_prefix-db" --env-file "$smoke_tmp/runtime.env" "$runner_image" >/dev/null
-[[ "$(docker exec "$smoke_prefix-web" id -u)" == 1000 ]]
-docker exec "$smoke_prefix-web" node --input-type=module -e '
-  let ready;
-  for(let attempt=0;attempt<30;attempt++) {
-    try { ready=await fetch("http://127.0.0.1:3000/api/ready"); if(ready.ok)break; } catch {}
-    await new Promise(resolve=>setTimeout(resolve,500));
-  }
-  if(!ready?.ok || (await ready.json()).status!=="ready")process.exit(1);
-  const preview=await fetch("http://127.0.0.1:3000/opengraph-image");
-  const image=new Uint8Array(await preview.arrayBuffer());
-  if(!preview.ok || !preview.headers.get("content-type")?.includes("image/png") ||
-      !preview.headers.get("cache-control")?.includes("no-store") || image.byteLength<1000 ||
-      image.slice(0,8).join(",")!=="137,80,78,71,13,10,26,10")process.exit(1);
-'
 # Rehearse the actual protected-service tooling against an empty, separate DB.
 docker exec "$smoke_prefix-db" createdb --username=veya_smoke veya_restore
 docker cp scripts/backup.sh "$smoke_prefix-db:/tmp/backup.sh" >/dev/null
@@ -109,6 +94,24 @@ if docker exec --env PGSERVICEFILE=/tmp/pg_service.conf --env RESTORE_PGSERVICE=
 sed 's@/veya_smoke$@/veya_restore@' "$smoke_tmp/runtime.env" > "$smoke_tmp/restore.env"
 docker exec --env-file "$smoke_tmp/restore.env" "$smoke_prefix-operations" npm run db:verify
 [[ "$(docker exec "$smoke_prefix-db" psql --username=veya_smoke --dbname=veya_restore --no-psqlrc -Atc "SELECT count(*) FROM social_notifications WHERE type='CANDIDATE_FOUND'")" == 2 ]]
+# All CLI processes have exited. Release the large operations writable layer
+# before web smoke; vfs drivers otherwise duplicate both complete filesystems.
+docker rm --force --volumes "$smoke_prefix-operations" >/dev/null
+docker run --detach --name "$smoke_prefix-web" --network "container:$smoke_prefix-db" --env-file "$smoke_tmp/runtime.env" "$runner_image" >/dev/null
+[[ "$(docker exec "$smoke_prefix-web" id -u)" == 1000 ]]
+docker exec "$smoke_prefix-web" node --input-type=module -e '
+  let ready;
+  for(let attempt=0;attempt<30;attempt++) {
+    try { ready=await fetch("http://127.0.0.1:3000/api/ready"); if(ready.ok)break; } catch {}
+    await new Promise(resolve=>setTimeout(resolve,500));
+  }
+  if(!ready?.ok || (await ready.json()).status!=="ready")process.exit(1);
+  const preview=await fetch("http://127.0.0.1:3000/opengraph-image");
+  const image=new Uint8Array(await preview.arrayBuffer());
+  if(!preview.ok || !preview.headers.get("content-type")?.includes("image/png") ||
+      !preview.headers.get("cache-control")?.includes("no-store") || image.byteLength<1000 ||
+      image.slice(0,8).join(",")!=="137,80,78,71,13,10,26,10")process.exit(1);
+'
 # Missing-table readiness must fail safely; checksums can be corrupted in this disposable fixture.
 docker exec "$smoke_prefix-db" psql --username=veya_smoke --dbname=veya_smoke --no-psqlrc -c "UPDATE veya_schema_migrations SET checksum='bad'" >/dev/null
 docker exec "$smoke_prefix-web" node -e 'fetch("http://127.0.0.1:3000/api/ready").then(r=>process.exit(r.status===503?0:1))'

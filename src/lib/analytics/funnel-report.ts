@@ -13,3 +13,29 @@ export async function readAggregateFunnel(db:DatabaseExecutor,days=7){
  (SELECT count(DISTINCT post_id)::int FROM connected WHERE plan_intent_id IN(SELECT id FROM intents WHERE status='decided')) confirmed`,[days]);
  return {days,...result.rows[0]!};
 }
+
+/** Search cohorts, not people; completion is an owner's declaration, not verified attendance. */
+export async function readActionAggregateFunnel(db: DatabaseExecutor, days = 7) {
+ if (!Number.isInteger(days) || days < 1 || days > 30) throw new Error('Choose a cohort from 1 to 30 days.');
+ const result = await db.query<{
+  searches: number; candidates: number; offered: number; accepted: number;
+  rooms: number; conversations: number; plans: number; confirmed: number; completed: number;
+ }>(`WITH cohort AS (
+  SELECT s.id,s.compatible_count,l.id AS lobby_id,r.id AS room_id,r.plan_intent_id,r.status AS room_status
+  FROM social_action_searches s
+  JOIN social_lobbies l ON l.search_id=s.id
+  LEFT JOIN social_rooms r ON r.lobby_id=l.id
+  WHERE s.created_at>=clock_timestamp()-($1::int*interval '1 day')
+ )
+ SELECT count(*)::int AS searches,
+ count(*) FILTER(WHERE compatible_count>0 OR EXISTS(SELECT 1 FROM social_candidate_offers o WHERE o.search_id=cohort.id))::int AS candidates,
+ count(*) FILTER(WHERE EXISTS(SELECT 1 FROM social_candidate_offers o WHERE o.search_id=cohort.id))::int AS offered,
+ count(*) FILTER(WHERE EXISTS(SELECT 1 FROM social_candidate_offers o WHERE o.search_id=cohort.id AND o.status='accepted'))::int AS accepted,
+ count(room_id)::int AS rooms,
+ count(*) FILTER(WHERE EXISTS(SELECT 1 FROM social_room_messages m WHERE m.room_id=cohort.room_id))::int AS conversations,
+ count(plan_intent_id)::int AS plans,
+ count(*) FILTER(WHERE EXISTS(SELECT 1 FROM intents i WHERE i.id=cohort.plan_intent_id AND i.status='decided'))::int AS confirmed,
+ count(*) FILTER(WHERE room_status IN('completed','archived'))::int AS completed
+ FROM cohort`, [days]);
+ return { days, ...result.rows[0]! };
+}

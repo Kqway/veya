@@ -1,4 +1,6 @@
 @import "./social.css";
+@import "../features/profile-space/worlds.css";
+@import "../features/intent-product/product.css";
 @import "tailwindcss";
 
 @theme inline {

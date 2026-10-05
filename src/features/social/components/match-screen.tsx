@@ -137,6 +137,7 @@ export function MatchScreen({ matchKey }: { matchKey: string }) {
         <>
           <section className="social-card">
             <Person identity={match.identity} />
+            {match.status === "active" && <Link className="social-text-button" href={`/profile/match/${encodeURIComponent(match.publicKey)}`}>Посмотреть профиль</Link>}
             <h2>{match.activityLabel}</h2>
             <p>Ваш псевдоним здесь — {match.ownIdentity.alias}.</p>
             <p className="quiet-copy">

@@ -10,7 +10,7 @@ test("reviewed local assistance persists hints and enriches a deterministic vote
     if (path === "/api/ai/intent" || path.endsWith("/assist"))
       requests.push({ path, body: req.postDataJSON() });
   });
-  await page.goto("/");
+  await page.goto("/plan");
   await page.getByRole("textbox").fill("Coffee in Bristol tomorrow under $20");
   await page.getByRole("button", { name: "Создать план" }).click();
   await page.getByLabel("Ваше имя").fill("Maya");
@@ -161,7 +161,7 @@ test("helper request failure preserves manual creation", async ({ page }) => {
       body: '{"error":{"code":"SERVICE_UNAVAILABLE"}}',
     }),
   );
-  await page.goto("/");
+  await page.goto("/plan");
   await page.getByRole("textbox").fill("A simple coffee");
   await page.getByRole("button", { name: "Создать план" }).click();
   await page.getByLabel("Ваше имя").fill("Alex");

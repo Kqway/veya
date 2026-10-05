@@ -18,7 +18,7 @@ export function logOperationalEvent(event: OperationalEvent, fields: Record<stri
   const safe: Record<string, string | number> = { event };
   const total=Math.min((occurrences.get(event)??0)+1,Number.MAX_SAFE_INTEGER);
   occurrences.set(event,total);safe.occurrences=total;
-  for (const key of ["durationMs", "count", "exitCode", "claimed", "completed", "delivered", "cancelled", "retried", "failed", "notified", "reminders"] as const) {
+  for (const key of ["durationMs", "count", "exitCode", "claimed", "completed", "delivered", "cancelled", "retried", "failed", "notified", "reminders", "offered"] as const) {
     const value = fields[key];
     if (typeof value === "number" && Number.isFinite(value) && value >= 0) safe[key] = Math.min(value, Number.MAX_SAFE_INTEGER);
   }

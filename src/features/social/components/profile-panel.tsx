@@ -1,5 +1,6 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { ApiError } from "@/features/entry/client";
 import {
   ageBands,
@@ -101,7 +102,7 @@ export function ProfilePanel({
       <h2>{restricted ? "Ваш профиль недоступен" : profile ? "Ваш профиль" : "Выберите, как вас будут видеть"}</h2>
       {restricted && <p>Вы по-прежнему можете удалить профиль Intavro, связанный с этой сессией браузера.</p>}
       {!profile && !restricted && <p>Создайте профиль Intavro — только для взрослых (18+), сохраните Ключ Intavro и добавьте занятие. Электронная почта и пароль не нужны.</p>}
-      {profile && <Person identity={profile} />}
+      {profile && <><Person identity={profile} /><p><Link className="social-text-button" href="/profile">Открыть своё пространство</Link> · <Link className="social-text-button" href="/profile/edit">Настроить профиль</Link></p></>}
       <PrivacyCopy />
       {notice && <p role="status">{notice}</p>}
       {!oneTimeKey && !restricted && (

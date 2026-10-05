@@ -1,3 +1,4 @@
+import {cleanupIntentData} from '@/lib/db/intent-retention';
 import {cleanupReleaseData} from '@/lib/db/release-retention';
 import {createDatabase} from '@/lib/db/postgres';
 import type {Database} from '@/lib/db/types';
@@ -16,9 +17,10 @@ process.exitCode=await runOperation('retention',async signal=>{
  if(config.NODE_ENV==='production'&&!config.DATABASE_URL)throw new Error('Production requires DATABASE_URL.');
  database=createDatabase(config.DATABASE_URL??'postgresql://veya:veya-local-only@127.0.0.1:54322/veya',{max:config.DB_POOL_MAX,...(config.DATABASE_SSL_MODE?{sslMode:config.DATABASE_SSL_MODE}:{})});
  const release=await cleanupReleaseData(database,{apply,signal});
+ const action=await cleanupIntentData(database,{apply,signal});
  const social=await cleanupSocial(database,{apply,signal});
  const result=await cleanupExpired(database,{apply,signal});
  // These domain results contain only category counts and a dry-run boolean.
- console.log(JSON.stringify({release,social,coordination:result}));
+ console.log(JSON.stringify({release,action,social,coordination:result}));
 },async()=>{await database?.close();});
 if(process.exitCode===1)console.error('Retention command failed. Check database availability/migrations and use --dry-run or --apply. Production requires explicit DATABASE_URL.');
