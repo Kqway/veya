@@ -1,4 +1,5 @@
 import "server-only";
+import { closeRestrictedRooms } from "@/features/intent-product/repository";
 import { createHash,randomBytes,timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import type { Database,DatabaseExecutor } from "@/lib/db/types";
@@ -92,6 +93,7 @@ export class ModerationService {
       await tx.query("UPDATE social_matches SET status='closed',closed_at=COALESCE(closed_at,clock_timestamp()) WHERE status='active' AND pair_id IN(SELECT id FROM social_pairs WHERE low_profile_id=$1 OR high_profile_id=$1)",[report.target_profile_id]);
       await tx.query("UPDATE conversations SET status='closed' WHERE status='active' AND match_id IN(SELECT m.id FROM social_matches m JOIN social_pairs p ON p.id=m.pair_id WHERE p.low_profile_id=$1 OR p.high_profile_id=$1)",[report.target_profile_id]);
      }
+     if(data.moderationStatus==='suspended'||data.canConnect===false||data.canSeek===false)await closeRestrictedRooms(tx,[report.target_profile_id]);
      await this.options.onRestriction?.(tx,currentPeers);
     }
     if(data.status)await tx.query('UPDATE social_reports SET status=$2,updated_at=clock_timestamp() WHERE public_key=$1',[key,data.status]);
@@ -101,7 +103,9 @@ export class ModerationService {
   throw new HttpError(409,'CONFLICT','Повторите действие модератора.');
  }
  private async peers(tx:DatabaseExecutor,target:string):Promise<string[]> {
-  const r=await tx.query<{peer:string}>('SELECT CASE WHEN low_profile_id=$1 THEN high_profile_id ELSE low_profile_id END AS peer FROM social_pairs WHERE low_profile_id=$1 OR high_profile_id=$1',[target]);
+  const r=await tx.query<{peer:string}>(`SELECT CASE WHEN low_profile_id=$1 THEN high_profile_id ELSE low_profile_id END AS peer FROM social_pairs WHERE low_profile_id=$1 OR high_profile_id=$1
+ UNION SELECT m.profile_id FROM social_lobby_members m WHERE m.lobby_id IN(SELECT lobby_id FROM social_lobby_members WHERE profile_id=$1)
+ UNION SELECT CASE WHEN s.profile_id=$1 THEN o.recipient_profile_id ELSE s.profile_id END FROM social_candidate_offers o JOIN social_action_searches s ON s.id=o.search_id WHERE s.profile_id=$1 OR o.recipient_profile_id=$1`,[target]);
   return [...new Set([target,...r.rows.map(v=>v.peer)])].sort();
  }
 }

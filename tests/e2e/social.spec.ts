@@ -7,7 +7,7 @@ import {
   type Page,
   type Response,
   type TestInfo,
-} from "@playwright/test";
+} from "../support/browser-test";
 import type {
   Card,
   Connection,
@@ -382,9 +382,15 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
       "handle",
       "identity",
       "interactionMode",
+      "presentation",
       "reasons",
       "timeHint",
     ]);
+    if (!card.presentation) throw new Error("Discovery must return its bounded privacy-safe presentation");
+    expect(Object.keys(card.presentation).sort()).toEqual(["accent", "avatar", "world"]);
+    expect(["minimal", "midnight", "glass", "cozy", "cyber", "manga", "y2k", "monochrome"]).toContain(card.presentation.world);
+    expect(["coral", "mint", "violet", "amber", "blue"]).toContain(card.presentation.accent);
+    expect(["orbit", "arch", "spark", "grid"]).toContain(card.presentation.avatar);
     expect(card.identity.alias).not.toBe(aliasB);
     expect(JSON.stringify(cards)).not.toContain(bPost.publicKey);
     const candidates = page.getByRole("region", {
@@ -743,7 +749,7 @@ test("Intavro Key recovery rotates secrets, detaches social sessions and preserv
     const originalProfile = (
       await api<{ profile: Profile }>(context, "/api/social/profile")
     ).profile;
-    await page.goto("/");
+    await page.goto("/plan");
     await page
       .getByRole("textbox")
       .fill("Keep my original coordination identity");

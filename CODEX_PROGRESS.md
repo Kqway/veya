@@ -1,6 +1,164 @@
 # Intavro Development Progress
 
-## Current release: managed Neon connection
+## Rollout tooling follow-up: offline Neon18→20 console upgrade
+
+Starting source `78d800fc1f81979b8e942b70a379a618d3105bd5` has full hosted quality/
+container SUCCESS in [run37284505275](https://github.com/Kqway/veya/actions/runs/37284505275):
+958 tests/92 files, ordinary66/66 and Vercel66/66, audit0, both Docker/non-root and
+isolated migration/worker/readiness/backup-restore gates. No production publication.
+
+Read-only Vercel inspection on2026-10-05 confirms project `intavro`, Node24,
+production deployment `dpl_DuUtzSHGNsfRAtVD3aqwhbGXU6Xt` on `ae68914` and Neon
+Marketplace integration. Database variables are sensitive, scoped to production;
+this workspace has no DB URL, Neon API key or authenticated Neon/Vercel CLI. No
+production DB access, backup, migration or maintenance was performed in this pass.
+
+Added offline `db:release:sql`: separate single-DO atomic upgrade18→20 and read-only
+full-ledger verification for Neon Query Editor. It reads only immutable source SQL,
+never env/credentials or a DB. The prepared-protocol bundle checks strict18/20
+history before DDL, shares the existing migration lock (10s lock wait), targets
+public, rolls back all DDL/ledger on failure and safely repeats a verified20 run.
+No old or new migration file changed. See [the owner procedure](docs/NEON_RELEASE_18_TO_20.md).
+
+Native12 regressions PASS: extended/prepared execution, existing data preservation,
+idempotency, concurrent runs, foreign/checksum/missing ledgers, second-DDL rollback,
+independent verification and inherited search_path. An initial pg_catalog-first
+DDL target failed natively; explicit public with implicit catalog lookup corrected
+it before release. Strict array access typing corrected without relaxed checks.
+Independent read-only review found no actionable Important/Critical issue and
+reran all12 native regressions PASS. Fresh `npm run check` PASS: zero-warning lint,
+strict types, **970 tests/93 files**, production build. Fresh audit0 PASS. Operations
+image build and offline non-root/read-only/no-network generator smoke PASS;
+both SQL outputs match host generation even with an unusable dummy DB URL.
+Invalid CLI flags refuse generation with exit1 and no SQL output. Final hosted
+evidence is recorded for the exact source in the PR. Protected backup/restore rehearsal, operator DB access,
+maintenance, actual schema verification and hosted promotion remain required.
+
+## Current local candidate: Profile Worlds + minimal intent product
+
+Starting HEAD: `ae68914ede1923f6d93cf888403fc397e9b42cf4`. Implementation commits:
+`d5b72b3` (bounded profile foundation) and `540e4cd5553da792c115c3acb80c470e85bb6642`
+(profile UI/context services and consented intent-to-room orchestration). This
+documentation checkpoint follows those verified sources on
+`codex/intent-worlds-20261005`. Production [intavro.vercel.app](https://intavro.vercel.app)
+remains the verified **18-migration** baseline. This pass has no production
+migration/deployment. The initial local checkpoint is below; subsequent hosted
+CI findings and their test-isolation correction are recorded separately.
+
+- Additive **0019_profile_spaces.sql** and **0020_intent_lobbies.sql**; old 0001–0018
+  are immutable. Eight Profile Worlds, explicit visibility and owner editor; stranger/
+  connection projections require authorized discovery/request/match context.
+  Incognito hides global customization and keeps scoped presentation.
+- `/` is the minimal «Сейчас» composer; `/people` contains temporary rooms;
+  `/profile` is «Я». Original friend coordination composer moves to `/plan` and
+  existing invitation/scheduling/results/voting/confirmation behavior remains.
+- Reviewed own-text interpretation, one clarification at a time, explicit Start,
+  persisted searches, deterministic compatible offers and explicit acceptance.
+  Local fallback works without AI. Owner-only removable preferences and quiet hours
+  are visible, not hidden AI memory.
+- Atomic consent/capacity checks create a room only when the lobby fills. External
+  reserved seats are declared by the owner and never appear as invented members.
+  Plain-text chat, leave/remove/block/report, completion/history and original Plan it.
+- Aggregate intent transitions and `analytics:funnel` actions search cohort (six new
+  native tests); counts are per search, not unique users/verified attendance, and
+  deletion/retention can reduce historical counts.
+- Recipient-scoped fixed `intents`/`rooms` realtime topics and minimal notifications.
+  Durable jobs use existing CLI/Cron; bounded immediate work serves known candidates,
+  but future candidates/retries need a frequent scheduler. Daily Hobby Cron is insufficient.
+- Room reports extend existing `social_reports.room_id` with immutable minimized
+  evidence; no separate room-report table. Deletion erases authored personal content,
+  customization/preferences and authority, preserving protected evidence/peer history.
+  Historical server-proven linked-plan identity bindings prevent recovered-session
+  aliases/participation from surviving later deletion.
+
+**Local evidence, 2026-10-05, Node 24.19.0:** fresh full `npm run check` PASS:
+zero-warning lint, strict types, **952 tests / 91 files** (+241/+12 over baseline),
+production build. Fresh `npm ci --offline` PASS and `npm audit --json` reports
+**zero vulnerabilities**. Full ordinary **66/66** and isolated Vercel-mode **66/66**
+desktop/mobile E2E PASS, no retries (+10 browser cases per runtime). Both Docker
+targets build; non-root runner/operations smoke and actual isolated PostgreSQL18
+all-20 migration/repeated migration/verification, concurrent workers, retention
+preview, safe readiness and protected backup/empty-database restore PASS.
+Final zero-warning lint and strict types also passed separately. Hosted CI is a
+separate gate; no result for this source is claimed at this documentation checkpoint.
+
+Managed Docker's vfs driver initially exhausted disk during container smoke.
+The operations target now copies source/locked dependencies from the dependency
+stage rather than inheriting the compiled web build. Smoke runs backup/restore
+before web startup and cleans its own disposable volumes; all original assertions
+remain. The corrected full data smoke passed without ignoring failures. Final
+operations image `sha256:0c0393e2eec37145af84ba61f34b1677355529461ee44a33e1b4824820df1e6b`;
+runner `sha256:742764faf2f900b223e2f02e678ea65e3820f16a84a84438583021749a2567ca`.
+
+The initial full ordinary E2E exposed a Profile Worlds editor accessible-label
+bug: a select label included its option text, breaking exact accessible-name lookup.
+Specific `aria-labelledby` spans now name intent/visibility selectors; retained
+first-failure trace, **9 targeted DOM tests PASS** and fresh production build PASS.
+Targeted real-browser eight-world/legacy social rerun **4/4 PASS**, followed by both
+complete browser gates above. Duplicate save announcements were corrected with a
+RED→GREEN DOM regression; browser Back protection passed desktop/mobile. The
+profile block browser test now waits for the committed block and closed UI before
+requiring 404 from profile APIs, preserving every authorization assertion.
+
+Independent actual read-only review reproduced two Important issues and fixes:
+legacy cleanup could remove a newly resolved old room report inside its 365-day
+protection period; search updates could permanently suppress recipients after
+cancelling previous-revision offers. Native RED→GREEN regressions verify the room
+report exclusion and revision-aware dedupe with one pending offer per recipient,
+while declines remain remembered (**42 targeted tests PASS**). A subsequent
+independent read-only verification ran **48 native PostgreSQL tests PASS**, with
+no additional confirmed Important/Critical issue in the inspected boundaries. See
+[security-minimal-intent-review.md](docs/security-minimal-intent-review.md) for scope
+and limits; this is not a complete external security audit.
+
+Rollout: preserve live `main` until coordinated backup/migration verification of all
+20 migrations; review the feature branch/PR, then promote source only after database
+readiness and hosted release gates. The feature branch is explicitly excluded from
+automatic Vercel deployment; this does not block production `main` deployment.
+Do not reuse live credentials in tests or previews.
+See [deployment](docs/DEPLOYMENT.md), [checklist](docs/RELEASE_CHECKLIST.md),
+[intent API](docs/intent-product-api.md) and [product design](docs/minimal-intent-product-design.md).
+
+### Hosted quota-isolation follow-up
+
+GitHub source `1b2764898e11f4532db04b4cc163f90be6038b0a`,
+[run 37279461008](https://github.com/Kqway/veya/actions/runs/37279461008): container
+job SUCCESS; quality install/lint/types/tests/build/audit SUCCESS, ordinary browser
+gate **64/66**. Preserved traces showed HTTP429 with Retry-After1/2 seconds in the
+profile Back and recovery journeys. Independent fast browser journeys shared the
+same global limiter budgets; this was fixture coupling, not an authorization failure.
+
+The corrected test-only fixture resets only limiter buckets before each unrelated
+journey. Production policies/provider are unchanged and remain enforced throughout
+each journey. Control requires a private600 file in an owner-only700 temporary
+directory, validated native loopback test URL and a random capability confirmed
+against a marker created only by the isolated test server. No production endpoint
+or inherited DATABASE_URL is used. Cleanup removes only its own file/empty directory.
+Six new native regressions prove quota rejection within a journey, isolation across
+journeys and refusal of foreign configuration/wrong capabilities; the existing
+seven shared-limiter regressions remain unchanged. Fresh lint/types and full
+**958 tests / 92 files PASS** (+247/+13 over the starting baseline). Fresh production
+build and audit0 PASS; corrected ordinary desktop/mobile browser gate **66/66 PASS**,
+no retries. Independent follow-up reviewed the fixture boundary and reran all
+**13 native fixture/shared-limiter tests PASS**, with no reproducible Important/
+Critical finding. Corrected full Vercel-mode desktop/mobile browser gate also
+**66/66 PASS**, no retries. Final hosted follow-up remains a separate gate: this
+checkpoint records local verification and the preceding failed hosted run, not
+an assumed remote PASS. The PR will record the exact final source/run result.
+
+Hosted source `7e78aeeedb9959f4177533d0fbad5f1ffa60e91b`,
+[run 37283228419](https://github.com/Kqway/veya/actions/runs/37283228419): container,
+install/lint/types/958 tests/build/audit and ordinary **66/66 PASS**. All quota-
+affected profile journeys passed in both runtimes. Vercel-mode finished **65/66**:
+the legacy 404-to-home assertion selected any textbox, but the hydrated anonymous
+home correctly has both an intent textarea and a profile alias input. Explicitly
+waiting for alias hydration reproduced the same strict-selector failure on both
+desktop/mobile locally. The test now checks home URL and both exact accessible
+field names; targeted Vercel desktop/mobile **2/2 PASS**, preserving 404 and home
+visibility checks. Application code is unchanged. Final full browser/hosted gates
+are recorded in the PR after verification; this record does not assume a PASS.
+
+## Previous release: managed Neon connection
 
 Starting HEAD: `bc0e304ffc051bae1456cbbdf50582afb3aaf9be`. Owner created and linked
 the free Neon Marketplace resource in the same `iad1` region as Vercel, then reports

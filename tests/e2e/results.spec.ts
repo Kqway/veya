@@ -1,7 +1,7 @@
-import { devices, expect, test, type Page } from "@playwright/test";
+import { devices, expect, test, type Page } from "../support/browser-test";
 
 async function createPlan(page: Page) {
-  await page.goto("/");
+  await page.goto("/plan");
   await page.getByRole("textbox").fill("Coffee and a walk together?");
   await page.getByRole("button", { name: "Создать план" }).click();
   await page.getByLabel("Ваше имя").fill("Maya");

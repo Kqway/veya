@@ -28,4 +28,6 @@ export type {
   PlanContext,
   PlanIdea,
   PlanAssistanceResult,
+  InterpretInput,
+  Interpretation,
 } from "./types";

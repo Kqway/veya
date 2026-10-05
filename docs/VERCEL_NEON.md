@@ -4,6 +4,33 @@
 ключи восстановления, privacy projections, чат и scheduling остаются прежними.
 Проверки в репозитории не заменяют проверку настоящего HTTPS deployment.
 
+## Текущий rollout: 18 live → 20 migrations
+
+Ветка проверки `codex/intent-worlds-20261005` дополнительно исключена из
+автоматических deployments через `git.deploymentEnabled` в `vercel.json`.
+GitHub CI продолжает работать. Это исключение не блокирует deployment `main`:
+слияние разрешено только после согласованного применения миграций и проверки базы.
+
+Production [intavro.vercel.app](https://intavro.vercel.app) остаётся на проверенном
+release с **18 migrations**. Profile Worlds и новый minimal intent product сейчас
+локальные: **0019_profile_spaces.sql**, **0020_intent_lobbies.sql**. Нового deployment,
+production migration нет. Hosted CI source `78d800f` полностью прошёл в
+[run37284505275](https://github.com/Kqway/veya/actions/runs/37284505275).
+Проверки и pending gates
+записаны отдельно в [CODEX_PROGRESS.md](../CODEX_PROGRESS.md).
+
+Подготовить отдельную feature branch/PR: push в production `main` может автоматически
+запустить Vercel до обновления БД. Сначала backup и isolated restore, проверить
+неизменность 0001–0018, применить 0019/0020 через direct CLI и проверить **все 20**
+checksum entries. Только затем публиковать соответствующий web/worker source.
+Согласовать maintenance: readiness старого release проверяет точный набор migrations
+и может отклонить расширенный ledger. Старый image на новой схеме не считать
+автоматически безопасным rollback. Preview использует только synthetic isolated DB.
+
+Для оператора с Neon Query Editor доступен [пошаговый SQL upgrade18→20](NEON_RELEASE_18_TO_20.md):
+`db:release:sql` offline генерирует одну атомарную команду и отдельную read-only
+проверку всех checksums. Backup/restore rehearsal и maintenance остаются обязательны.
+
 ## 1. Создать проект и базу
 
 1. В Vercel импортировать GitHub-репозиторий `Kqway/veya`, production branch `main`,
@@ -86,9 +113,10 @@ npm run db:migrate
 npm run db:verify
 ```
 
-Применяются checksum-tracked migrations **0001–0018**, transaction + advisory lock;
-повторный запуск безопасен. Этот hosting pass не добавляет migrations и не меняет
-старые. При существующей БД сначала сделать backup согласно [DEPLOYMENT.md](DEPLOYMENT.md).
+Для текущего candidate применяются checksum-tracked migrations **0001–0020**,
+transaction + advisory lock; повторный запуск безопасен. Additive 0019/0020 не
+меняют применённые 0001–0018. Старый bootstrap из 18 migrations относится только к
+предыдущему live release и не устанавливает новую функциональность. При существующей БД сначала сделать backup согласно [DEPLOYMENT.md](DEPLOYMENT.md).
 Vercel web остаётся на pooled `DATABASE_URL`, realtime — на direct URL.
 
 Встроенный **Vercel Storage → Query** использует prepared statements и не принимает
@@ -107,8 +135,8 @@ Vercel web остаётся на pooled `DATABASE_URL`, realtime — на direct
 для production deployment; preview не должен выполнять production jobs.
 
 Этот endpoint проверяет secret **до доступа к базе**, не принимает query overrides
-или гостевую авторизацию. Обрабатывает до пяти candidate jobs и пяти notification
-jobs за вызов, включая reminders; использует прежние durable leases, retries и
+или гостевую авторизацию. Обрабатывает до пяти intent jobs, пяти candidate jobs и пяти notification
+jobs за вызов, включая reminders; использует durable leases, retries и
 deduplication. Через 45 секунд перестаёт начинать следующую работу; уже начатая
 транзакция завершается. Host имеет hard limit 300 секунд: при принудительном
 прерывании leases позволяют безопасно повторить работу. Результат — только counters,
@@ -121,7 +149,10 @@ deduplication. Через 45 секунд перестаёт начинать с
 вызовы безопасны, но расходуют ресурсы. Защита deployment должна пропускать
 авторизованный scheduler: учитывать Vercel Deployment Protection при выборе способа.
 
-Daily default означает отложенный поиск будущих кандидатов/push/reminders и может
+Start нового intent выполняет bounded best-effort обработку известных кандидатов;
+это не гарантирует мгновенную доставку и не заменяет scheduler. Будущие совместимые
+posts ставят active searches в durable queue. Daily default означает отложенные
+intent offers, поиск будущих кандидатов/push/reminders и может
 не успеть до expiry короткого занятия. Это **не задерживает** явный discovery,
 Interested, accept, запись chat, inbox или realtime активного пользователя: эти
 действия сохраняются синхронно. Для реальных вечерних встреч ежедневного worker
@@ -157,14 +188,20 @@ tracking/font requests не добавлено.
 1. `/api/health` → 200; `/api/ready` → 200 после всех migrations. Никогда не считать
    одну работающую landing доказательством исправной базы.
 2. `/opengraph-image` возвращает PNG с русским текстом; invite OG также работает.
-3. Два независимых браузера: profile/key → совместимые шахматные posts → discovery
-   → Interested → Accept → chat в обе стороны без Refresh → Plan it → availability
-   → results/votes/confirmation. Пройти это также на настоящих iPhone/Android.
+3. Независимые браузеры: minimal composer → review/один clarification → Start →
+   compatible offer → «Я в деле» → full consenting room → plain-text chat без
+   Refresh → Plan it → availability/results/votes/confirmation. Третий пользователь
+   не получает room access. Проверить external seats, stop/update/expiry, последний
+   слот, preferences/quiet hours и completion/history; сохранить legacy шахматный
+   discovery/Interested/Accept flow. Пройти также на настоящих iPhone/Android.
 4. Подождать более четырёх минут: SSE reconnect восстанавливает состояние; закрытие
    одной вкладки не отключает второго участника. Network offline/online не теряет
    persisted messages. Проверить списки активных Neon connections и Vercel errors.
 5. Block останавливает сообщения; deleted/recovered sessions теряют доступ;
-   incognito aliases не совпадают между разными pairs. Moderator login защищён.
+   incognito identities независимы между pairs и rooms. Проверить восемь Profile
+   Worlds, self/stranger/matched projections и скрытые incognito customization.
+   Удаление после recovery стирает исторически связанные plan identities. Moderator
+   login и room reports/evidence защищены.
 6. Без Cron secret endpoint → 401; с правильным secret → 200 и bounded counters;
    нет секретов, сообщений, raw intent или contacts в runtime logs. Проверить
    Cron execution в dashboard, будущего candidate notification и push fallback.

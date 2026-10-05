@@ -11,8 +11,10 @@ import {
   type OwnPost,
   type Profile,
 } from "../client";
-import { Person, SocialError, SocialShell, SocialLiveStatus } from "./common";
+import { SocialError, SocialShell, SocialLiveStatus } from "./common";
 import { ProfilePanel } from "./profile-panel";
+import { ProfileScene } from "@/features/profile-space/components/profile-scene";
+import type { ProfileSpace } from "@/features/profile-space/schema";
 const reasonCopy: Record<string, string> = {
   SAME_ACTIVITY: "Вы хотите заниматься одним и тем же",
   TIME_OVERLAP: "Ваше свободное время совпадает",
@@ -228,22 +230,9 @@ export function DiscoverScreen() {
                   </p>
                 )}
                 {cards?.map((card) => (
-                  <article className="social-card" key={card.handle}>
-                    <Person identity={card.identity} />
-                    <h2>{card.activityLabel}</h2>
-                    <p>
-                      {card.interactionMode === "in_person"
-                        ? "Вживую"
-                        : card.interactionMode === "online"
-                          ? "Онлайн"
-                          : "Вживую или онлайн"}{" "}
-                      ·{" "}
-                      {card.format === "one_to_one"
-                        ? "Вдвоём"
-                        : card.format === "group"
-                          ? "В группе"
-                          : "Любой состав группы"}
-                    </p>
+                  <article className="profile-discovery-card" key={card.handle}>
+                    <ProfileScene compact space={{identity:card.identity,audience:"stranger",presentation:card.presentation??{world:"minimal",accent:"coral",avatar:"orbit"},status:null,tagline:null,currentIntent:{activityLabel:card.activityLabel,interactionMode:card.interactionMode,format:card.format,timeHint:({"Compatible today":"Подходит сегодня","Compatible tomorrow":"Подходит завтра","Compatible this week":"Подходит на этой неделе","Compatible soon":"Подходит в ближайшее время"} as Record<string,string>)[card.timeHint]??"Совпадает свободное время"},activities:[],interests:[],goals:[],blockOrder:["intent"],action:{kind:"interest",key:card.handle}} satisfies ProfileSpace}>
+                    <Link className="social-text-button" href={`/profile/discovery/${encodeURIComponent(card.handle)}`}>Посмотреть профиль</Link>
                     <ul>
                       {card.reasons
                         .filter((r) => reasonCopy[r])
@@ -251,14 +240,6 @@ export function DiscoverScreen() {
                           <li key={r}>{reasonCopy[r]}</li>
                         ))}
                     </ul>
-                    <p>
-                      {({
-                        "Compatible today": "Подходит сегодня",
-                        "Compatible tomorrow": "Подходит завтра",
-                        "Compatible this week": "Подходит на этой неделе",
-                        "Compatible soon": "Подходит в ближайшее время",
-                      } as Record<string, string>)[card.timeHint] ?? "Совпадает свободное время"}
-                    </p>
                     <div className="social-actions">
                       <button
                         className="button button-primary"
@@ -307,6 +288,7 @@ export function DiscoverScreen() {
                         Пропустить
                       </button>
                     </div>
+                    </ProfileScene>
                   </article>
                 ))}
                 {notice && (

@@ -79,6 +79,16 @@ export class IdentityService {
       const row = rechecked.rows[0] ?? fail("NOT_FOUND");
       const recoveryKey = newKey();
       await tx.query("UPDATE social_profiles SET recovery_key_hash=$2,updated_at=now() WHERE id=$1", [row.id, hash(recoveryKey)]);
+      // Record only server-proven social-linked plan identity before rotating the binding.
+      // A later account deletion must still erase names/windows left by a former session.
+      await tx.query(`INSERT INTO social_linked_plan_identities(plan_intent_id,profile_id,guest_id,is_creator)
+       SELECT DISTINCT i.id,$1::uuid,b.guest_id,i.creator_guest_id=b.guest_id
+       FROM social_profile_bindings b JOIN intents i ON i.creator_guest_id=b.guest_id
+       OR EXISTS(SELECT 1 FROM participants p WHERE p.intent_id=i.id AND p.guest_id=b.guest_id)
+       WHERE b.profile_id=$1 AND (
+        EXISTS(SELECT 1 FROM social_matches m JOIN social_pairs pair ON pair.id=m.pair_id WHERE m.plan_intent_id=i.id AND $1 IN(pair.low_profile_id,pair.high_profile_id))
+        OR EXISTS(SELECT 1 FROM social_rooms r JOIN social_lobby_members lm ON lm.lobby_id=r.lobby_id WHERE r.plan_intent_id=i.id AND lm.profile_id=$1))
+       ON CONFLICT DO NOTHING`,[row.id]);
       await tx.query("DELETE FROM social_profile_bindings WHERE profile_id=$1", [row.id]);
       await tx.query("INSERT INTO social_profile_bindings(guest_id,profile_id) VALUES ($1,$2)", [guestId, row.id]);
       return { profile: projectOwnProfile(row, true), recoveryKey };

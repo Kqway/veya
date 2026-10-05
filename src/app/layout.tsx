@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import Script from "next/script";
 import { Brand } from "@/components/brand";
 import { ArrowIcon } from "@/components/arrow-icon";
 import { getServerEnv } from "@/lib/config/server";
@@ -34,13 +35,14 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body>
+        <Script src="/history-guard.js" strategy="beforeInteractive" />
         <a href="#main-content" className="skip-link">
           Перейти к содержимому
         </a>
         <div className="app-shell">
           <header className="site-header">
             <Brand />
-            <Link className="header-link" href="/#how-it-works">
+            <Link className="header-link" href="/plan#how-it-works">
               Как это работает <ArrowIcon />
             </Link>
           </header>

@@ -1,4 +1,4 @@
-import { devices, expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
+import { devices, expect, test, type Browser, type Page, type TestInfo } from "../support/browser-test";
 import type { Card, Connection, Match, Message, OwnPost, Profile } from "../../src/features/social/client";
 
 const origin = "http://127.0.0.1:3100";
@@ -54,7 +54,7 @@ async function time(page: Page, date: string) {
 }
 
 async function createProfile(page: Page, alias: string, copyAndNavigate = false) {
-  await page.goto("/");
+  await page.goto("/plan");
   await page.getByRole("textbox", { name: "Чем хотите заняться?", exact: true }).fill(idea);
   await page.getByRole("button", { name: "Найти людей", exact: true }).click();
   await expect(page).toHaveURL(/\/seek\/new$/);

@@ -14,7 +14,9 @@ COPY --chown=node:node . .
 RUN npm run build
 
 # Run the same migration/worker CLI from an isolated release job, not the web startup.
-FROM builder AS operations
+FROM dependencies AS operations
+# CLI jobs need source and locked dependencies, not the compiled web application.
+COPY --chown=node:node . .
 ENV NODE_ENV=production
 USER node
 CMD ["npm", "run", "db:migrate"]

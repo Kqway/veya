@@ -1,8 +1,12 @@
 import { randomBytes } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 process.env.VEYA_TEST_ADMIN_SECRET ??= randomBytes(32).toString("base64url");
+// Workers inherit this private test capability; the web fixture creates the DB.
+process.env.VEYA_E2E_FIXTURE_FILE ??= join(mkdtempSync(join(tmpdir(), 'intavro-browser-')), 'control.json');
 
 const systemChromium =
   process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||

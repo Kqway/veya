@@ -41,6 +41,7 @@ export class PlanningService {
         "UPDATE social_matches SET plan_intent_id=(SELECT id FROM intents WHERE public_slug=$2) WHERE id=$1",
         [ctx.match.id, view.intent.publicSlug],
       );
+      await tx.query('INSERT INTO social_linked_plan_identities(plan_intent_id,profile_id,guest_id) SELECT id,$2,creator_guest_id FROM intents WHERE public_slug=$1 ON CONFLICT DO NOTHING',[view.intent.publicSlug,ctx.own.id]);
       for (const [recipient,peer] of [[ctx.own.id,ctx.peer.id],[ctx.peer.id,ctx.own.id]]) await enqueueNotification(tx,{recipientProfileId:recipient!,peerProfileId:peer!,type:'PLAN_READY',matchKey,dedupeKey:'plan:'+ctx.match.id});
       await trackFunnel(tx,'plan_created',this.options.analyticsEnabled ?? false);
       await publishSocialEvent(tx,[ctx.own.id,ctx.peer.id],{topic:'match',matchKey});

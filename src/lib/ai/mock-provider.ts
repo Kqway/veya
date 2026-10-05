@@ -5,6 +5,7 @@ import type { ParsedIntent } from "@/features/intents/structured";
 import type { SeekingSuggestion } from "@/features/discovery/seeking-suggestion";
 import { normalizeActivity } from "@/features/discovery/activity-normalization";
 import { activityLabel } from "@/features/intents/labels";
+import { interpretInputSchema } from "@/features/intent-product/schema";
 import {
   parseInputSchema,
   planContextSchema,
@@ -140,6 +141,8 @@ export class MockAiProvider implements AiProvider {
   readonly name = "mock" as const;
   async complete(request: AiRequest, signal: AbortSignal): Promise<unknown> {
     signal.throwIfAborted();
+    if (request.task === "parse_conversation")
+      return { text: interpretInputSchema.parse(request.input).text };
     if (request.task === "parse_intent")
       return parse(parseInputSchema.parse(request.input));
     if (request.task === "parse_seeking")

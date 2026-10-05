@@ -1,10 +1,10 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/browser-test";
 test("security headers and explicit overnight times survive join and refresh", async ({
   page,
 }, info) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  const home = await page.goto("/");
+  const home = await page.goto("/plan");
   expect(home!.headers()["x-frame-options"]).toBe("DENY");
   expect(home!.headers()["x-content-type-options"]).toBe("nosniff");
   expect(home!.headers()["referrer-policy"]).toBe("no-referrer");
@@ -78,7 +78,7 @@ test("AI quota rejection preserves manual details and creation", async ({
       body: JSON.stringify({ error: { code: "RATE_LIMITED" } }),
     }),
   );
-  await page.goto("/");
+  await page.goto("/plan");
   await page.getByRole("textbox").fill("Coffee tomorrow");
   await page.getByRole("button", { name: "Создать план" }).click();
   await page.getByLabel("Ваше имя").fill("Artem");

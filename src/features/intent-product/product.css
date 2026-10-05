@@ -1,0 +1,129 @@
+/* The action surfaces share a quiet dark canvas; legacy planning keeps its theme. */
+body:has(.intent-product) {
+  --paper: #111318; --ink: #f1f2f5; --muted: #a6adb9;
+  --accent: #b6c8ff; --line: #343942;
+  background: #111318; color: #f1f2f5;
+}
+body:has(.intent-product) .app-shell { max-width: 1160px; }
+body:has(.intent-product) .site-header { min-height: 92px; }
+body:has(.intent-product) .brand { font-size: 28px; letter-spacing: -1.2px; }
+body:has(.intent-product) .header-link { color: #a6adb9; }
+body:has(.intent-product) .site-footer { margin-top: 64px; border-color: #292e36; }
+body:has(.intent-product) .social-root-nav { max-width: 720px; justify-content: flex-start; margin: 8px auto 38px; border: 0; gap: 6px; }
+body:has(.intent-product) .social-root-nav a { color: #c3c9d4; padding: 10px 15px; min-height: 44px; border: 0; border-radius: 10px; font-size: 14px; }
+body:has(.intent-product) .social-root-nav a[aria-current="page"] { color: #f6f7fb; background: #242934; }
+body:has(.intent-product) .social-root-nav a:hover { background: #242934; }
+body:has(.intent-product) .social-recovery-banner { background: #1c222d; color: #f1f2f5; border-color: #50617f; }
+body:has(.intent-product) .social-recovery-banner .field input { background: #111318; color: #f1f2f5; }
+body:has(.intent-product) .social-recovery-banner .button-primary { color: #111318; }
+body:has(.intent-product) .social-recovery-banner .social-warning { background: #332518; color: #f7cfac; }
+body:has(.intent-product) .skip-link { background: #d3dfff; color: #111318; }
+.intent-product { width: min(720px, 100%); margin: 0 auto; min-height: 62vh; padding: 26px 0 48px; line-height: 1.6; overflow-wrap: anywhere; }
+.intent-heading h1 { font-size: clamp(32px, 4.5vw, 49px); line-height: 1.14; letter-spacing: -.055em; font-weight: 500; margin: 14px 0; }
+.intent-eyebrow { margin: 0 0 12px; font-size: 10px; line-height: 1.5; font-weight: 600; color: #a6adb9; text-transform: uppercase; letter-spacing: .14em; }
+.intent-intro { color: #a6adb9; font-size: 15px; margin: 0 0 34px; }
+.intent-product h2 { font-size: 19px; font-weight: 500; letter-spacing: -.025em; margin: 0 0 14px; line-height: 1.35; }
+.intent-product h3 { font-size: 19px; font-weight: 500; letter-spacing: -.025em; margin: 0; line-height: 1.35; }
+.intent-product p { margin-top: 0; }
+.intent-product button, .intent-product input, .intent-product select, .intent-product textarea { font-family: inherit; }
+.intent-product fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.intent-product :focus-visible { outline: 3px solid #b6c8ff; outline-offset: 4px; }
+.intent-composer { margin-bottom: 28px; }
+.intent-composer form { position: relative; border: 1px solid #424b5d; border-radius: 20px; background: #1d212a; box-shadow: 0 12px 35px #00000014; }
+.intent-composer textarea { display: block; width: 100%; resize: vertical; background: transparent; color: #f1f2f5; padding: 23px 70px 23px 22px; border: 0; border-radius: 20px; min-height: 106px; line-height: 1.6; font-size: 17px; }
+.intent-composer textarea::placeholder { color: #a2aab9; }
+.intent-compose-send { position: absolute; bottom: 19px; right: 17px; display: grid; place-items: center; width: 44px; height: 44px; background: #d0dcff; color: #111318; border: 0; border-radius: 13px; font-size: 24px; }
+.intent-compose-send:hover:not(:disabled) { background: #e2e9ff; }
+.intent-suggestions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 13px; }
+.intent-suggestions button, .intent-chip { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; background: transparent; border: 1px solid #343b49; border-radius: 10px; padding: 8px 12px; color: #c0c8d6; font-size: 12px; line-height: 1.5; text-align: left; }
+.intent-suggestions button:hover:not(:disabled), .intent-chip:hover:not(:disabled) { border-color: #8faae7; color: #eff3ff; }
+.intent-card { display: block; background: #1a1e26; border: 1px solid #333a46; padding: 24px; border-radius: 18px; margin: 16px 0; min-width: 0; }
+.intent-card-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.intent-card-heading h2 { margin: 0; }
+.intent-state { display: inline-block; padding: 4px 9px; border: 1px solid #465269; background: #222b3a; border-radius: 8px; font-size: 11px; color: #c6d5f5; line-height: 1.5; flex-shrink: 0; }
+.intent-state-closed, .intent-state-expired { color: #b7bfcd; background: #282d37; border-color: #454c5a; }
+.intent-state-filled { background: #20362e; color: #bde2cf; border-color: #425f52; }
+.intent-muted, .intent-footnote { color: #a6adb9; font-size: 13px; line-height: 1.65; }
+.intent-summary { font-size: 20px; color: #eef2fc; line-height: 1.5; }
+.intent-understood { border-color: #657b9e; background: #1b2433; }
+.intent-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; margin: 24px 0; }
+.intent-preview dt { color: #aeb9cd; font-size: 12px; margin-bottom: 3px; }
+.intent-preview dd { font-size: 14px; margin: 0; }
+.intent-question { margin-top: 25px; }
+.intent-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 15px; margin-top: 16px; }
+.intent-button { display: inline-flex; align-items: center; justify-content: center; background: #d0dcff; color: #10151f; padding: 12px 21px; min-height: 46px; border: 1px solid transparent; border-radius: 11px; font-size: 14px; font-weight: 600; line-height: 1.5; text-align: center; }
+.intent-button:hover:not(:disabled) { background: #e2e9ff; }
+.intent-text-button { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 0; color: #c0d0fa; font-size: 13px; line-height: 1.5; text-align: left; border: 0; background: transparent; }
+.intent-text-button:hover:not(:disabled) { color: #e0e9ff; text-decoration: underline; text-underline-offset: 4px; }
+.intent-understood > .intent-text-button { margin-left: 16px; }
+.intent-counts { display: flex; flex-wrap: wrap; gap: 10px 20px; font-size: 13px; margin-bottom: 13px; color: #d9e0ed; }
+.intent-error { color: #ffd4c7; background: #362322; border: 1px solid #7c4a44; border-radius: 12px; padding: 15px; font-size: 14px; margin: 20px 0; }
+.intent-notice { background: #20362e; color: #c9e8d7; border: 1px solid #476355; padding: 14px 17px; border-radius: 12px; margin: 20px 0; }
+.intent-empty { padding: 32px 0; color: #a6adb9; font-size: 14px; }
+.intent-empty h2 { color: #eef2fc; }
+.intent-empty a { color: #c0d0fa; text-decoration: underline; }
+.intent-section { margin-top: 40px; }
+.intent-section > h2 { color: #b5bdca; font-size: 14px; margin-bottom: 12px; }
+.intent-room-card:hover { border-color: #70819f; }
+.intent-room-card p { font-size: 14px; }
+.intent-field { display: flex; flex-direction: column; gap: 8px; margin: 17px 0; font-size: 13px; color: #d6ddea; }
+.intent-field input, .intent-field textarea, .intent-field select { width: 100%; min-width: 0; min-height: 46px; padding: 11px 13px; font-size: 16px; line-height: 1.5; background: #11161f; border: 1px solid #495365; border-radius: 9px; color: #f1f2f5; }
+.intent-field textarea { resize: vertical; }
+.intent-check { display: flex; align-items: flex-start; gap: 10px; margin: 17px 0; font-size: 13px; color: #d5dce9; line-height: 1.6; }
+.intent-check input { width: 20px; height: 20px; margin: 1px 0; flex-shrink: 0; accent-color: #b6c8ff; }
+.intent-onboarding { max-width: 520px; margin-top: 36px; }
+.intent-onboarding > p { color: #a6adb9; font-size: 13px; }
+.intent-settings h2:not(:first-child) { margin-top: 30px; }
+.intent-time-fields { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; }
+.intent-time-fields .intent-field { width: 95px; }
+.intent-time-fields > button { margin-bottom: 17px; }
+.intent-rule { padding: 10px 0 20px; border-bottom: 1px solid #343b49; }
+.intent-rule .intent-check { margin-bottom: 8px; }
+.intent-secondary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 13px; color: #a6adb9; font-size: 12px; margin-top: 40px; }
+.intent-secondary a { display: inline-flex; min-height: 44px; align-items: center; }
+.intent-secondary a:hover { color: #eef2fc; text-decoration: underline; }
+.intent-footnote { font-size: 11px; margin: 20px 0 0; }
+.intent-refresh { margin-top: 28px; }
+.intent-refresh .social-live-status { background: #232b3a; border-color: #485c7a; font-size: 13px; }
+.intent-refresh .social-text-button { color: #c0d0fa; }
+.intent-members { padding: 0; margin: 23px 0; list-style: none; }
+.intent-members li { padding: 13px 0; border-bottom: 1px solid #333a46; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 17px; }
+.intent-members .social-person { flex: 1; min-width: 150px; }
+.intent-members .social-avatar { width: 34px; height: 34px; background: #293246; }
+.intent-member-actions { display: flex; flex-wrap: wrap; gap: 5px 16px; }
+.intent-member-actions .intent-text-button { font-size: 11px; }
+.intent-confirm { padding: 17px; border: 1px solid #73604c; background: #2e281f; border-radius: 12px; margin-top: 20px; font-size: 13px; }
+.intent-confirm .intent-text-button { margin-left: 16px; }
+.intent-confirm form .intent-text-button { margin-left: 0; }
+.intent-messages { list-style: none; padding: 0; margin: 22px 0; display: flex; flex-direction: column; gap: 12px; }
+.intent-message { width: min(88%, 480px); border: 1px solid #3b4351; border-radius: 12px; background: #242a35; padding: 13px 15px; }
+.intent-message-mine { align-self: flex-end; background: #25354c; border-color: #4a5f7e; }
+.intent-message > div { display: flex; justify-content: space-between; gap: 15px; align-items: baseline; font-size: 11px; color: #bfcbe0; }
+.intent-message time { color: #a6b6cf; font-size: 10px; flex-shrink: 0; }
+.intent-message p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; margin: 7px 0 0; }
+.intent-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; clip: rect(0, 0, 0, 0); overflow: hidden; white-space: nowrap; border: 0; }
+@media (max-width: 640px) {
+  body:has(.intent-product) .app-shell { padding-inline: 18px; }
+  body:has(.intent-product) .site-header { min-height: 78px; }
+  body:has(.intent-product) .social-root-nav { margin-bottom: 20px; gap: 2px; }
+  body:has(.intent-product) .social-root-nav a { padding-inline: 12px; }
+  .intent-product { padding-top: 20px; }
+  .intent-heading h1 { font-size: clamp(31px, 8.5vw, 42px); }
+  .intent-intro { font-size: 13px; max-width: 280px; margin-bottom: 26px; }
+  .intent-card { padding: 18px; border-radius: 15px; }
+  .intent-card-heading { flex-direction: column; gap: 8px; }
+  .intent-summary { font-size: 18px; }
+  .intent-preview { grid-template-columns: 1fr; gap: 12px; }
+  .intent-composer textarea { padding: 18px 62px 18px 17px; font-size: 16px; min-height: 119px; }
+  .intent-compose-send { right: 12px; bottom: 14px; }
+  .intent-suggestions button { font-size: 11px; padding: 8px 10px; }
+  .intent-secondary { gap: 4px 11px; }
+  .intent-message { width: 95%; }
+  .intent-members .social-person { min-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intent-product *, .intent-product *::before, .intent-product *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+.intent-attributes { color: #c4cee3; font-size: 13px; line-height: 1.7; }
+.intent-rule-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 15px; }
+@media (max-width: 420px) { .intent-rule-fields { grid-template-columns: 1fr; } }

@@ -19,6 +19,9 @@ export async function cleanupSocial(db: Database,options: {apply?:boolean;batchS
       if (!rows.rows.length) return 0;
       const ids = rows.rows.map((row) => row.id);
       if (table === "seeking_posts") {
+        // Durable searches retain only inactive context shells after a source expires.
+        await tx.query("UPDATE social_action_searches SET status='expired' WHERE post_id=ANY($1::uuid[]) AND status='active'",[ids]);
+        await tx.query("UPDATE social_candidate_offers SET status='expired' WHERE status='pending' AND (target_post_id=ANY($1::uuid[]) OR search_id IN(SELECT id FROM social_action_searches WHERE post_id=ANY($1::uuid[])))",[ids]);
         // Clear both references in one update while posts still exist. Independent
         // FK SET NULL actions otherwise see a deleted opposite post in the
         // existing request ownership trigger when both posts are purged together.
@@ -31,7 +34,7 @@ export async function cleanupSocial(db: Database,options: {apply?:boolean;batchS
       return (await tx.query(`DELETE FROM ${table} t WHERE ${key}=ANY($1::text[])`,[ids])).rowCount;
     });
   }
-  const reports = await purge("social_reports","t.id::text","t.reporter_profile_id AS profile_a,t.target_profile_id AS profile_b","t.created_at<clock_timestamp()-interval '365 days' AND t.status IN('resolved','dismissed')","t.created_at,t.id");
+  const reports = await purge("social_reports","t.id::text","t.reporter_profile_id AS profile_a,t.target_profile_id AS profile_b","t.room_id IS NULL AND t.created_at<clock_timestamp()-interval '365 days' AND t.status IN('resolved','dismissed')","t.created_at,t.id");
   const handles = await purge("discovery_handles","t.public_handle","t.viewer_profile_id AS profile_a,(SELECT p.profile_id FROM seeking_posts p WHERE p.id=t.target_post_id) AS profile_b","t.created_at<clock_timestamp()-interval '90 days' AND (NOT EXISTS(SELECT 1 FROM seeking_posts p WHERE p.id=t.source_post_id AND p.status='active' AND p.expires_at>clock_timestamp()) OR NOT EXISTS(SELECT 1 FROM seeking_posts p WHERE p.id=t.target_post_id AND p.status='active' AND p.expires_at>clock_timestamp()))","t.created_at,t.public_handle");
   const passes = await purge("discovery_passes","t.viewer_profile_id::text || ':' || t.target_profile_id::text","t.viewer_profile_id AS profile_a,t.target_profile_id AS profile_b","t.created_at<clock_timestamp()-interval '90 days'","t.created_at,t.viewer_profile_id,t.target_profile_id");
   const posts = await purge("seeking_posts","t.id::text","t.profile_id AS profile_a,NULL::uuid AS profile_b","t.expires_at<clock_timestamp()-interval '90 days'","t.expires_at,t.id");

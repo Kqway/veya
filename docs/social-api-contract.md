@@ -1,4 +1,8 @@
-# Social v1 client contract
+# Social client contract (legacy flows retained)
+Minimal intent orchestration uses separate [`/api/intavro`](intent-product-api.md).
+Profile Worlds and intent rooms require additive 0019/0020; live production remains
+the verified 18-migration baseline until coordinated rollout.
+
 All JSON `/api/social/*`, same-origin cookie, no-store. POST JSON, `ensureGuest()`
 only before first profile create/recover. Errors `{error:{code,message}}`,403/404
 privacy-safe,401 expired guest,409 inactive/capacity,429 Retry-After.
@@ -54,15 +58,18 @@ POST /block {requestKey:...} OR {matchKey:...} → {blocked:true}
 POST /reports {requestKey:...|matchKey:...,reason:spam|harassment|unsafe_meeting|impersonation|other,text?:string} → {reported:true}
 
 Screens /discover, /seek/new, /seek/[key], /connections, /m/[key]; profile create/
-recovery inline at /discover and /seek/new; profile controls at /discover. No social
+recovery inline at /discover and /seek/new; primary profile controls at /profile
+(«Я»), with preferences at /preferences. Original coordination composer is /plan.
+Main navigation: Сейчас (/), Люди (/people, rooms), Я (/profile). No social
 metadata uses records; generic noindex only. Generated SVG/CSS avatar seed local.
 
 ## Phase 9 live delivery and notifications
 
 `GET /api/social/events` authenticates the current guest/profile only; query strings
 cannot select another profile or match. SSE `sync` has `{}`; `invalidate` has
-`{topic, matchKey?}` with topic connections/match/notifications/discovery and only a
-currently authorized active match key. Event IDs are random per-recipient cursors,
+`{topic, matchKey?}` with topic connections/match/notifications/discovery/intents/rooms and only a
+currently authorized active match key. New `intents`/`rooms` topics have no context
+keys or content; clients refetch authorized persistent APIs. Event IDs are random per-recipient cursors,
 never numeric database sequences. No profile IDs, identity aliases, private content,
 recovery/session material or presence is streamed. Backfill caps at 100; expired
 cursors/overflow trigger persistent API reload. Heartbeats reauthorize access;
@@ -74,13 +81,14 @@ cleans them up and uses six bounded reconnect attempts plus manual retry.
 `GET /api/notifications/unread` returns `{unreadCount,capped}` (maximum 1000).
 `POST /api/notifications/<own-key>/read` accepts `{}`. Blocked/suspended/closed
 contexts are hidden from reads and push. Types: INTEREST_RECEIVED,
-INTEREST_ACCEPTED, NEW_MESSAGE, PLAN_READY, MEETUP_REMINDER, CANDIDATE_FOUND.
+INTEREST_ACCEPTED, NEW_MESSAGE, PLAN_READY, MEETUP_REMINDER, CANDIDATE_FOUND,
+OFFER_RECEIVED, LOBBY_READY, ROOM_MESSAGE. New offer/room links are context-authorized.
 
 `GET /api/notifications/push` returns `{enabled,publicKey}`;
 POST/DELETE accept a strict browser subscription/endpoint respectively. Registration
 is opt-in, requires current server-owned profile membership, caps at five and accepts
 only HTTPS endpoints of supported browser push providers. The generic encrypted
-payload is `{title:'Veya',body:'You have a new update in Veya',url:'/notifications'}`.
+payload is `{title:'Intavro',body:'У вас новое уведомление в Intavro',url:'/notifications'}`.
 It contains no aliases, activity, match key, location or message. Push is best effort,
 not read acknowledgement. Unsupported/denied browsers keep the inbox usable.
 
@@ -99,3 +107,33 @@ are readable without expiring rows, and coordination results read persisted cach
 without creating new suggestions. Health/readiness, deletion, revocation, push opt-out
 and explicit human safety actions remain available. Operational quota writes can
 continue; the flag is an application maintenance policy, not PostgreSQL read-only.
+
+## Profile Worlds (0019)
+
+GET `/api/social/profile/space` → `{space:ProfileSpace}` (self).
+PATCH same route with full strict customization → `{space}`.
+GET `/api/social/profiles/discovery/:handle`, `/profiles/connection/:requestKey`,
+`/profiles/match/:matchKey` → `{space}` for the currently authorized context.
+There is no profile-ID lookup or directory. Blocked/suspended/deleted/stale contexts
+fail safely; discovery also rechecks compatibility and pass state.
+
+World: minimal/midnight/glass/cozy/cyber/manga/y2k/monochrome; accent:
+coral/mint/violet/amber/blue; local avatar: orbit/arch/spark/grid. Customization has
+status≤60, tagline≤120, interests≤8×30, goals≤3×80, selectedActivities≤6, optional
+owned active intentPostKey, enabledBlocks/blockOrder and per-field visibility
+self/connection/everyone. Self DTO alone includes customization and bounded editor
+options; selected activities must be authentic owned seeking history.
+
+ProfileSpace has identity, audience:self/stranger/connection, presentation, nullable
+status/tagline/currentIntent, activities/interests/goals, blockOrder and authorized
+action. Scoped currentIntent contains activityLabel/mode/format/coarse timeHint;
+no raw text/location/windows. PRIVATE stranger projections hide personal blocks.
+INCOGNITO hides global customization/history even after connection and derives
+presentation only from the already-random pair identity. Room member identities
+use the independent per-room projection described in intent-product-api.md.
+
+Profile deletion also erases customization/preferences, authored room messages and
+search/offer authority, closes affected rooms and invalidates live delivery. Room
+reports use existing `social_reports.room_id` and protected immutable evidence;
+there is no `social_room_reports` table. Historical server-proven linked-plan
+identity records support erasure after recovery without transferring guest ownership.
