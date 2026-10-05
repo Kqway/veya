@@ -36,7 +36,7 @@ migration/deployment and no new remote CI evidence.
   Historical server-proven linked-plan identity bindings prevent recovered-session
   aliases/participation from surviving later deletion.
 
-**Local evidence, 2026-10-05, Node 24.21.0:** fresh full `npm run check` PASS:
+**Local evidence, 2026-10-05, Node 24.19.0:** fresh full `npm run check` PASS:
 zero-warning lint, strict types, **952 tests / 91 files** (+241/+12 over baseline),
 production build. Fresh `npm ci --offline` PASS and `npm audit --json` reports
 **zero vulnerabilities**. Full ordinary **66/66** and isolated Vercel-mode **66/66**
