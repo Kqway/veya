@@ -14,7 +14,9 @@ GitHub CI продолжает работать. Это исключение н�
 Production [intavro.vercel.app](https://intavro.vercel.app) остаётся на проверенном
 release с **18 migrations**. Profile Worlds и новый minimal intent product сейчас
 локальные: **0019_profile_spaces.sql**, **0020_intent_lobbies.sql**. Нового deployment,
-production migration или remote CI для этого изменения нет. Проверки и pending gates
+production migration нет. Hosted CI source `78d800f` полностью прошёл в
+[run37284505275](https://github.com/Kqway/veya/actions/runs/37284505275).
+Проверки и pending gates
 записаны отдельно в [CODEX_PROGRESS.md](../CODEX_PROGRESS.md).
 
 Подготовить отдельную feature branch/PR: push в production `main` может автоматически
@@ -24,6 +26,10 @@ checksum entries. Только затем публиковать соответ�
 Согласовать maintenance: readiness старого release проверяет точный набор migrations
 и может отклонить расширенный ledger. Старый image на новой схеме не считать
 автоматически безопасным rollback. Preview использует только synthetic isolated DB.
+
+Для оператора с Neon Query Editor доступен [пошаговый SQL upgrade18→20](NEON_RELEASE_18_TO_20.md):
+`db:release:sql` offline генерирует одну атомарную команду и отдельную read-only
+проверку всех checksums. Backup/restore rehearsal и maintenance остаются обязательны.
 
 ## 1. Создать проект и базу
 

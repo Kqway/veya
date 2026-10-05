@@ -16,7 +16,9 @@ journey. The VPS/container operations and backup procedures below remain support
 The live [Intavro](https://intavro.vercel.app) baseline has 18 verified migrations.
 Profile Worlds and the minimal intent product are local migration-dependent changes:
 **0019_profile_spaces.sql** and **0020_intent_lobbies.sql**. No new production
-migration, deployment or remote CI is claimed. Read CODEX_PROGRESS.md for actual
+migration or deployment is claimed. Hosted CI for source `78d800f` passed all
+quality/container gates in [run37284505275](https://github.com/Kqway/veya/actions/runs/37284505275).
+Read CODEX_PROGRESS.md and the PR for actual
 completed and pending gates. Prepare a feature branch/PR without automatic production
 publication; keep preview databases isolated with synthetic data.
 
@@ -26,6 +28,12 @@ endpoint, and `db:verify` for all 20 migrations. Then publish the matching web/w
 source. Coordinate maintenance while old source and new schema differ: the old
 release's readiness checks require its exact migration set and may reject a newer
 ledger. Never assume an older deployment is a safe rollback against the new schema.
+
+For the owner using Neon Query Editor without local DB credentials, follow the
+[single-statement18→20 procedure](NEON_RELEASE_18_TO_20.md). The offline
+`db:release:sql` generator produces separate atomic upgrade and read-only checksum
+verification files; it does not access or migrate a database. Backup, isolated
+restore rehearsal and maintenance remain required before production execution.
 
 ## Server prerequisites
 

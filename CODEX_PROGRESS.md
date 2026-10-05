@@ -1,5 +1,39 @@
 # Intavro Development Progress
 
+## Rollout tooling follow-up: offline Neon18→20 console upgrade
+
+Starting source `78d800fc1f81979b8e942b70a379a618d3105bd5` has full hosted quality/
+container SUCCESS in [run37284505275](https://github.com/Kqway/veya/actions/runs/37284505275):
+958 tests/92 files, ordinary66/66 and Vercel66/66, audit0, both Docker/non-root and
+isolated migration/worker/readiness/backup-restore gates. No production publication.
+
+Read-only Vercel inspection on2026-10-05 confirms project `intavro`, Node24,
+production deployment `dpl_DuUtzSHGNsfRAtVD3aqwhbGXU6Xt` on `ae68914` and Neon
+Marketplace integration. Database variables are sensitive, scoped to production;
+this workspace has no DB URL, Neon API key or authenticated Neon/Vercel CLI. No
+production DB access, backup, migration or maintenance was performed in this pass.
+
+Added offline `db:release:sql`: separate single-DO atomic upgrade18→20 and read-only
+full-ledger verification for Neon Query Editor. It reads only immutable source SQL,
+never env/credentials or a DB. The prepared-protocol bundle checks strict18/20
+history before DDL, shares the existing migration lock (10s lock wait), targets
+public, rolls back all DDL/ledger on failure and safely repeats a verified20 run.
+No old or new migration file changed. See [the owner procedure](docs/NEON_RELEASE_18_TO_20.md).
+
+Native12 regressions PASS: extended/prepared execution, existing data preservation,
+idempotency, concurrent runs, foreign/checksum/missing ledgers, second-DDL rollback,
+independent verification and inherited search_path. An initial pg_catalog-first
+DDL target failed natively; explicit public with implicit catalog lookup corrected
+it before release. Strict array access typing corrected without relaxed checks.
+Independent read-only review found no actionable Important/Critical issue and
+reran all12 native regressions PASS. Fresh `npm run check` PASS: zero-warning lint,
+strict types, **970 tests/93 files**, production build. Fresh audit0 PASS. Operations
+image build and offline non-root/read-only/no-network generator smoke PASS;
+both SQL outputs match host generation even with an unusable dummy DB URL.
+Invalid CLI flags refuse generation with exit1 and no SQL output. Final hosted
+evidence is recorded for the exact source in the PR. Protected backup/restore rehearsal, operator DB access,
+maintenance, actual schema verification and hosted promotion remain required.
+
 ## Current local candidate: Profile Worlds + minimal intent product
 
 Starting HEAD: `ae68914ede1923f6d93cf888403fc397e9b42cf4`. Implementation commits:

@@ -21,6 +21,11 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
   promotion. Prepare a feature branch/PR; do not trigger production `main` deployment
   while the live database has only 18 migrations. Account for old readiness's exact
   ledger check during maintenance and rollback.
+- If the operator uses Neon Query Editor, generate the offline single-statement
+  `db:release:sql` bundle and run verification separately; follow
+  [the18→20 maintenance procedure](NEON_RELEASE_18_TO_20.md). Native regressions
+  must prove prepared-protocol compatibility, wrong-ledger refusal, second-DDL
+  rollback, repeated/concurrent execution and public-schema targeting.
 - Exercise `/` minimal composer/one question/review/Start, truthful empty state,
   update/stop/extend, revision-aware offer dedupe and remembered declines. Keep `/plan`
   and original invite/results/votes/confirmation intact; navigation is Сейчас/Люди/Я.

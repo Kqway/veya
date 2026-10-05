@@ -25,6 +25,7 @@
     "notifications:process": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/notifications.ts",
     "analytics:funnel": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/funnel.ts",
     "db:verify": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/database.ts verify",
+    "db:release:sql": "node --conditions=react-server --import tsx scripts/console-upgrade.ts",
     "db:backup": "bash scripts/backup.sh",
     "db:restore": "bash scripts/restore.sh",
     "ops:status": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/status.ts"

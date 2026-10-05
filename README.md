@@ -27,9 +27,17 @@ Advanced seeking/discovery/pair flows remain available.
 Current production [intavro.vercel.app](https://intavro.vercel.app) remains on the
 verified 18-migration release. This checkout adds **0019_profile_spaces.sql** and
 **0020_intent_lobbies.sql**; applied 0001–0018 stay immutable. No deployment or new
-remote CI result is claimed for this local change. Back up, migrate and verify all
+production migration is claimed. Hosted CI for source `78d800f` passed both full
+browser modes and container gates in [run37284505275](https://github.com/Kqway/veya/actions/runs/37284505275).
+Back up, migrate and verify all
 20 migrations before promoting migration-dependent source to production `main`.
 Use an isolated feature branch/PR while preparing that coordinated rollout.
+
+Для владельца без локальных DB credentials подготовлен
+[SQL upgrade18→20 через Neon Query Editor](docs/NEON_RELEASE_18_TO_20.md).
+`npm run --silent db:release:sql` генерирует одну атомарную команду offline;
+`-- --verify` — отдельную read-only проверку всех checksums. Backup/test restore
+и maintenance обязательны. Команда не подключается к БД и ничего не применяет сама.
 
 PostgreSQL is required for persisted searches, offers, rooms and plans. Parsing
 uses a bounded deterministic local fallback; optional AI only interprets your own
