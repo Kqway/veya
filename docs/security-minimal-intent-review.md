@@ -78,6 +78,14 @@ follow-up inspected the fixture boundary and reran all 13 native fixture/limiter
 regressions PASS with no reproducible Important/Critical finding. Final hosted
 evidence is separate and will be recorded for the exact source in the PR.
 
+Hosted run37283228419 subsequently passed the real limiter/profile journeys,
+ordinary66/66 and all core/container gates. Vercel65/66 exposed a separate legacy
+404-home generic-textbox assertion racing legitimate alias-input hydration.
+Waiting for hydration reproduced RED on desktop/mobile; exact accessible names
+plus the home URL give GREEN2/2, preserving the original404/visibility checks.
+This follow-up changes only the browser assertion and records, not application
+authentication, rendering or policy. Final hosted PASS requires the new source.
+
 Operators retain internal relational identity. Incognito does not prevent behavioral
 identification or voluntary disclosure; a copied plan/message cannot be retracted.
 Completion and aggregate counts do not prove attendance or unique humans. Historical

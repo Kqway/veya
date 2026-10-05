@@ -112,6 +112,18 @@ Critical finding. Corrected full Vercel-mode desktop/mobile browser gate also
 checkpoint records local verification and the preceding failed hosted run, not
 an assumed remote PASS. The PR will record the exact final source/run result.
 
+Hosted source `7e78aeeedb9959f4177533d0fbad5f1ffa60e91b`,
+[run 37283228419](https://github.com/Kqway/veya/actions/runs/37283228419): container,
+install/lint/types/958 tests/build/audit and ordinary **66/66 PASS**. All quota-
+affected profile journeys passed in both runtimes. Vercel-mode finished **65/66**:
+the legacy 404-to-home assertion selected any textbox, but the hydrated anonymous
+home correctly has both an intent textarea and a profile alias input. Explicitly
+waiting for alias hydration reproduced the same strict-selector failure on both
+desktop/mobile locally. The test now checks home URL and both exact accessible
+field names; targeted Vercel desktop/mobile **2/2 PASS**, preserving 404 and home
+visibility checks. Application code is unchanged. Final full browser/hosted gates
+are recorded in the PR after verification; this record does not assume a PASS.
+
 ## Previous release: managed Neon connection
 
 Starting HEAD: `bc0e304ffc051bae1456cbbdf50582afb3aaf9be`. Owner created and linked

@@ -60,5 +60,7 @@ test("long ideas create persistent invites inside the layout", async ({
 test("returns from a missing page to the landing", async ({ page }) => {
   expect((await page.goto("/missing-page"))?.status()).toBe(404);
   await page.getByRole("link", { name: "На главную Intavro" }).click();
-  await expect(page.getByRole("textbox")).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("textbox", { name: "Псевдоним", exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Что хочешь сделать?", exact: true })).toBeVisible();
 });
