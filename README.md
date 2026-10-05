@@ -16,38 +16,61 @@ to reveal. Then Intavro helps you actually meet.**
 
 ## Current scope
 
-**Closed beta release candidate, built on Phases 1–9.** Start with an activity,
-create a seeking post, discover compatible posts, send Interested, and open a
-private conversation after the recipient accepts. Plan it connects the match to
-the existing availability/results/voting/confirmation flow. The original no-account
-friend invitation flow remains available from «Создать план» and `/i/<slug>`.
+**Local release candidate: Profile Worlds and minimal intent orchestration.** The
+main screen `/` is «Сейчас»: write a short intent, review what was understood,
+answer one question at a time when time/city/activity is missing, then explicitly
+start a persisted search. Main navigation is «Сейчас», «Люди» (`/people`, temporary
+rooms), «Я» (`/profile`). The original friend invitation composer is at `/plan`;
+existing `/i/<slug>`, scheduling, results, votes and confirmation retain their behavior.
+Advanced seeking/discovery/pair flows remain available.
 
-PostgreSQL is required for persistent social/plan APIs; the landing, build and
-stateless optional intent parsing work without credentials. AI is optional:
-manual social discovery, recovery, matching, chat and planning need no OpenAI key.
-Read [CODEX_PROGRESS.md](CODEX_PROGRESS.md) before development and
-[the design](docs/intent-network-design.md) for privacy/retention/operational limits.
-The [social API contract](docs/social-api-contract.md) documents exact bounded DTOs.
+Current production [intavro.vercel.app](https://intavro.vercel.app) remains on the
+verified 18-migration release. This checkout adds **0019_profile_spaces.sql** and
+**0020_intent_lobbies.sql**; applied 0001–0018 stay immutable. No deployment or new
+remote CI result is claimed for this local change. Back up, migrate and verify all
+20 migrations before promoting migration-dependent source to production `main`.
+Use an isolated feature branch/PR while preparing that coordinated rollout.
+
+PostgreSQL is required for persisted searches, offers, rooms and plans. Parsing
+uses a bounded deterministic local fallback; optional AI only interprets your own
+text and own draft, never candidate profiles or human room messages. Review all
+suggestions before execution. Read [CODEX_PROGRESS.md](CODEX_PROGRESS.md),
+[the product design](docs/minimal-intent-product-design.md),
+[the intent API](docs/intent-product-api.md) and
+[the existing social API](docs/social-api-contract.md) before development.
 
 ## Find people through an activity
 
-1. Enter an idea such as “Play chess with someone” and choose Find compatible
-   people. Create an 18+ social profile with an alias and privacy mode. Save the
-   one-time Intavro Key privately; anyone holding it can recover the social profile.
-2. Fill the activity, in-person/online mode, format, city/coarse area, languages,
-   skill and future availability. Optional Help structure parses **your own text**
-   into reviewed suggestions; manually filling every field also works.
-3. Open `/discover` for up to five compatible action cards. Interested sends a
-   visible request; Pass hides that candidate. `/connections` lets recipients
-   accept, decline, block or report. Acceptance alone creates a match.
-4. `/m/<key>` provides plain-text private chat with live updates, refresh/pagination and
-   optional match-only first-name/contact disclosure with an irreversible warning.
-   Nothing is shared automatically. Blocking closes new messages/disclosures,
-   hides both profiles from discovery and prevents further requests.
-5. Choose Plan it, then both participants manually join the ordinary Intavro invite
-   and add availability. The existing deterministic scheduler, votes and organizer
-   confirmation select the final time. A copied invite remains a bearer link;
-   blocking cannot retract it or erase an existing coordination plan.
+1. On «Сейчас», enter “Нужен пятый в Dota сегодня вечером”, or another activity.
+   Review time, mode, people count and bounded activity parameters; missing critical
+   information produces one short clarification. Create an alias with 18+ and
+   privacy attestation if needed, and save the one-time Intavro Key privately.
+2. Explicit Start authorizes the described search and compatible offers. Matching
+   remains deterministic and bounded. Recipients require an active compatible
+   seeking post, current permission and offer preferences. An empty pool remains
+   visibly empty; counts represent persisted state.
+3. Incoming «Я в деле» accepts an offer. Capacity includes registered consenting
+   members plus explicitly declared external seats. “Need a fifth” reserves three
+   external seats plus the owner and one new participant; external people are never
+   fabricated Intavro members. The last available slot admits only one acceptance.
+4. A full consenting lobby opens one temporary room with plain-text chat. Members
+   can leave, block or report; the owner can remove members and advance the room
+   through active/completed/archived states. Removal or block closes unsafe contact.
+   Completion is self-declared, not proof of attendance.
+5. Plan it creates one ordinary coordination plan. Participants manually enter
+   availability; the original deterministic scheduler, votes and organizer
+   confirmation select a time. Copied invitations remain bearer links.
+
+**Profile Worlds:** «Я» offers eight local themes: minimal, midnight, glass, cozy,
+cyber, manga, y2k and monochrome. Customize bounded status/tagline, activities,
+interests, goals and block order with explicit self/connection/everyone visibility.
+Other-profile views require an authorized discovery, request or match context;
+there is no directory or global profile lookup. PRIVATE stranger views hide personal
+blocks; INCOGNITO uses context-derived presentation and suppresses global customization.
+Room identities are random per room and independent of pair/profile identities.
+
+Preferences are visible under «Я» (`/preferences`): offers, IANA-timezone quiet hours
+and removable activity rules. They are owner-only and are not hidden AI memory.
 
 **Privacy modes:** OPEN uses your chosen alias. PRIVATE uses a stable pseudonym.
 INCOGNITO uses random persisted aliases/local avatars separately for each pair.
@@ -63,13 +86,19 @@ you. Server operators still hold the internal relational identity.
 create/recover/rotate. The in-memory recovery banner survives client navigation,
 warns before full navigation and disappears after saved/discard acknowledgement.
 Recovery from a new active unbound guest rotates the key and detaches old social
-sessions. Rotation/revoke invalidate old keys. Recovery preserves social posts and
-matches, but does not transfer old guest ownership of coordination invitations.
+sessions. Rotation/revoke invalidate old keys. Recovery preserves social state, but does not transfer old guest ownership of
+coordination invitations. Historical server-proven linked-plan bindings allow later
+profile deletion to erase linked plan aliases/participation across recovered sessions.
 No email, SMS or home-grown password service is required.
 
-Profile controls include typed-confirmation deletion. It removes personal social content, recovery keys and session bindings, closes conversations and stops delivery. Other participants keep their own messages; frozen reports and moderation evidence remain under the documented retention policy. Separate coordination invitations remain bearer links. See [closed-beta-design.md](docs/closed-beta-design.md).
+Profile controls include typed-confirmation deletion. It removes personal social
+content, customization, authored room messages, preferences, recovery keys and
+session bindings, closes conversations/rooms and stops delivery. Other participants
+keep their own messages; frozen reports and moderation evidence remain protected.
+Separate coordination invitations remain bearer links. See
+[closed-beta-design.md](docs/closed-beta-design.md).
 
-**Deterministic matching:** normalized activity, compatible interaction/format/city,
+**Deterministic matching (including retained advanced flows):** normalized activity, compatible interaction/format/city,
 at least 15 minutes of real future overlap, shared language and mutual optional
 age-band requirements are hard filters. Skill, coarse area and shared tags explain
 ranking. AI never sees candidate profiles or chooses people. There are at most
@@ -86,20 +115,22 @@ See the [release checklist](docs/RELEASE_CHECKLIST.md),
 [production architecture](docs/production-release-design.md) and
 [deployment guide](docs/DEPLOYMENT.md) before inviting real users.
 
-Live updates use authenticated SSE and a PostgreSQL outbox; reconnect reloads the
-persistent APIs. Notifications have a private inbox/unread count and optional,
-explicitly enabled Web Push with generic lock-screen text. Saved posts queue actual
-deterministic future-candidate work, run by an **operator-scheduled** bounded worker;
-Intavro never sends Interested automatically. Run `npm run social:process` periodically
-for candidate notices, confirmed-plan reminders and opted-in push delivery.
-Production limits are shared through PostgreSQL and fail closed; no Redis, IP
-fingerprinting or additional realtime/chat provider is required.
+Live updates use authenticated SSE and a PostgreSQL outbox; reconnect reloads
+persistent APIs. New `intents`/`rooms` invalidations contain fixed topics only.
+Notifications add privacy-minimal OFFER_RECEIVED, LOBBY_READY and ROOM_MESSAGE;
+optional explicit Web Push remains generic. Durable offer jobs run through
+`npm run social:process` or protected Cron. Start performs bounded best-effort work
+for known candidates; future candidates, retries, reminders and push require a
+**configured frequent worker**. Vercel Hobby's daily Cron cannot provide timely
+short-lived searches. Legacy Interested requests still require a manual action.
 
-Optional aggregate analytics measure seeking → candidates → interest → match →
-conversation → plan → confirmed time. Only fixed server events are stored, without
-identifiers or personal content. `npm run analytics:funnel -- 7` reports a seven-day
-seeking cohort when analytics is enabled. Confirmation measures a selected plan,
-not proof that a real-world meetup occurred.
+Optional aggregate analytics add intent_created/search_started/offer_delivered/
+offer_accepted/lobby_filled/room_opened/activity_completed to the retained funnels.
+They store fixed events without content or identifiers, are disabled by default and
+measure actions, not unique users or actual real-world attendance.
+`npm run analytics:funnel -- 7` preserves the old report and adds an `actions`
+search cohort (searches/candidates/offered/accepted/rooms/conversations/plans/
+confirmed/completed); deletion and retention can reduce historical counts.
 
 ## Local setup
 
@@ -176,7 +207,7 @@ guarded by `server-only`. Errors name invalid fields and omit their values.
 | `AI_PROVIDER` | `mock` | `mock` for local templates or `openai` for optional remote assistance |
 | `OPENAI_API_KEY` | Unset | Server-only secret; a missing key uses local fallback |
 | `OPENAI_MODEL` | `gpt-4.1-mini` | Optional remote model identifier |
-| `ANALYTICS_ENABLED` | `false` | Opt into nine bounded entry/result event names in PostgreSQL |
+| `ANALYTICS_ENABLED` | `false` | Opt into fixed bounded entry/social/intent events in PostgreSQL |
 | `NODE_ENV` | Managed by Next.js | `development`, `test` or `production` |
 
 Never prefix secrets with `NEXT_PUBLIC_`. No intent text or display names are sent
@@ -271,6 +302,8 @@ src/
     scheduling/           Pure overlap/ranking engine and focused results/voting UI
     social/               Guest-bound profiles, privacy DTOs, recovery, requests/chat/safety
     discovery/            Pure social matching, bounded seeking parser
+    profile-space/        Eight local worlds and context-scoped visibility
+    intent-product/       Interpretation, persisted searches/offers, consent and rooms
   lib/
     config/               Pure env parser and server-only accessor
     db/                   Typed SQL, transactions, migrations, demo seed
@@ -297,7 +330,7 @@ event names, enumerated surfaces and timestamps, never personal text or tokens.
 
 ## Create, invite and join
 
-1. Enter an idea on the landing. Add your name, collect replies for 3/7/14 days,
+1. Open `/plan` and enter an idea. Add your name, collect replies for 3/7/14 days,
    and optionally choose a type, activities and a place. Help with details previews
    suggestions; Apply details explicitly copies them into editable fields.
    Manual creation remains available during assistance or after failure.
@@ -371,11 +404,11 @@ group proposal; numerical budget ranges never appear.
 
 ## Mobile flow and share previews
 
-Creation keeps the current idea prominent and compacts the landing header. Join
+The `/plan` composer keeps the current idea prominent and compacts its header. Join
 forms focus the display name, available times show selection feedback, and all
 controls remain usable at 320px. Loading and subtle transitions respect reduced
 motion. Create your own plan follows joining/results and returns directly to the
-landing, closing the create → share → join → result → create loop.
+`/plan`, closing the create → share → join → result → create loop.
 
 Copy link handles permission failure with a selectable URL; native sharing guards
 duplicate clicks, reports success and keeps cancellation quiet. Telegram/native
@@ -585,12 +618,13 @@ database; the landing and stateless intent parser work without one. Migrations
 0005–0010 add identity, seeking, connections, conversation, planning and safety;
 0011–0017 add live events, notifications, moderation, shared limits, query indexes,
 funnel transitions and future-candidate jobs. Migration 0018 adds irreversible profile
-deletion invariants. Applied 0001–0017 are unchanged. Complete the host checks in
+deletion invariants. Additions 0019/0020 introduce Profile Worlds and intent rooms;
+applied 0001–0018 are unchanged. Complete the host checks in
 [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md).
 
-The Intent Network MVP is a release candidate for a controlled preview. Local production-browser
-verification is complete; live OpenAI, a hosted database and actual deployment
-remain host-specific checks. This development run performs no deployment.
+The hosted 18-migration baseline is verified separately in CODEX_PROGRESS.md.
+The new local candidate has no production deployment or new remote CI evidence;
+frequent scheduler, actual hosted journeys and device checks remain rollout gates.
 
 ## Roadmap
 
@@ -614,14 +648,10 @@ identity/chat/avatar providers, Redis, GPS, remote fonts and paid AI are not req
 A public production launch still needs a configured HTTPS host, managed database,
 backups, host/gateway connection controls, scheduled workers and human report
 handling. Shared PostgreSQL limits are implemented. Closed-beta application source
-passed local Node24 gates: **689 tests / 77 files**, **56/56 first-attempt desktop/mobile
-E2E**, production build and audit0. Both normal Docker builds, non-root execution,
-Cyrillic image rendering and isolated PostgreSQL migration/worker/backup/restore smokes
-passed. The same source also passed both hosted jobs in
-[run 37155067183](https://github.com/Kqway/veya/actions/runs/37155067183).
-See CODEX_PROGRESS.md for the exact verified source and baseline/failure history.
-Actual deployment, optional live OpenAI/
-push and device/browser compatibility remain host checks. No deployment occurred.
+has current local verification recorded in CODEX_PROGRESS.md. Historical CI and
+production evidence there apply only to their named source commits; they do not
+verify these migration-dependent local changes. Optional live OpenAI/push and real
+device compatibility require separate host checks.
 
 Closed-beta operations include bounded workers, aggregate diagnostics, guarded backup/restore,
 and server-only signup/seeking/read-only controls. Follow [DEPLOYMENT.md](docs/DEPLOYMENT.md)

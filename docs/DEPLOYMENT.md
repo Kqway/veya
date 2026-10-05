@@ -1,7 +1,7 @@
-# Running a Veya release
+# Running an Intavro release
 
 This release targets Node 24 and PostgreSQL. Deployment remains an operator action;
-no production service or database is provisioned by the repository. Use a non-root
+the repository does not automatically provision or migrate production services. Use a non-root
 account for both the web container and native PostgreSQL test runner.
 
 ## Hosting on Vercel + Neon
@@ -10,6 +10,22 @@ For the managed Next.js deployment path, follow [VERCEL_NEON.md](VERCEL_NEON.md)
 It covers pooled queries/direct LISTEN, Node 24/Fluid compute, serverless connection
 cleanup, protected Cron, manual migrations, preview isolation and the HTTPS smoke
 journey. The VPS/container operations and backup procedures below remain supported.
+
+## Current local candidate and production boundary
+
+The live [Intavro](https://intavro.vercel.app) baseline has 18 verified migrations.
+Profile Worlds and the minimal intent product are local migration-dependent changes:
+**0019_profile_spaces.sql** and **0020_intent_lobbies.sql**. No new production
+migration, deployment or remote CI is claimed. Read CODEX_PROGRESS.md for actual
+completed and pending gates. Prepare a feature branch/PR without automatic production
+publication; keep preview databases isolated with synthetic data.
+
+Promote only after a protected backup and isolated restore rehearsal, immutable
+0001–0018 checksum verification, application of 0019/0020 using the trusted direct
+endpoint, and `db:verify` for all 20 migrations. Then publish the matching web/worker
+source. Coordinate maintenance while old source and new schema differ: the old
+release's readiness checks require its exact migration set and may reject a newer
+ledger. Never assume an older deployment is a safe rollback against the new schema.
 
 ## Server prerequisites
 
@@ -40,7 +56,11 @@ In a managed environment whose HTTPS proxy uses a private root, add
 BuildKit CA mount exists only during dependency installation and never enters
 image layers; TLS verification remains enabled.
 
-The final image uses Next standalone output and the non-root `node` account. Secrets
+The web image uses Next standalone output; the separate operations image contains
+source and locked CLI dependencies without the compiled web build. Both run as the
+non-root `node` account. The database smoke executes backup/restore before starting
+the web container, and removes only its own disposable containers and volumes.
+Secrets
 are excluded by `.dockerignore`. Never pass secrets as Docker build arguments,
 copy a runtime secret file into the build context, or bake production credentials
 into `NEXT_PUBLIC_*`. The public URL is an origin, without path/query/credentials.
@@ -138,7 +158,8 @@ Integration and credential details:
 Back up the database before schema changes. Apply the checked migrations from the
 same release exactly once as a separate deployment job, then roll out the web image.
 The existing migration runner uses a PostgreSQL advisory lock, one transaction and
-checksums; it refuses modified applied migrations. Never rewrite applied migrations 0001–0017; this release adds 0018.
+checksums; it refuses modified applied migrations. Never rewrite applied migrations 0001–0018; this candidate adds 0019 and 0020.
+The release checkout must verify all 20 names/checksums before source promotion.
 Demo seeding is disabled in production.
 
 ```sh
@@ -205,7 +226,7 @@ Use a non-root operations container/checkout and monitor generic success/failure
 counts. Do not promise automatic push/reminders/candidate checks without a scheduler.
 
 ```sh
-# One bounded batch of future candidates, reminders and opted-in push:
+# One bounded batch of intent offers, future candidates, reminders and opted-in push:
 NODE_ENV=production npm run social:process
 # Notifications alone:
 NODE_ENV=production node --conditions=react-server --import tsx \
@@ -223,12 +244,23 @@ names or chat. Unavailable VAPID configuration keeps inbox/reminders working and
 jobs pending. Schedule frequent small batches and observe backlog before scaling.
 Run `npm run social:process` every minute using the scheduler examples below. Candidate jobs use five-minute leases, at most five
 attempts and a 20-job batch. Without scheduling there are no background candidate
-notices or pushes. Candidate discovery never sends Interested automatically.
+notices or pushes. New intent Start authorizes compatible offers and performs bounded
+best-effort processing for known candidates; future candidates and retries need the
+scheduled durable worker. Legacy discovery never sends Interested automatically.
+The CLI handles up to 20 intent jobs per invocation; protected Vercel Cron handles
+up to five intent, five legacy candidate and five notification jobs per call.
+A daily Hobby Cron is too slow for short-lived intent offers; use a frequent
+authorized scheduler and monitor persisted delivery rather than promising immediacy.
 Retention defaults to dry run and limits each category to 100 records; schedule
 small batches rather than unbounded deletion. Notifications expire after 30 days, outbox events after 24 hours, terminal worker
 jobs and expired moderator sessions after seven days. Invalid push subscriptions
 follow expired/revoked guest retention. Open/reviewing moderation cases protect their
 evidence and context indefinitely; resolved/dismissed cases retain at least 365 days.
+Room reports use existing `social_reports.room_id`: both creation and last case
+update must be older than 365 days before resolved/dismissed evidence is eligible.
+Terminal intent jobs age out after seven days; inactive intent contexts require
+180-day search/expiry/room/message guards and absence of protected reports, active
+related posts or pending live offers. Preview/apply remains explicit and bounded.
 Moderator audit history is not automatically purged; define an operator policy. The limiter removes up to 100 expired buckets per check; `db:cleanup` also
 removes a bounded batch of old buckets without touching active quotas; do not truncate active abuse budgets during normal operation.
 
@@ -417,12 +449,18 @@ performed by this task.
 
 ## First-host smoke and real devices
 
-Before inviting the cohort, use two isolated browsers/accounts for the complete
-chess activity→Interested→Accept→live chat→Plan it→both availability→results→votes→
-organizer confirmation journey. Verify inbox/unread state, incompatible activity/city
+Before inviting the cohort, use independent browsers for minimal intent→review/
+clarification→Start→compatible offer→explicit accept→full room→live plain-text chat→
+Plan it→both availability→results/votes/organizer confirmation. Check a third browser
+is denied room access, last-slot acceptance races, stop/update/expiry, quiet hours,
+external-seat labels and room completion/history. Also retain the legacy chess
+discovery→Interested→Accept→pair chat→Plan it journey. Verify inbox/unread state, incompatible activity/city
 exclusion, block during chat, lost-session key recovery, key rotation/revocation,
-profile deletion and continued peer closed history. Confirm two Incognito pairs use
-different stable aliases/avatars and reveal no global profile identifiers.
+profile deletion and continued peer closed history. Confirm two Incognito pairs and two separate rooms use context-specific
+identities without global profile identifiers. Check all eight Profile Worlds,
+self/stranger/connection visibility and incognito suppression; blocked/stale contexts
+must fail. Deletion after recovery must erase server-linked plan participation and
+old-session aliases without transferring original coordination ownership.
 
 On an actual iPhone (Safari) and Android (Chrome), check 320px-equivalent layout,
 keyboard/form focus, datetime input/timezone, clipboard failure fallback, memory-only

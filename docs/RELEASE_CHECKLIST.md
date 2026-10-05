@@ -1,8 +1,40 @@
 # Intavro closed beta release candidate
 
-Phases 1–9 retain the action-first Intent Network and original invitation/scheduling
-flow. Local verification and hosted rollout evidence are separate. Exact local
+Phases 1–9 retain the Intent Network and original invitation/scheduling flow.
+The current local candidate adds Profile Worlds and minimal intent orchestration;
+production remains the separately verified 18-migration release. Local verification and hosted rollout evidence are separate. Exact local
 counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
+
+## Current candidate gates and rollout order
+
+- Confirm `ae68914ede1923f6d93cf888403fc397e9b42cf4` as starting baseline; record the
+  final source SHA and actual evidence in CODEX_PROGRESS.md. Current check is PASS
+  (952 tests/91 files, lint/types/build), offline clean install and audit0. Full
+  ordinary66/66 and Vercel66/66 desktop/mobile E2E, both container builds, non-root
+  and isolated PG/concurrent-worker/readiness/backup-restore gates passed locally.
+  Verify hosted CI separately; do not reuse historical CI or live deployment as evidence.
+- Preserve applied 0001–0018; only add 0019_profile_spaces and 0020_intent_lobbies.
+  Protected backup, isolated restore, migrate/verify all 20 entries, then source
+  promotion. Prepare a feature branch/PR; do not trigger production `main` deployment
+  while the live database has only 18 migrations. Account for old readiness's exact
+  ledger check during maintenance and rollback.
+- Exercise `/` minimal composer/one question/review/Start, truthful empty state,
+  update/stop/extend, revision-aware offer dedupe and remembered declines. Keep `/plan`
+  and original invite/results/votes/confirmation intact; navigation is Сейчас/Люди/Я.
+- Verify explicit recipient acceptance, consent before full room creation, last-slot
+  race, idempotent acceptance, third-user denial, external-seat labels, plain-text
+  chat, leave/remove/block/report, stale authority and completion/history.
+- Check all eight Profile Worlds and self/stranger/connection visibility; Incognito
+  suppresses global customization and uses separate pair/room identities. Verify
+  suspended/stale/blocked contexts and deletion after recovered-session plan creation.
+- Follow [security-minimal-intent-review.md](security-minimal-intent-review.md):
+  actual bounded read-only review plus native regressions, not an external audit.
+  Room evidence stays in `social_reports.room_id`; open cases protect it and resolved
+  cases require both creation/update to age beyond 365 days across all cleanup paths.
+- Configure frequent intent/notification workers and monitor persisted jobs. Start's
+  bounded best-effort processing is insufficient for future candidates; daily Hobby
+  Cron is unsuitable for timely searches. Test owner-only removable preferences,
+  quiet hours, fixed realtime topics and minimal notification payloads.
 
 ## Vercel + Neon hosting
 
@@ -10,7 +42,7 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
   verified-TLS pooled `DATABASE_URL` and direct `REALTIME_DATABASE_URL` (or the
   Vercel Marketplace `DATABASE_URL_UNPOOLED` fallback) for the same
   database, shared PostgreSQL limiter and independent moderator/Cron credentials.
-- Keep preview credentials separate from production. Apply/verify 0001–0018 manually
+- Keep preview credentials separate from production. Apply/verify 0001–0020 manually
   using the direct endpoint before real-user rollout; never migrate during web build.
 - Reproduce full E2E twice: ordinary runtime and `VEYA_TEST_VERCEL=1` isolated runtime.
   Verify actual SQL/font NFT assets, final LISTEN cleanup and retained stream caps.
@@ -25,7 +57,8 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
 - Verify Russian labels, metadata, dates, errors, inbox/push and moderation on desktop
   and 320px mobile Chromium. Public branding is Intavro; stored user text remains intact.
 - Preserve the existing `veya_guest`/moderator cookies, DB/channel/lock namespaces,
-  migration checksums, recovery secrets and invite URLs. No migration is required.
+  migration checksums, recovery secrets and invite URLs. Branding alone required no
+  migration; this product candidate requires the additive 0019/0020.
 - Read an existing voted/finalized plan after upgrade: localized presentation must
   preserve semantic fingerprints, suggestion keys, revisions and votes.
 - Verify standalone `/opengraph-image` renders a no-store PNG using bundled licensed
@@ -53,7 +86,7 @@ counts/commits and remote CI status are recorded in CODEX_PROGRESS.md.
 - Independent read-only security/privacy review of the Phase 9 diff, followed by
   reproducible regression tests and fixes; see security-phase9-review.md and security-closed-beta-review.md. Verify
   there are no known unresolved Critical/Important issues and no committed secrets.
-- Applied migrations 0001–0017 remain unchanged. Addition 0018 and the existing set are checksum-tracked,
+- Applied migrations 0001–0018 remain unchanged. Additions 0019/0020 and the existing set are checksum-tracked,
   transaction-safe, indexed and server-only/RLS protected. Never edit applied SQL.
 - Typed-confirmation profile deletion invalidates keys/bindings and delivery, erases
   personal social content, closes conversations and preserves frozen moderation
@@ -119,8 +152,9 @@ without an additional identity provider; no own-password system is used.
 Discovery uses at most100 candidates/5 cards, three active posts, ten outgoing pending
 requests and twenty new contexts/profile/day. Matching is deterministic; activity
 normalization is a bounded local vocabulary, not arbitrary semantic understanding.
-Coarse hints use UTC days; editing uses browser time. Group-compatible discovery
-still connects two profiles; ordinary invitations coordinate larger groups.
+Coarse hints use UTC days; editing uses browser time. Legacy group-compatible discovery connects two profiles; new consenting lobbies
+create temporary rooms up to 12 total seats, including declared external reservations.
+Profile Worlds are context-authorized; there is no global profile lookup.
 
 SSE uses bounded streams/backfill/retries and manual API recovery; neither SSE nor
 push is the source of truth. Worker checks are bounded and need an actual scheduler.
