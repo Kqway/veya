@@ -1,4 +1,5 @@
 import 'server-only';
+import {eraseGoalProfile,cleanupGoalArtifacts} from '@/features/goals/repository';
 import { eraseIntentProfile } from '@/features/intent-product/repository';
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
@@ -27,7 +28,7 @@ export class ProfileDeletionService {
  async delete(token:string,input:unknown):Promise<{deleted:true}>{
   parseSocialInput(deleteProfileSchema,input);
   for(let attempt=0;attempt<5;attempt++){
-   try{return await this.db.transaction(async tx=>{
+   try{const result=await this.db.transaction<{deleted:true}>(async tx=>{
     const guest=await requireSession(tx,token);
     await tx.query("SELECT pg_advisory_xact_lock(hashtextextended('veya-social-guest:' || $1,0))",[guest]);
     await requireSession(tx,token);
@@ -43,7 +44,7 @@ export class ProfileDeletionService {
     if(currentPeers.some(id=>!initialPeers.includes(id)))throw new RetryMembership();
     await this.erase(tx,profile,currentPeers);
     return {deleted:true};
-   });}catch(error){if(!(error instanceof RetryMembership))throw error;}
+   });try{await cleanupGoalArtifacts(this.db);}catch{/* Durable erasure queue is retried by the worker; deletion already committed. */}return result;}catch(error){if(!(error instanceof RetryMembership))throw error;}
   }
   return fail('CONFLICT');
  }
@@ -52,7 +53,7 @@ export class ProfileDeletionService {
   // The committed NOTIFY survives removal of the deleted owner's outbox rows.
   for(let i=0;i<affected.length;i+=100){
    const chunk=affected.slice(i,i+100);
-   for(const topic of ['connections','match','notifications','discovery','intents','rooms'] as const)await publishSocialEvent(tx,chunk,{topic});
+   for(const topic of ['connections','match','notifications','discovery','intents','rooms','goals'] as const)await publishSocialEvent(tx,chunk,{topic});
   }
   const plans=await tx.query<{id:string;status:string}>(`SELECT i.id,i.status FROM intents i WHERE i.id IN(
    SELECT m.plan_intent_id FROM social_matches m JOIN social_pairs p ON p.id=m.pair_id
@@ -97,6 +98,7 @@ export class ProfileDeletionService {
    source_post_id=CASE WHEN sender_profile_id=$1 THEN NULL ELSE source_post_id END,
    target_post_id=CASE WHEN recipient_profile_id=$1 THEN NULL ELSE target_post_id END
    WHERE sender_profile_id=$1 OR recipient_profile_id=$1`,[profile]);
+  await eraseGoalProfile(tx,profile);
   await eraseIntentProfile(tx,profile);
   await tx.query('DELETE FROM social_linked_plan_identities WHERE profile_id=$1',[profile]);
   await tx.query("UPDATE social_candidate_offers SET status='cancelled' WHERE target_post_id IN(SELECT id FROM seeking_posts WHERE profile_id=$1) AND status='pending'",[profile]);

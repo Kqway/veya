@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { ConnectionsScreen } from "@/features/social/components/connections-screen";
+import { GoalConnections } from "@/features/goals/components/connections";
 export const metadata: Metadata = {
-  title: "Запросы",
+  title: "Способности и подключения",
   robots: { index: false, follow: false },
 };
 export default function ConnectionsPage() {
-  return <ConnectionsScreen />;
+  return <GoalConnections />;
 }

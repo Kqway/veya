@@ -1,4 +1,96 @@
-# Intavro Development Progress
+# Veya Development Progress
+
+## Autonomous Goal Network — 2026-10-06
+
+Implemented the supplied transformation in the existing Next/PostgreSQL repository.
+Primary routes are now intent composer, goal execution/detail/approval, activity,
+capabilities/connections, autonomy and identity/privacy/settings. Brand, metadata,
+light shell, typography, surfaces, focus, loading, errors, mobile and reduced motion
+share the new design system. Legacy coordination and social flows are secondary at
+`/network`, `/network/connections`, `/network/profile`, alongside existing URLs.
+
+### Durable engine and evidence
+
+- Immutable 0001–0020; additive 0021 goal tables and 0022 network capability/artifact
+  kind+bounded metadata. Existing 18→20 console generator deliberately remains
+  historical; readiness and normal migrations use the complete 22-file catalog.
+- Persisted state machine, bounded rolling typed proposals, strict registry,
+  owner/day communication policy, exact input/revision/expiry invoice approvals,
+  SKIP LOCKED claims, nonce+lease checks, bounded retry, graceful worker shutdown.
+- Complete honest mock money vertical: bounded opportunity filtering, requirements,
+  proposal, client acceptance, real stored Markdown, deterministic verification,
+  delivery, revision, exact invoice consent and confirmed matching payment events.
+  Separate deals repeat to target; duplicates cannot inflate received amount.
+- Existing AI abstraction extended with bounded `plan_goal`, strict schema and
+  canonical order checks. Provider descriptions/evidence/payment assertions cannot
+  become execution authority. Default is local; real provider I/O occurs before
+  transactional execution. No arbitrary shell, SQL, env or URL tools.
+- `search_people` executes shared real discovery, with sorted peer locks before
+  goal/job locks, server-owned goal grant, post-wait authorization, lease checks,
+  real availability/permissions/blocks and privacy projections. Missing own source
+  and unavailable interaction capabilities block honestly; no fictitious people,
+  agreement, hire or deliverable is reported.
+- Significant notifications, fixed goals realtime invalidation, cancellation,
+  moderation/disable recheck, goal-scoped artifact downloads, profile erasure with
+  durable storage cleanup and bounded 180-day terminal retention preview/apply.
+
+### Review and regression corrections
+
+Two independent read-only reviews found and corrected budget waits exhausting
+retry attempts, expired approvals sleeping forever, and post-commit erasure errors.
+Repeated consent deadlines now renew requests without executing financial actions;
+raising the communication allowance wakes delayed goals. Review also corrected
+stale private goal data after 401/403/404, settings applying an old profile's fields
+following another-tab recovery/replacement, partial onboarding retries, residual
+dark fields in the secondary light UI, and archived-room navigation/backlinks.
+Focused follow-up review found no new actionable issue; UI 11/11 passed independently.
+
+Initial baseline AI/date tests contained fixed October 4 reference dates while
+validation correctly used the real clock. Test fixtures now freeze only Date at
+that reference point; production validation is preserved. Browser assertions were
+updated for intentional new navigation/title/secondary routes while retaining
+message, privacy, moderation, recovery, scheduling and mutation checks.
+
+### Operational limits
+
+This checkout is a local implementation, not a production deployment. Payments and
+clients are simulated. GitHub, Email, Calendar, actual marketplaces and real payment
+webhooks are not connected; UI states this explicitly. General goals outside current
+capabilities remain paused. Person matching requires an existing active owner post,
+and subsequent contact/agreement requires human participation. Executable code
+work is excluded until a deterministic sandboxed verification adapter exists.
+
+Run `npm run agent:process -- --watch` alongside the web process, using the same DB
+and persistent shared `GOAL_ARTIFACT_DIR` (default `.data/goal-artifacts`). Browser
+closure is safe; stopping every worker delays progress. Back up artifact storage
+separately from PostgreSQL. Ephemeral serverless FS alone cannot provide this store.
+Readiness/backup/restore/migration 22 and actual frequent scheduling must be coordinated
+before any deployment. No production credentials, live OpenAI payments, hosted
+migration, promotion or external connection is claimed.
+
+### Final verification
+
+- Final `npm run check` PASS: zero-warning lint, strict TypeScript, **1033 tests
+  in 99 files**, and production build. Tests use isolated native PostgreSQL.
+- Full production Playwright PASS: **72/72**, comprising 36 desktop and 36 mobile
+  journeys, with zero retries. Includes the independent background worker,
+  close/reopen, real verified Markdown download, exact invoice approval,
+  rejection/resume and matching confirmed demo payment, plus preserved legacy flows.
+- Screenshots inspected for desktop/mobile home and empty state, active/waiting/
+  completed goals, approval, errors, settings, connections, autonomy and activity;
+  responsive widths 320/375/390/768/1280 and reduced motion pass. Secondary network
+  form contrast and navigation inspected too. Final polish separates activity
+  timestamps from goal links. After this CSS correction, the full check/build
+  passed again and all six new goal browser journeys passed again on that build;
+  final desktop/mobile activity screenshots were inspected.
+- Original 0001–0020 source files match the starting commit byte-for-byte. Build
+  traces contain no private `.data/` artifact store or `.local/` diagnostics.
+- Local evidence: `.local/check-release.log`, `.local/e2e-final.log`,
+  `.local/e2e-visual-final.log` and
+  `.local/visual/`; these are intentionally ignored, not published credentials or
+  hosted CI evidence. No production database or deployment was modified.
+
+---
 
 ## Rollout tooling follow-up: offline Neon18→20 console upgrade
 

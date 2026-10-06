@@ -26,7 +26,7 @@ export const visibleNotificationSql = `EXISTS(SELECT 1 FROM social_profiles own 
  WHERE a.lobby_id=room.lobby_id AND z.lobby_id=room.lobby_id AND a.status='active' AND z.status='active')))`;
 export type NotificationInput={recipientProfileId:string;peerProfileId?:string;type:NotificationType;requestKey?:string;matchKey?:string;offerKey?:string;roomKey?:string;dedupeKey:string};
 export async function enqueueNotification(tx:DatabaseExecutor,input:NotificationInput):Promise<void> {
-  const schema=z.object({recipientProfileId:z.uuid(),peerProfileId:z.uuid().optional(),type:z.enum(['INTEREST_RECEIVED','INTEREST_ACCEPTED','NEW_MESSAGE','PLAN_READY','MEETUP_REMINDER','CANDIDATE_FOUND','OFFER_RECEIVED','LOBBY_READY','ROOM_MESSAGE']),requestKey:publicKeySchema.optional(),matchKey:publicKeySchema.optional(),offerKey:publicKeySchema.optional(),roomKey:publicKeySchema.optional(),dedupeKey:z.string().min(1).max(256)}).strict();
+  const schema=z.object({recipientProfileId:z.uuid(),peerProfileId:z.uuid().optional(),type:z.enum(['INTEREST_RECEIVED','INTEREST_ACCEPTED','NEW_MESSAGE','PLAN_READY','MEETUP_REMINDER','CANDIDATE_FOUND','OFFER_RECEIVED','LOBBY_READY','ROOM_MESSAGE','GOAL_APPROVAL','GOAL_RESULT','GOAL_BLOCKER']),requestKey:publicKeySchema.optional(),matchKey:publicKeySchema.optional(),offerKey:publicKeySchema.optional(),roomKey:publicKeySchema.optional(),dedupeKey:z.string().min(1).max(256)}).strict();
   const data=validate(schema,input);
   if([data.matchKey,data.requestKey,data.offerKey,data.roomKey].filter(Boolean).length>1)fail('INVALID_INPUT');
   const recipient=await tx.query<{id:string}>("SELECT id FROM social_profiles WHERE id=$1 AND moderation_status='active'",[data.recipientProfileId]);
@@ -53,7 +53,7 @@ export async function enqueueNotification(tx:DatabaseExecutor,input:Notification
 const querySchema=z.object({before:publicKeySchema.optional(),limit:z.number().int().min(1).max(50).default(30)}).strict();
 type NotificationRow={public_key:string;type:NotificationType;created_at:Date;read_at:Date|null;match_key:string|null;offer_key:string|null;room_key:string|null};
 function project(row:NotificationRow):NotificationDTO {
-  const href=row.room_key?`/room/${row.room_key}`:row.offer_key?`/offer/${row.offer_key}`:row.match_key?`/m/${row.match_key}`:row.type==='INTEREST_RECEIVED'||row.type==='INTEREST_ACCEPTED'?'/connections':row.type==='CANDIDATE_FOUND'?'/discover':'/notifications';
+  const href=row.type.startsWith('GOAL_')?'/activity':row.room_key?`/room/${row.room_key}`:row.offer_key?`/offer/${row.offer_key}`:row.match_key?`/m/${row.match_key}`:row.type==='INTEREST_RECEIVED'||row.type==='INTEREST_ACCEPTED'?'/network/connections':row.type==='CANDIDATE_FOUND'?'/discover':'/notifications';
   return notificationSchema.parse({publicKey:row.public_key,type:row.type,createdAt:row.created_at.toISOString(),readAt:row.read_at?.toISOString()??null,href});
 }
 export class NotificationService {

@@ -13,7 +13,7 @@ export function RootSocialNavigation() {
     <Link href="/profile" aria-current={path.startsWith("/profile") || path === "/preferences" ? "page" : undefined}>Я</Link>
   </nav>;
   if (!profileActive) return null;
-  return <nav className="social-nav social-root-nav" aria-label="Ваш Intavro">
+  return <nav className="social-nav social-root-nav" aria-label="Ваш Veya">
     <Link href="/profile">Моё пространство</Link>
     <Link href="/notifications">Уведомления <NotificationBadge enabled={profileActive} /></Link>
   </nav>;

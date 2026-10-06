@@ -27,9 +27,9 @@ export function SharePanel({
   const locked = useRef(false);
   const title = creatorName
     ? `${creatorName} предлагает встретиться 👀`
-    : "Давайте встретимся · Intavro";
+    : "Давайте встретимся · Veya";
   const text =
-    "Укажите свободное время, и Intavro найдёт подходящий вариант для всех. Регистрация не нужна.";
+    "Укажите свободное время, и Veya найдёт подходящий вариант для всех. Регистрация не нужна.";
   async function copy() {
     if (locked.current || !origin) return;
     locked.current = true;

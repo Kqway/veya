@@ -51,7 +51,7 @@ it("keeps an empty saved activity honest and refreshes new candidates without se
   vi.stubGlobal("fetch", fetcher);
   render(<RecoveryKeyProvider><DiscoverScreen /></RecoveryKeyProvider>);
   await userEvent.setup().click(await screen.findByRole("button", { name: "Найти людей" }));
-  expect(await screen.findByText(/Ваша заявка сохранена до истечения срока действия/)).toHaveTextContent("Intavro никогда не отправляет запрос «Хочу присоединиться» за вас.");
+  expect(await screen.findByText(/Ваша заявка сохранена до истечения срока действия/)).toHaveTextContent("Veya никогда не отправляет запрос «Хочу присоединиться» за вас.");
   found = true;
   await act(async () => { await live.reload!(); });
   expect(screen.getByRole("button", { name: "Хочу присоединиться" })).toBeVisible();

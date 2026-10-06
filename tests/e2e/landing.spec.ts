@@ -5,7 +5,7 @@ test("renders the landing without overflow or browser errors", async ({
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/plan");
-  await expect(page).toHaveTitle("Intavro — Вместе от идеи к встрече");
+  await expect(page).toHaveTitle("Veya — Что должно произойти?");
   await expect(page.locator("html")).toHaveAttribute("lang", "ru");
   await expect(
     page.getByRole("textbox", { name: "Чем хотите заняться?" }),
@@ -59,8 +59,7 @@ test("long ideas create persistent invites inside the layout", async ({
 });
 test("returns from a missing page to the landing", async ({ page }) => {
   expect((await page.goto("/missing-page"))?.status()).toBe(404);
-  await page.getByRole("link", { name: "На главную Intavro" }).click();
+  await page.getByRole("link", { name: "На главную Veya" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("textbox", { name: "Псевдоним", exact: true })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Что хочешь сделать?", exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Что должно произойти?", exact: true })).toBeVisible();
 });

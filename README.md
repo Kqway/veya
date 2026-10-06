@@ -1,55 +1,105 @@
-# Intavro
+# Veya — Autonomous Goal Network
 
-**Tell Intavro what you want to do. Intavro finds compatible people. You decide what
-to reveal. Then Intavro helps you actually meet.**
+**Скажите, что должно произойти. Veya берёт цель в работу и возвращается с результатом.**
 
-Интерфейс сайта полностью на русском: от создания занятия до чата и подтверждения
-встречи, включая уведомления, ошибки, модерацию и картинки приглашений. Новый
-публичный бренд — **Intavro**; технический репозиторий остаётся `Kqway/veya`.
-Имена, сообщения и другие введённые пользователями данные не переводятся.
-Существующие приглашения, сессии и ключи восстановления продолжают работать.
+Главный экран `/` — минимальный composer «Что должно произойти?». Страница
+`/goals/<key>` показывает подтверждённый результат, текущее действие, следующие
+шаги, понятные события, файлы и конкретные решения. `/activity`, `/connections`,
+`/autonomy`, `/settings` и `/profile` образуют новый основной интерфейс.
 
-Для размещения на Vercel с PostgreSQL Neon есть [пошаговая инструкция](docs/VERCEL_NEON.md)
-и конфигурация `vercel.json`. Realtime работает через bounded SSE; background jobs
-запускаются защищённым Cron. Частоту scheduler и реальные HTTPS/DB smoke checks
-нужно настроить перед приглашением пользователей.
+## Working reference flow
 
-## Current scope
+Введите «Заработай мне 10000 ₽». В **демонстрационной среде** агент выбирает
+подходящий документный заказ из ограниченного каталога, отправляет предложение,
+получает требования клиента, сохраняет настоящий Markdown-файл, проверяет
+разделы/объём/SHA256, передаёт документ, выполняет запрошенную доработку и получает
+подтверждение приёмки. Выставление конкретного демо-счёта требует одобрения.
+Только совпадающее подтверждение суммы, валюты и счёта от mock-провайдера
+увеличивает результат; сделки повторяются до достижения цели.
+**Клиенты и платежи симулируются, реальные деньги не перемещаются.**
 
-**Local release candidate: Profile Worlds and minimal intent orchestration.** The
-main screen `/` is «Сейчас»: write a short intent, review what was understood,
-answer one question at a time when time/city/activity is missing, then explicitly
-start a persisted search. Main navigation is «Сейчас», «Люди» (`/people`, temporary
-rooms), «Я» (`/profile`). The original friend invitation composer is at `/plan`;
-existing `/i/<slug>`, scheduling, results, votes and confirmation retain their behavior.
-Advanced seeking/discovery/pair flows remain available.
+PostgreSQL хранит цели, действия, доказательства, решения и задания. Отдельный
+worker продолжает исполнение после закрытия браузера. Поддержаны пауза,
+возобновление, отмена, истечение согласия, ограничение сообщений на профиль/день,
+отключение демо-среды, retries и nonce-защита от устаревшего worker.
+Неподдерживаемая цель сохраняется с честным объяснением ограничения.
 
-Current production [intavro.vercel.app](https://intavro.vercel.app) remains on the
-verified 18-migration release. This checkout adds **0019_profile_spaces.sql** and
-**0020_intent_lobbies.sql**; applied 0001–0018 stay immutable. No deployment or new
-production migration is claimed. Hosted CI for source `78d800f` passed both full
-browser modes and container gates in [run37284505275](https://github.com/Kqway/veya/actions/runs/37284505275).
-Back up, migrate and verify all
-20 migrations before promoting migration-dependent source to production `main`.
-Use an isolated feature branch/PR while preparing that coordinated rollout.
+Поиск фотографа, дизайнера или партнёра для шахмат вызывает `search_people`:
+существующую Intent Network с её реальной совместимостью, блокировками,
+permissions и privacy projections. Нужны собственное действующее объявление и
+заданное пользователем время; доступность и люди не придумываются. Поиск не
+означает достигнутую договорённость: дальнейшее взаимодействие пока требует
+участия пользователя. Старый интерфейс доступен через secondary navigation:
+`/network`, `/network/connections`, `/network/profile`; приглашения `/plan`,
+`/i/<slug>`, комнаты, сообщения и recovery продолжают работать.
 
-Для владельца без локальных DB credentials подготовлен
-[SQL upgrade18→20 через Neon Query Editor](docs/NEON_RELEASE_18_TO_20.md).
-`npm run --silent db:release:sql` генерирует одну атомарную команду offline;
-`-- --verify` — отдельную read-only проверку всех checksums. Backup/test restore
-и maintenance обязательны. Команда не подключается к БД и ничего не применяет сама.
+## Local setup and worker
 
-PostgreSQL is required for persisted searches, offers, rooms and plans. Parsing
-uses a bounded deterministic local fallback; optional AI only interprets your own
-text and own draft, never candidate profiles or human room messages. Review all
-suggestions before execution. Read [CODEX_PROGRESS.md](CODEX_PROGRESS.md),
-[the product design](docs/minimal-intent-product-design.md),
-[the intent API](docs/intent-product-api.md) and
-[the existing social API](docs/social-api-contract.md) before development.
+```bash
+npm ci
+npm run db:local
+# Copy the connection URL printed by db:local into your private .env.local.
+npm run db:migrate
+npm run dev
+# In a separate terminal, using the SAME database and artifact directory:
+npm run agent:process -- --watch
+```
 
-## Find people through an activity
+`npm run agent:process` без аргументов выполняет один ограниченный batch.
+Watch обрабатывает задания каждую секунду, учитывает AbortSignal и завершает
+работу по SIGINT/SIGTERM. Защищённый существующий cron/social worker также
+обрабатывает цели; частота scheduler определяет задержку продолжения.
+AI по умолчанию использует локальные typed proposals. Опциональный OpenAI
+работает через существующий provider с deadline и strict Zod: предложения
+проверяются по разрешённой последовательности действий. Модель не может
+подтвердить оплату, разрешение или доказательство выполнения.
 
-1. On «Сейчас», enter “Нужен пятый в Dota сегодня вечером”, or another activity.
+`GOAL_ARTIFACT_DIR` по умолчанию `.data/goal-artifacts`. В deployment это должен
+быть **постоянный общий volume** для web и worker. Файлы приватны, выдаются только
+через goal-scoped authenticated API, адресуются SHA256 и не лежат в public/DB.
+Резервируйте этот каталог вместе с PostgreSQL: существующий `db:backup` сохраняет
+только БД. Ephemeral serverless filesystem без постоянного storage adapter не
+подходит. GitHub, Email, Calendar и реальные платежи пока не подключены; UI
+показывает их как недоступные. Автономная работа с исполняемым кодом не заявлена.
+
+Миграции **0001–0020 неизменны**. Новые `0021_agent_goals.sql` и
+`0022_goal_network.sql` применяются штатным `db:migrate`, readiness проверяет
+полный каталог. Исторический `db:release:sql` по-прежнему генерирует только18→20;
+он не является способом обновления до текущей схемы. Сначала backup/test restore,
+затем согласованное обновление схемы и приложения. Развёртывание и применение
+миграций к production в этой работе не выполнялись.
+
+Удаление профиля стирает цели и их DB-содержимое транзакционно, очищает файлы
+через durable erasure queue; временный отказ storage повторяет worker.
+`npm run db:cleanup` сначала показывает dry-run; `-- --apply` удаляет ограниченный
+batch terminal-целей старше180дней вместе с их файлами.
+
+## Verification and design
+
+```bash
+npm run check
+npm run test:e2e
+```
+
+Тесты используют отдельные ephemeral PostgreSQL databases. Browser fixture
+поднимает production build и **отдельный worker**, проверяет создание, закрытие
+страницы, approval/rejection/resume, настоящий файл и подтверждённую демо-оплату
+на desktop/mobile. Responsive проверки:320/375/390/768/1280px и reduced motion.
+Операционные ограничения и фактические результаты — в
+[CODEX_PROGRESS.md](CODEX_PROGRESS.md).
+
+- [Архитектура Goal Engine](docs/autonomous-goal-engine-design.md)
+- [Новая дизайн-система](docs/veya-redesign-system.md)
+- [План реализации](docs/plans/2026-10-05-autonomous-veya.md)
+- [Intent Network](docs/intent-network-design.md)
+- [Legacy API](docs/social-api-contract.md)
+- [Vercel/Neon configuration](docs/VERCEL_NEON.md)
+
+## Legacy people and coordination flows
+
+### Find people through an activity
+
+1. On `/network` («Сейчас»), enter “Нужен пятый в Dota сегодня вечером”, or another activity.
    Review time, mode, people count and bounded activity parameters; missing critical
    information produces one short clarification. Create an alias with 18+ and
    privacy attestation if needed, and save the one-time Intavro Key privately.

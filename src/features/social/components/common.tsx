@@ -13,9 +13,9 @@ export function SocialShell({
 }) {
   return (
     <section className="social-shell">
-      {navigation && <nav className="social-nav" aria-label="Навигация Intavro">
+      {navigation && <nav className="social-nav" aria-label="Навигация Veya">
         <Link href="/discover">Найти людей</Link>
-        <Link href="/connections">Запросы</Link>
+        <Link href="/network/connections">Запросы</Link>
         <Link href="/seek/new">Новое занятие</Link>
         <Link href="/profile">Моё пространство</Link>
       </nav>}
@@ -70,7 +70,7 @@ export function Person({ identity }: { identity: Identity }) {
 export function PrivacyCopy() {
   return (
     <p className="quiet-copy">
-      Люди, с которыми вы знакомитесь в Intavro, видят только то, что вы решите раскрыть. В режиме «Инкогнито» для каждой пары используются отдельные псевдоним и аватар. При этом личные сведения и встречи вживую могут раскрыть вашу личность.
+      Люди, с которыми вы знакомитесь в Veya, видят только то, что вы решите раскрыть. В режиме «Инкогнито» для каждой пары используются отдельные псевдоним и аватар. При этом личные сведения и встречи вживую могут раскрыть вашу личность.
     </p>
   );
 }
@@ -78,7 +78,7 @@ export function PrivacyCopy() {
 export function SocialLiveStatus({ status, reconnect }: { status: string; reconnect: () => void }) {
   if (status !== "offline" && status !== "reconnecting" && status !== "retrying") return null;
   return <aside className="social-live-status" aria-label="Состояние обновлений в реальном времени">
-    <p role="status">{status === "offline" ? "Обновления в реальном времени недоступны. Вы можете обновлять страницу вручную и продолжать пользоваться Intavro." : "Восстанавливаем подключение для обновлений в реальном времени. Вы можете обновлять страницу вручную."}</p>
+    <p role="status">{status === "offline" ? "Обновления в реальном времени недоступны. Вы можете обновлять страницу вручную и продолжать пользоваться Veya." : "Восстанавливаем подключение для обновлений в реальном времени. Вы можете обновлять страницу вручную."}</p>
     <button className="social-text-button" onClick={reconnect}>Восстановить обновления</button>
   </aside>;
 }

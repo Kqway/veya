@@ -84,7 +84,7 @@ it.each(["profile", "posts", "created"])("ignores a late %s response after profi
     await waitFor(() => expect(profileReads).toBe(2));
     if (phase === "posts") await waitFor(() => expect(postReads).toBe(2));
   }
-  await user.click(screen.getByRole("button", { name: "Удалить профиль Intavro" }));
+  await user.click(screen.getByRole("button", { name: "Удалить профиль Veya" }));
   await user.type(screen.getByLabelText("Введите DELETE для подтверждения"), "DELETE");
   await user.click(screen.getByRole("button", { name: "Удалить профиль навсегда" }));
   expect(await screen.findByRole("button", { name: "Создать профиль" })).toBeVisible();
@@ -115,15 +115,15 @@ it("requires explicit adult consent and shows a selectable one-time key without 
   expect(fetcher).not.toHaveBeenCalled();
   await user.click(screen.getByLabelText("Мне исполнилось 18 лет"));
   await user.click(screen.getByRole("button", { name: "Создать профиль" }));
-  expect(await screen.findByLabelText("Ключ Intavro")).toHaveValue("K".repeat(43));
-  expect(screen.getByLabelText("Ключ Intavro")).toHaveAttribute("readonly");
+  expect(await screen.findByLabelText("Ключ Veya")).toHaveValue("K".repeat(43));
+  expect(screen.getByLabelText("Ключ Veya")).toHaveAttribute("readonly");
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);
   const leaving = new Event("beforeunload", { cancelable: true });
   window.dispatchEvent(leaving);
   expect(leaving.defaultPrevented).toBe(true);
   await user.click(screen.getByRole("button", { name: "Ключ сохранён" }));
-  expect(screen.queryByLabelText("Ключ Intavro")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Ключ Veya")).not.toBeInTheDocument();
 });
 it("previews AI fields before reviewed apply and leaves manual availability required", async () => {
   vi.stubGlobal(
@@ -498,11 +498,11 @@ it("recovers from a new unbound guest and restores editable profile choices afte
   const user = userEvent.setup();
   render(<NewSeekScreen />);
   await user.click(
-    await screen.findByRole("button", { name: "Восстановить с помощью Ключа Intavro" }),
+    await screen.findByRole("button", { name: "Восстановить с помощью Ключа Veya" }),
   );
   await user.type(screen.getByLabelText("Ключ восстановления"), "O".repeat(43));
   await user.click(screen.getByRole("button", { name: "Восстановить профиль" }));
-  expect(await screen.findByLabelText("Ключ Intavro")).toHaveValue("R".repeat(43));
+  expect(await screen.findByLabelText("Ключ Veya")).toHaveValue("R".repeat(43));
   await user.click(screen.getByRole("button", { name: "Ключ сохранён" }));
   expect(screen.getByLabelText("Псевдоним")).toHaveValue("Maple");
   expect(screen.getByLabelText("Приватность")).toHaveValue("INCOGNITO");
@@ -527,13 +527,13 @@ it("keeps an unsaved recovery key visible after a client route unmounts the prof
   await user.type(screen.getByLabelText("Псевдоним"), "Maple");
   await user.click(screen.getByLabelText("Мне исполнилось 18 лет"));
   await user.click(screen.getByRole("button", {name: "Создать профиль"}));
-  expect(await screen.findByLabelText("Ключ Intavro")).toHaveValue("N".repeat(43));
+  expect(await screen.findByLabelText("Ключ Veya")).toHaveValue("N".repeat(43));
   await user.click(screen.getByRole("button", {name: "Next route"}));
-  expect(screen.getByLabelText("Ключ Intavro")).toHaveValue("N".repeat(43));
+  expect(screen.getByLabelText("Ключ Veya")).toHaveValue("N".repeat(43));
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);
   await user.click(screen.getByRole("button", {name: "Ключ сохранён"}));
-  expect(screen.queryByLabelText("Ключ Intavro")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Ключ Veya")).not.toBeInTheDocument();
 });
 it("delivers an issued key and activates live social after the initiating screen unmounts", async () => {
   const dispatch = vi.spyOn(window, "dispatchEvent");
@@ -553,7 +553,7 @@ it("delivers an issued key and activates live social after the initiating screen
   await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
   await user.click(screen.getByRole("button", { name: "Next route" }));
   finish(json({ profile, recoveryKey: "L".repeat(43) }));
-  expect(await screen.findByLabelText("Ключ Intavro")).toHaveValue("L".repeat(43));
+  expect(await screen.findByLabelText("Ключ Veya")).toHaveValue("L".repeat(43));
   expect(dispatch.mock.calls.filter(([event]) => event.type === "veya:social-profile-changed")).toHaveLength(1);
 });
 
@@ -567,10 +567,10 @@ it("copies a key but keeps it unsaved until explicit acknowledgement", async () 
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
   render(<IssueKey />);
   await user.click(screen.getByRole("button", { name: "Issue key" }));
-  await user.click(screen.getByRole("button", { name: "Скопировать Ключ Intavro" }));
+  await user.click(screen.getByRole("button", { name: "Скопировать Ключ Veya" }));
   expect(writeText).toHaveBeenCalledWith("C".repeat(43));
   expect(await screen.findByRole("status")).toHaveTextContent("Ключ скопирован");
-  expect(screen.getByLabelText("Ключ Intavro")).toHaveValue("C".repeat(43));
+  expect(screen.getByLabelText("Ключ Veya")).toHaveValue("C".repeat(43));
   expect(screen.getByText(/потеряете и ключ, и сессию браузера/)).toBeVisible();
   const leaving = new Event("beforeunload", { cancelable: true });
   window.dispatchEvent(leaving);
@@ -589,7 +589,7 @@ it("does not restore a copy notice after an acknowledged key is cleared", async 
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: () => new Promise<void>((resolve) => { finish = resolve; }) } });
   render(<IssueKey />);
   await user.click(screen.getByRole("button", { name: "Issue key" }));
-  await user.click(screen.getByRole("button", { name: "Скопировать Ключ Intavro" }));
+  await user.click(screen.getByRole("button", { name: "Скопировать Ключ Veya" }));
   await user.click(screen.getByRole("button", { name: "Ключ сохранён" }));
   await user.click(screen.getByRole("button", { name: "Issue key" }));
   finish();
@@ -601,9 +601,9 @@ it("offers manual copying when clipboard access fails without showing the clipbo
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: vi.fn().mockRejectedValue(new Error("secret clipboard provider detail")) } });
   render(<IssueKey />);
   await user.click(screen.getByRole("button", { name: "Issue key" }));
-  await user.click(screen.getByRole("button", { name: "Скопировать Ключ Intavro" }));
+  await user.click(screen.getByRole("button", { name: "Скопировать Ключ Veya" }));
   expect(await screen.findByRole("status")).toHaveTextContent("Выделите ключ и скопируйте его вручную");
-  expect(screen.getByLabelText("Ключ Intavro")).toHaveValue("C".repeat(43));
+  expect(screen.getByLabelText("Ключ Veya")).toHaveValue("C".repeat(43));
   expect(screen.queryByText(/secret clipboard provider detail/)).not.toBeInTheDocument();
 });
 it("requires an exact destructive confirmation and deletes only the current profile", async () => {
@@ -616,7 +616,7 @@ it("requires an exact destructive confirmation and deletes only the current prof
     return <ProfilePanel profile={current} onProfile={setCurrent} />;
   }
   render(<ProfileState />);
-  await user.click(screen.getByRole("button", { name: "Удалить профиль Intavro" }));
+  await user.click(screen.getByRole("button", { name: "Удалить профиль Veya" }));
   expect(screen.getByText(/действие нельзя отменить/)).toHaveTextContent("Материалы для модерации");
   const confirm = screen.getByRole("button", { name: "Удалить профиль навсегда" });
   expect(confirm).toBeDisabled();
@@ -624,12 +624,12 @@ it("requires an exact destructive confirmation and deletes only the current prof
   expect(confirm).toBeDisabled();
   await user.click(screen.getByRole("button", { name: "Отменить удаление" }));
   expect(fetcher).not.toHaveBeenCalled();
-  await user.click(screen.getByRole("button", { name: "Удалить профиль Intavro" }));
+  await user.click(screen.getByRole("button", { name: "Удалить профиль Veya" }));
   expect(screen.getByLabelText("Введите DELETE для подтверждения")).toHaveValue("");
   await user.type(screen.getByLabelText("Введите DELETE для подтверждения"), "DELETE");
   await user.click(screen.getByRole("button", { name: "Удалить профиль навсегда" }));
   expect(await screen.findByRole("button", { name: "Создать профиль" })).toBeVisible();
-  expect(screen.getByRole("status")).toHaveTextContent("Ваш профиль Intavro удалён.");
+  expect(screen.getByRole("status")).toHaveTextContent("Ваш профиль Veya удалён.");
   expect(screen.getByLabelText("Псевдоним")).toHaveValue("");
   expect(screen.getByLabelText("Языки профиля (необязательно)")).toHaveValue("ru");
   expect(fetcher).toHaveBeenCalledWith("/api/social/profile", expect.objectContaining({ method: "DELETE", body: JSON.stringify({ confirmation: "DELETE" }) }));
@@ -641,7 +641,7 @@ it("preserves the profile when deletion fails and allows an explicit retry", asy
   const onProfile = vi.fn();
   const user = userEvent.setup();
   render(<ProfilePanel profile={profile} onProfile={onProfile} />);
-  await user.click(screen.getByRole("button", { name: "Удалить профиль Intavro" }));
+  await user.click(screen.getByRole("button", { name: "Удалить профиль Veya" }));
   await user.type(screen.getByLabelText("Введите DELETE для подтверждения"), "DELETE");
   await user.click(screen.getByRole("button", { name: "Удалить профиль навсегда" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(/попробуйте ещё раз/i);
@@ -658,22 +658,22 @@ it.each(["seek", "discover"])("offers profile deletion to an unavailable owner o
   vi.stubGlobal("fetch", fetcher);
   const user = userEvent.setup();
   render(surface === "seek" ? <NewSeekScreen /> : <DiscoverScreen />);
-  await user.click(await screen.findByRole("button", { name: "Удалить профиль Intavro" }));
+  await user.click(await screen.findByRole("button", { name: "Удалить профиль Veya" }));
   expect(screen.queryByRole("button", { name: "Создать профиль" })).not.toBeInTheDocument();
   await user.type(screen.getByLabelText("Введите DELETE для подтверждения"), "DELETE");
   await user.click(screen.getByRole("button", { name: "Удалить профиль навсегда" }));
   expect(await screen.findByRole("button", { name: "Создать профиль" })).toBeVisible();
-  expect(screen.getByRole("status")).toHaveTextContent("Ваш профиль Intavro удалён.");
+  expect(screen.getByRole("status")).toHaveTextContent("Ваш профиль Veya удалён.");
 });
 it("explains an invalid or revoked recovery key without erasing the entered key", async () => {
   const fetcher = vi.fn().mockResolvedValueOnce(json({ authenticated: true })).mockResolvedValueOnce(json({ error: { code: "NOT_FOUND" } }, 404));
   vi.stubGlobal("fetch", fetcher);
   const user = userEvent.setup();
   render(<ProfilePanel profile={null} onProfile={() => {}} />);
-  await user.click(screen.getByRole("button", { name: "Восстановить с помощью Ключа Intavro" }));
+  await user.click(screen.getByRole("button", { name: "Восстановить с помощью Ключа Veya" }));
   await user.type(screen.getByLabelText("Ключ восстановления"), "O".repeat(43));
   await user.click(screen.getByRole("button", { name: "Восстановить профиль" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent("Этот Ключ Intavro недействителен или больше не активен");
+  expect(await screen.findByRole("alert")).toHaveTextContent("Этот Ключ Veya недействителен или больше не активен");
   expect(screen.getByLabelText("Ключ восстановления")).toHaveValue("O".repeat(43));
   expect(screen.getByRole("alert")).not.toHaveTextContent("O".repeat(43));
   expect(localStorage.length).toBe(0);

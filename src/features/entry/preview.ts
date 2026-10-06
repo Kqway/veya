@@ -5,7 +5,7 @@ import type { DatabaseExecutor } from "@/lib/db/types";
 import { slugSchema } from "@/features/backend/validation";
 import type { PublicIntent } from "@/features/backend/types";
 export const previewDescription =
-  "Укажите свободное время, и Intavro найдёт подходящий вариант для всех.";
+  "Укажите свободное время, и Veya найдёт подходящий вариант для всех.";
 export type InvitePreview = { title: string; description: string };
 export async function readPublicPreview(
   db: DatabaseExecutor,

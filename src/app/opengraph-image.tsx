@@ -1,6 +1,6 @@
 import { runtimeLimiter } from "@/lib/security/rate-limit";
 import { shareImage } from "@/components/share-image";
-export const alt = "Intavro — Меньше планирования. Больше жизни.";
+export const alt = "Veya — Что должно произойти?";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const dynamic = "force-dynamic";
@@ -15,8 +15,8 @@ export default async function Image() {
       },
     });
   return shareImage({
-    title: "От идеи к встрече — вместе.",
+    title: "Что должно произойти?",
     description:
-      "Расскажите, чем хотите заняться. Найдите компанию и договоритесь о встрече.",
+      "Вы задаёте цель. Veya берёт её в работу.",
   });
 }

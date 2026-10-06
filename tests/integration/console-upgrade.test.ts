@@ -93,7 +93,7 @@ it('verification rejects a20-row ledger with an incorrect checksum',async () => 
  await expect(execute(bundle.upgrade)).rejects.toThrow('Unsupported migration history');
 });
 it.each(['missing','reordered','checksum'] as const)('rejects an invalid source manifest: %s',kind => {
- const invalid=migrations.map(m=>({...m}));
+ const invalid=migrations.slice(0,20).map(m=>({...m}));
  if(kind==='missing') invalid.pop();
  if(kind==='reordered') [invalid[0],invalid[1]]=[invalid[1]!,invalid[0]!];
  if(kind==='checksum') invalid[19]!.checksum='a'.repeat(64);

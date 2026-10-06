@@ -91,7 +91,7 @@ export const socialApi = <T>(path: string, method = "GET", body?: unknown) =>
 export function socialError(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 401)
-      return "Ваша сессия завершена. Обновите страницу, чтобы продолжить, или восстановите профиль с помощью Ключа Intavro.";
+      return "Ваша сессия завершена. Обновите страницу, чтобы продолжить, или восстановите профиль с помощью Ключа Veya.";
     if (error.status === 403 || error.status === 404)
       return "Этот объект недоступен в этой сессии.";
     if (error.status === 409)

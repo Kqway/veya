@@ -13,12 +13,12 @@ it('creates an explicit Interested action from the issued context only, then poi
  const fetcher=vi.fn().mockResolvedValueOnce(response({space})).mockResolvedValueOnce(response({status:'pending'}));vi.stubGlobal('fetch',fetcher);
  const user=userEvent.setup();render(<ProfileScreen context="discovery" contextKey={'h'.repeat(24)}/>);
  await user.click(await screen.findByRole('button',{name:'Предложить что-нибудь'}));
- expect(await screen.findByRole('link',{name:'Посмотреть запрос'})).toHaveAttribute('href','/connections');
+ expect(await screen.findByRole('link',{name:'Посмотреть запрос'})).toHaveAttribute('href','/network/connections');
  expect(fetcher.mock.calls[1]![0]).toBe('/api/social/connections');
  expect(JSON.parse(fetcher.mock.calls[1]![1].body)).toEqual({handle:'h'.repeat(24)});
  expect(screen.queryByRole('button',{name:'Предложить что-нибудь'})).not.toBeInTheDocument();
 });
-it.each([['connections','Посмотреть запрос','/connections'],['chat','Открыть чат','/m/'+'m'.repeat(24)]] as const)('avoids duplicate connection actions for %s',async(kind,name,href)=>{
+it.each([['connections','Посмотреть запрос','/network/connections'],['chat','Открыть чат','/m/'+'m'.repeat(24)]] as const)('avoids duplicate connection actions for %s',async(kind,name,href)=>{
  vi.stubGlobal('fetch',vi.fn().mockResolvedValue(response({space:{...space,action:{kind,key:'m'.repeat(24)}}})));
  render(<ProfileScreen context="connection" contextKey={'r'.repeat(24)}/>);
  expect(await screen.findByRole('link',{name})).toHaveAttribute('href',href);
@@ -54,7 +54,7 @@ it('preserves an unsaved space draft while identity or privacy settings are save
  const fetcher=vi.fn().mockResolvedValueOnce(response({profile})).mockResolvedValueOnce(response({space:ownSpace})).mockResolvedValueOnce(response({profile:changed})).mockResolvedValueOnce(response({profile:changed})).mockReturnValueOnce(refresh);vi.stubGlobal('fetch',fetcher);
  const user=userEvent.setup();render(<RecoveryKeyProvider><ProfileScreen editor/></RecoveryKeyProvider>);
  await user.type(await screen.findByLabelText('Статус'),'Не потерять этот черновик');
- await user.click(screen.getByText('Приватность, Ключ Intavro и управление профилем'));
+ await user.click(screen.getByText('Приватность, Ключ Veya и управление профилем'));
  await user.selectOptions(screen.getByLabelText('Приватность'),'PRIVATE');
  await user.click(screen.getByRole('button',{name:'Сохранить профиль'}));
  expect(screen.getByLabelText('Статус')).toHaveValue('Не потерять этот черновик');

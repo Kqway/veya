@@ -17,7 +17,7 @@ async function profile(page: Page, label: string, language: string) {
   await page.getByRole("combobox", {name:"Приватность",exact:true}).selectOption("INCOGNITO");
   await page.getByLabel("Мне исполнилось 18 лет").check();
   await page.getByRole("button", {name:"Создать профиль",exact:true}).click();
-  await expect(page.getByLabel("Ключ Intavro", {exact:true})).toBeVisible();
+  await expect(page.getByLabel("Ключ Veya", {exact:true})).toBeVisible();
   await page.getByRole("button", {name:"Ключ сохранён",exact:true}).click();
 }
 function input(testInfo: TestInfo, category = "chess"): SeekingInput {
@@ -50,7 +50,7 @@ async function matched(a: Page, b: Page, testInfo: TestInfo) {
   await Promise.all([profile(a, "Launch A", language), profile(b, "Launch B", language)]);
   const seeking = input(testInfo, `launch-chess-${Date.now()}-${Math.random().toString(36).slice(2,8)}`);
   const [source] = await Promise.all([api<OwnPost>(a,"/api/social/seeking","POST",seeking,201),api<OwnPost>(b,"/api/social/seeking","POST",seeking,201)]);
-  await b.goto("/connections");
+  await b.goto("/network/connections");
   await expect(b.getByText(/Запросов пока нет/)).toBeVisible();
   await a.goto("/discover");
   await a.getByLabel("Ваша активная заявка").selectOption(source.publicKey);
@@ -62,7 +62,7 @@ async function matched(a: Page, b: Page, testInfo: TestInfo) {
   await candidates.getByRole("button",{name:"Хочу присоединиться",exact:true}).click();
   // Wait for the persisted action acknowledgement before leaving its page.
   await expect(a.getByRole("status").filter({hasText:"Запрос отправлен."})).toBeVisible();
-  await a.goto("/connections");
+  await a.goto("/network/connections");
   const incoming = b.getByRole("region",{name:"Входящие запросы",exact:true});
   await expect(incoming.getByRole("button",{name:"Принять",exact:true})).toBeVisible();
   await incoming.getByRole("button",{name:"Принять",exact:true}).click();
@@ -99,8 +99,8 @@ test("two online profiles receive interest, accept, messages, linked plans, inbo
     expect(notices.notifications.map(n=>n.type)).toContain("NEW_MESSAGE");
     const unread = await api<{unreadCount:number}>(b.page,"/api/notifications/unread");
     expect(unread.unreadCount).toBeGreaterThan(0);
-    await expect(b.page.getByRole("navigation",{name:"Ваш Intavro"})).toContainText(String(unread.unreadCount));
     await b.page.goto("/notifications");
+    await expect(b.page.getByRole("button",{name:"Отметить как прочитанное",exact:true})).toHaveCount(unread.unreadCount);
     await expect(b.page.getByRole("heading",{name:"Уведомления",exact:true})).toBeVisible();
     await b.page.goto(`/m/${key}`);
     await page.getByRole("button",{name:"Заблокировать",exact:true}).click();
@@ -143,7 +143,7 @@ test("empty activities stay saved and usable at 320px with reduced motion and un
   await page.goto("/discover");
   await page.getByLabel("Ваша активная заявка").selectOption(post.publicKey);
   await page.getByRole("button",{name:"Найти людей",exact:true}).click();
-  await expect(page.getByText(/Ваша заявка сохранена до истечения срока/)).toContainText("Intavro никогда не отправляет запрос «Хочу присоединиться» за вас.");
+  await expect(page.getByText(/Ваша заявка сохранена до истечения срока/)).toContainText("Veya никогда не отправляет запрос «Хочу присоединиться» за вас.");
   await expect(page.getByRole("button",{name:"Хочу присоединиться",exact:true})).toHaveCount(0);
   expect((await api<OwnPost>(page,`/api/social/seeking/${post.publicKey}`)).status).toBe("active");
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
@@ -156,7 +156,7 @@ test("empty activities stay saved and usable at 320px with reduced motion and un
 test("denied browser push leaves profiles, inbox and manual connections functional",async({page},testInfo)=>{
   await page.addInitScript(()=>{
     Object.defineProperty(window.Notification,"permission",{value:"denied",configurable:true});
-    window.Notification.requestPermission = async () => { throw new Error("Intavro must not prompt automatically"); };
+    window.Notification.requestPermission = async () => { throw new Error("Veya must not prompt automatically"); };
   });
   await profile(page,"Push denied",testInfo.project.name==="desktop"?"ru":"en");
   await page.goto("/notifications");
@@ -164,7 +164,7 @@ test("denied browser push leaves profiles, inbox and manual connections function
   const notices = await api<{notifications:unknown[]}>(page,"/api/notifications");
   expect(Array.isArray(notices.notifications)).toBe(true);
   expect(await page.evaluate(()=>Notification.permission)).toBe("denied");
-  await page.goto("/connections");
+  await page.goto("/network/connections");
   await expect(page.getByRole("button",{name:"Обновить запросы",exact:true})).toBeEnabled();
   await page.getByRole("button",{name:"Обновить запросы",exact:true}).click();
   await expect(page.getByRole("heading",{name:"Запросы",exact:true})).toBeVisible();

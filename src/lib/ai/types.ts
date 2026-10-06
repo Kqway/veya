@@ -1,3 +1,4 @@
+import type { GoalPlanningInput } from "@/features/goals/ai-plan";
 import type { z } from "zod";
 import type {
   parseInputSchema,
@@ -8,15 +9,24 @@ import type {
 export type { ParsedIntent } from "@/features/intents/structured";
 export type { SeekingSuggestion } from "@/features/discovery/seeking-suggestion";
 import type { InterpretInput } from "@/features/intent-product/schema";
-export type { InterpretInput, Interpretation } from "@/features/intent-product/schema";
+export type {
+  InterpretInput,
+  Interpretation,
+} from "@/features/intent-product/schema";
 export type ParseInput = z.infer<typeof parseInputSchema>;
 export type PlanContext = z.infer<typeof planContextSchema>;
 export type PlanIdea = z.infer<typeof planIdeaSchema>;
 export type ExplanationReasons = z.infer<typeof explanationReasonsSchema>;
-export type AiTask = "parse_intent" | "parse_seeking" | "parse_conversation" | "suggest_plan" | "explain_plan";
+export type AiTask =
+  | "plan_goal"
+  | "parse_intent"
+  | "parse_seeking"
+  | "parse_conversation"
+  | "suggest_plan"
+  | "explain_plan";
 export interface AiRequest {
   task: AiTask;
-  input: ParseInput | PlanContext | InterpretInput;
+  input: ParseInput | PlanContext | InterpretInput | GoalPlanningInput;
 }
 export interface AiProvider {
   readonly name: "mock" | "openai";

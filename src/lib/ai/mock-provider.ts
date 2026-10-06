@@ -1,3 +1,5 @@
+import { goalPlanningInputSchema } from "@/features/goals/ai-plan";
+import { planNext } from "@/features/goals/planner";
 import "server-only";
 import { z } from "zod";
 import type { AiProvider, AiRequest, ParseInput } from "./types";
@@ -106,7 +108,10 @@ function parseSeeking(input: ParseInput): SeekingSuggestion {
   const activity = normalizeActivity(text);
   const online = datePhrase(text, "online|онлайн");
   const inPerson = datePhrase(text, "in[ -]person|offline|очно|офлайн");
-  const oneToOne = datePhrase(text, "one[ -]to[ -]one|one person|one partner|одного человека|один на один|вдво[её]м");
+  const oneToOne = datePhrase(
+    text,
+    "one[ -]to[ -]one|one person|one partner|одного человека|один на один|вдво[её]м",
+  );
   const group = datePhrase(text, "group|групп(?:а|ой|у)|компани(?:я|ей|ю)");
   const skills: [NonNullable<SeekingSuggestion["skill"]>, string][] = [
     ["beginner", "beginner|начинающ(?:ий|ая|ие)|новичок"],
@@ -122,18 +127,40 @@ function parseSeeking(input: ParseInput): SeekingSuggestion {
   const afterTomorrow = datePhrase(text, "day after tomorrow|послезавтра");
   const tomorrow = !afterTomorrow && datePhrase(text, "tomorrow|завтра");
   const today = datePhrase(text, "today|tonight|сегодня");
-  const date = tomorrow ? shiftDate(input.referenceDate, 1) : today ? input.referenceDate : null;
+  const date = tomorrow
+    ? shiftDate(input.referenceDate, 1)
+    : today
+      ? input.referenceDate
+      : null;
   return {
     activityKey: activity?.key ?? null,
     activityLabel: activity?.label ?? null,
-    interactionMode: online && inPerson ? "either" : online ? "online" : inPerson ? "in_person" : null,
-    format: oneToOne && group ? "either" : oneToOne ? "one_to_one" : group ? "group" : null,
+    interactionMode:
+      online && inPerson
+        ? "either"
+        : online
+          ? "online"
+          : inPerson
+            ? "in_person"
+            : null,
+    format:
+      oneToOne && group
+        ? "either"
+        : oneToOne
+          ? "one_to_one"
+          : group
+            ? "group"
+            : null,
     city: datePhrase(text, "Moscow|Москв(?:а|е|у|ы)") ? "Moscow" : null,
     area: null,
     skill: skill?.[0] ?? null,
     languages: [],
     tags: [],
-    timeHint: date ? `${date}${evening ? " вечером" : ""}` : evening ? "вечером" : null,
+    timeHint: date
+      ? `${date}${evening ? " вечером" : ""}`
+      : evening
+        ? "вечером"
+        : null,
   };
 }
 /** Small explicit vocabulary and templates, not a language model. */
@@ -141,6 +168,10 @@ export class MockAiProvider implements AiProvider {
   readonly name = "mock" as const;
   async complete(request: AiRequest, signal: AbortSignal): Promise<unknown> {
     signal.throwIfAborted();
+    if (request.task === "plan_goal") {
+      const input = goalPlanningInputSchema.parse(request.input);
+      return { steps: planNext(input.next, input.revision) };
+    }
     if (request.task === "parse_conversation")
       return { text: interpretInputSchema.parse(request.input).text };
     if (request.task === "parse_intent")

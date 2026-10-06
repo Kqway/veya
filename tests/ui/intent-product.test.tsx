@@ -141,7 +141,7 @@ describe("minimal intent product", () => {
     });
     const user = userEvent.setup(); const view = render(<RoomScreen roomKey={key} />);
     await screen.findByRole("textbox", { name: "Сообщение" });
-    expect(screen.getByText(/ещё 3 участников вне Intavro/)).toBeInTheDocument();
+    expect(screen.getByText(/ещё 3 участников вне Veya/)).toBeInTheDocument();
     await user.type(screen.getByRole("textbox", { name: "Сообщение" }), '<img src=x onerror=alert(1)>');
     await act(async () => { await live.refresh?.(); });
     expect(screen.getByRole("textbox", { name: "Сообщение" })).toHaveValue('<img src=x onerror=alert(1)>');

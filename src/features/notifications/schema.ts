@@ -1,10 +1,10 @@
 import { z } from 'zod';
-export const notificationTypeSchema = z.enum(['INTEREST_RECEIVED','INTEREST_ACCEPTED','NEW_MESSAGE','PLAN_READY','MEETUP_REMINDER','CANDIDATE_FOUND','OFFER_RECEIVED','LOBBY_READY','ROOM_MESSAGE']);
+export const notificationTypeSchema = z.enum(['INTEREST_RECEIVED','INTEREST_ACCEPTED','NEW_MESSAGE','PLAN_READY','MEETUP_REMINDER','CANDIDATE_FOUND','OFFER_RECEIVED','LOBBY_READY','ROOM_MESSAGE','GOAL_APPROVAL','GOAL_RESULT','GOAL_BLOCKER']);
 export type NotificationType = z.infer<typeof notificationTypeSchema>;
 export const notificationSchema = z.object({
   publicKey:z.string().regex(/^[A-Za-z0-9_-]{24}$/), type:notificationTypeSchema,
   createdAt:z.iso.datetime(), readAt:z.iso.datetime().nullable(),
-  href:z.string().regex(/^\/(?:notifications|connections|discover|m\/[A-Za-z0-9_-]{24}|offer\/[A-Za-z0-9_-]{24}|room\/[A-Za-z0-9_-]{24})$/),
+  href:z.string().regex(/^\/(?:activity|notifications|network\/connections|connections|discover|m\/[A-Za-z0-9_-]{24}|offer\/[A-Za-z0-9_-]{24}|room\/[A-Za-z0-9_-]{24})$/),
 }).strict();
 export type NotificationDTO = z.infer<typeof notificationSchema>;
 const providers=new Set(['fcm.googleapis.com','updates.push.services.mozilla.com','web.push.apple.com']);

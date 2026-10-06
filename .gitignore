@@ -149,3 +149,6 @@ test-results/
 .worktrees/
 .local/
 .vercel/
+
+# Private durable goal artifacts (never publicly served or committed)
+.data/

@@ -1,3 +1,4 @@
+import {processGoalJobs} from '@/features/goals/worker';
 import 'server-only';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { ServerEnv } from '@/lib/config/env';
@@ -31,6 +32,8 @@ export function createSocialCronHandler(options: {config: () => ServerEnv; datab
       const signal = AbortSignal.any([request.signal, AbortSignal.timeout(45_000)]);
       const db = options.database();
       logOperationalEvent('worker_started');
+      const goals = await processGoalJobs(db, {limit: 5, signal});
+      logOperationalEvent('worker_complete', goals);
       const intents = await processIntentJobs(db, {limit: 5, signal, analyticsEnabled: config.ANALYTICS_ENABLED});
       logOperationalEvent('worker_complete', intents);
       const candidates = await processCandidateJobs(db, {limit: 5, signal});
@@ -39,9 +42,9 @@ export function createSocialCronHandler(options: {config: () => ServerEnv; datab
       const notifications = await processNotificationJobs(db, {limit: 5, signal, ...(push ? {push} : {})});
       logOperationalEvent('worker_complete', candidates);
       logOperationalEvent('worker_complete', {...notifications, durationMs: Date.now() - started});
-      const failures = intents.failed + intents.retried + candidates.failed + candidates.retried + notifications.failed + notifications.retried;
+      const failures = goals.failed + goals.retried + intents.failed + intents.retried + candidates.failed + candidates.retried + notifications.failed + notifications.retried;
       if (failures) logOperationalEvent('worker_failed', {count: failures});
-      return json({ok: failures === 0, intents, candidates, notifications}, failures ? 503 : 200);
+      return json({ok: failures === 0, goals, intents, candidates, notifications}, failures ? 503 : 200);
     } catch {
       logOperationalEvent('worker_failed', {durationMs: Date.now() - started});
       return json({error: {code: 'UNAVAILABLE'}}, 503);

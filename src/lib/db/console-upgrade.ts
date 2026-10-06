@@ -14,7 +14,8 @@ function quoted(value: string, label: string) {
 
 /** Offline generator for the known18→20 release. No DB/env/credentials are read.
  * Never run during web build/startup. The operator chooses the target and backup. */
-export function buildConsoleUpgrade(migrations: Migrations) {
+export function buildConsoleUpgrade(allMigrations: Migrations) {
+ const migrations=allMigrations.slice(0,20);
  if(migrations.length!==20 || Array.from(migrations).some((m,index)=>
   !m || !new RegExp(`^${String(index+1).padStart(4,'0')}_[a-z0-9_]+\\.sql$`).test(m.version) ||
   m.checksum!==createHash('sha256').update(m.sql).digest('hex')) ||
@@ -57,7 +58,7 @@ export function buildConsoleUpgrade(migrations: Migrations) {
  END
  `;
  return {
-  upgrade:`-- Intavro18→20. Run only after protected backup/test restore and maintenance.\n-- One atomic statement for Neon Query Editor; repeated verified20 runs do no DDL.\nDO ${quoted(body,'intavro_upgrade')};\n`,
+  upgrade:`-- Veya18→20. Run only after protected backup/test restore and maintenance.\n-- One atomic statement for Neon Query Editor; repeated verified20 runs do no DDL.\nDO ${quoted(body,'intavro_upgrade')};\n`,
   verify:`-- Read-only verification. Run separately from the upgrade statement.\nSELECT (count(*)=20 AND NOT ${mismatch('20')}) AS verified,count(*)::integer AS migration_count\nFROM public.veya_schema_migrations;\n`,
  };
 }

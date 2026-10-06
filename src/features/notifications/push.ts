@@ -2,7 +2,7 @@ import 'server-only';
 import https from 'node:https';
 import webPush from 'web-push';
 import { pushEndpointSchema, type PushConfig, type PushSubscriptionInput } from './schema';
-export const genericPushPayload=JSON.stringify({title:'Intavro',body:'У вас новое уведомление в Intavro',url:'/notifications'});
+export const genericPushPayload=JSON.stringify({title:'Veya',body:'У вас новое уведомление в Veya',url:'/notifications'});
 export class PushDeliveryError extends Error {constructor(readonly statusCode?:number){super('Push delivery failed.');}}
 export type PushSender=(subscription:PushSubscriptionInput,payload:string,config:PushConfig)=>Promise<void>;
 /** Build encrypted standards payload, then own transport: exact HTTPS providers, no redirects, 5s deadline. */

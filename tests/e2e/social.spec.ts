@@ -77,7 +77,7 @@ async function observe(page: Page, errors: string[]) {
         const json = JSON.stringify(payload.body);
         if (payload.method === "GET") {
           for (const secret of secrets)
-            expect(json.includes(secret), "GET leaked a Intavro Key").toBe(false);
+            expect(json.includes(secret), "GET leaked a Veya Key").toBe(false);
         }
         if (!/^\/api\/social\/(?:profile|seeking)(?:\/|$)/.test(payload.path)) {
           for (const value of privateValues)
@@ -170,17 +170,17 @@ async function createProfile(page: Page, alias: string, language: string) {
     .click();
   expect((await created).status()).toBe(201);
   await expect(
-    page.getByRole("heading", { name: "Сохраните Ключ Intavro в надёжном месте" }),
+    page.getByRole("heading", { name: "Сохраните Ключ Veya в надёжном месте" }),
   ).toBeVisible();
   await expect(
     page.getByText("Этот ключ показывается только один раз.", { exact: false }),
   ).toBeVisible();
-  const key = await page.getByLabel("Ключ Intavro", { exact: true }).inputValue();
+  const key = await page.getByLabel("Ключ Veya", { exact: true }).inputValue();
   expect(key).toMatch(/^[A-Za-z0-9_-]{43}$/);
   await page
     .getByRole("button", { name: "Ключ сохранён", exact: true })
     .click();
-  await expect(page.getByLabel("Ключ Intavro", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Ключ Veya", { exact: true })).toHaveCount(0);
   return key;
 }
 
@@ -426,7 +426,7 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
       page.getByRole("status").filter({ hasText: "Запрос отправлен." }),
     ).toBeVisible();
 
-    await b.page.goto("/connections");
+    await b.page.goto("/network/connections");
     const incoming = b.page.getByRole("region", {
       name: "Входящие запросы",
       exact: true,
@@ -451,7 +451,7 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
     await expect(
       b.page.getByRole("heading", { name: "Ваш чат", exact: true }),
     ).toBeVisible();
-    await page.goto("/connections");
+    await page.goto("/network/connections");
     await page
       .getByRole("link", { name: "Открыть чат", exact: true })
       .click();
@@ -730,7 +730,7 @@ test("A/B/C activity discovery becomes a private match, an ordinary plan, then b
   }
 });
 
-test("Intavro Key recovery rotates secrets, detaches social sessions and preserves coordination identity", async ({
+test("Veya Key recovery rotates secrets, detaches social sessions and preserves coordination identity", async ({
   page,
   context,
   browser,
@@ -777,7 +777,7 @@ test("Intavro Key recovery rotates secrets, detaches social sessions and preserv
 
     await recovered.page.goto("/discover");
     await recovered.page
-      .getByRole("button", { name: "Восстановить с помощью Ключа Intavro", exact: true })
+      .getByRole("button", { name: "Восстановить с помощью Ключа Veya", exact: true })
       .click();
     await recovered.page
       .getByLabel("Ключ восстановления", { exact: true })
@@ -795,7 +795,7 @@ test("Intavro Key recovery rotates secrets, detaches social sessions and preserv
     expect(recovery.profile).toEqual(originalProfile);
     expect(recovery.recoveryKey).not.toBe(oldKey);
     await expect(
-      recovered.page.getByLabel("Ключ Intavro", { exact: true }),
+      recovered.page.getByLabel("Ключ Veya", { exact: true }),
     ).toHaveValue(recovery.recoveryKey);
     await recovered.page
       .getByRole("button", { name: "Ключ сохранён", exact: true })
@@ -829,7 +829,7 @@ test("Intavro Key recovery rotates secrets, detaches social sessions and preserv
 
     await probe.page.goto("/discover");
     await probe.page
-      .getByRole("button", { name: "Восстановить с помощью Ключа Intavro", exact: true })
+      .getByRole("button", { name: "Восстановить с помощью Ключа Veya", exact: true })
       .click();
     async function rejectKey(key: string) {
       await probe.page.getByLabel("Ключ восстановления", { exact: true }).fill(key);
@@ -843,7 +843,7 @@ test("Intavro Key recovery rotates secrets, detaches social sessions and preserv
       projection(body);
       await expect(
         probe.page.locator(".social-shell").getByRole("alert"),
-      ).toContainText("Этот Ключ Intavro недействителен или больше не активен.");
+      ).toContainText("Этот Ключ Veya недействителен или больше не активен.");
       expect(
         (
           await api<{ profile: Profile | null }>(
@@ -858,12 +858,12 @@ test("Intavro Key recovery rotates secrets, detaches social sessions and preserv
     expect(await rejectKey(oldKey)).toEqual(wrong);
     const rotation = responseFor(recovered.page, "/api/social/profile/key");
     await recovered.page
-      .getByRole("button", { name: "Заменить Ключ Intavro", exact: true })
+      .getByRole("button", { name: "Заменить Ключ Veya", exact: true })
       .click();
     const rotated = await json<{ recoveryKey: string }>(await rotation);
     expect(rotated.recoveryKey).not.toBe(recovery.recoveryKey);
     await expect(
-      recovered.page.getByLabel("Ключ Intavro", { exact: true }),
+      recovered.page.getByLabel("Ключ Veya", { exact: true }),
     ).toHaveValue(rotated.recoveryKey);
     await recovered.page
       .getByRole("button", { name: "Ключ сохранён", exact: true })
@@ -871,10 +871,10 @@ test("Intavro Key recovery rotates secrets, detaches social sessions and preserv
     expect(await rejectKey(recovery.recoveryKey)).toEqual(wrong);
     await recovered.page.reload();
     await expect(
-      recovered.page.getByLabel("Ключ Intavro", { exact: true }),
+      recovered.page.getByLabel("Ключ Veya", { exact: true }),
     ).toHaveCount(0);
     await recovered.page
-      .getByRole("button", { name: "Отозвать Ключ Intavro", exact: true })
+      .getByRole("button", { name: "Отозвать Ключ Veya", exact: true })
       .click();
     const revoke = responseFor(
       recovered.page,
@@ -887,7 +887,7 @@ test("Intavro Key recovery rotates secrets, detaches social sessions and preserv
     expect(await json(await revoke)).toEqual({ revoked: true });
     await expect(
       recovered.page.getByRole("button", {
-        name: "Отозвать Ключ Intavro",
+        name: "Отозвать Ключ Veya",
         exact: true,
       }),
     ).toBeDisabled();

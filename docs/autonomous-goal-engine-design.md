@@ -58,7 +58,8 @@ credential reads or arbitrary network URL tools exist.
 SQL 0021 adds goals, runs/jobs, steps/tool calls, approvals, events, opportunities,
 proposals/conversations/deals, artifacts, connector accounts, autonomy preferences
 and payment events with FKs, state/bounds checks, indexes, RLS, ownership constraints,
-timestamps, leases, failure codes and dedupe keys. Steps/events are persisted at
+timestamps, leases, failure codes and dedupe keys. SQL 0022 adds search_people and
+bounded artifact kind/metadata. Steps/events are persisted at
 each completed boundary; a new planner decision is based on persisted observation.
 Provider actions require stable idempotency keys. Real connector adapters must
 support idempotency or reconciliation before registration for write actions.
@@ -102,7 +103,8 @@ READ and REVERSIBLE auto. EXTERNAL_COMMUNICATION defaults to 5/day, hard maximum
 FINANCIAL, LEGAL and DESTRUCTIVE always require an approval bound to exact step,
 input and revision; approving one never approves unrelated actions. Invoice creation
 is treated conservatively as financial even in demo. Approval denial pauses the
-goal; expiry and changed input invalidate approval. No financial spend tool ships.
+goal; expiry and changed input invalidate approval. Expired sleeping invoice
+requests wake to issue a new exact approval without executing the financial tool. No financial spend tool ships.
 Communication allowance may be saved within its bound; high risk cannot be made
 unlimited through an “always allow” control.
 
@@ -132,3 +134,23 @@ complete 10,000 RUB demo, approval resume, persisted state after browser reopen,
 waiting/error/loading, authenticated artifacts, settings/connections/autonomy,
 320/375/390/tablet/desktop overflow and reduced motion. Preserve legacy domain tests;
 update route expectations where primary UX intentionally moved to `/network`.
+
+## Intent Network capability
+
+`search_people` is a typed READ tool with its own lock context. Person goals are
+interpreted conservatively as photography/design/chess needs and select only an
+owner's existing active post for that activity. Missing posts produce SEEKING_REQUIRED.
+The shared discovery operation acquires all profile locks in sorted order before
+goal/job locks, then validates the persisted owner grant, nonce, lease, moderation
+and seek permission. It reuses real compatibility, mutual blocks, discovery budgets,
+pair identity and explicit privacy projections. Persist only projected cards as
+step evidence. A match produces INTERACTION_REQUIRED; it cannot claim a completed
+hire, agreement or deliverable. Resuming performs another bounded search.
+
+## Verified review corrections
+
+Successful deadline/budget waits reset failure attempts; increasing the communication
+allowance wakes the delayed goal. Erasure failures remain queued after committed
+profile deletion. Authorization loss clears cached goal details, and Settings
+unmounts old identity forms before focus/profile-change reauthorization. Onboarding
+retries re-read the committed profile rather than creating another identity.

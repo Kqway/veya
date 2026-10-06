@@ -7,7 +7,7 @@ import { useSocialRefresh } from "@/features/realtime/client";
 import { SocialLiveStatus } from "@/features/social/components/common";
 
 export const productApi = <T,>(path: string, method = "GET", body?: unknown) => requestApi<T>(`/api/intavro${path}`, method, body);
-export function ProductShell({ children, title, eyebrow = "Intavro / вместе" }: { children: ReactNode; title: string; eyebrow?: string }) {
+export function ProductShell({ children, title, eyebrow = "Veya / вместе" }: { children: ReactNode; title: string; eyebrow?: string }) {
   return <section className="intent-product"><div className="intent-heading"><p className="intent-eyebrow">{eyebrow}</p><h1>{title}</h1></div>{children}</section>;
 }
 export function ProductError({ message, retry }: { message: string | null; retry?: (() => Promise<void>) | undefined }) {
@@ -16,7 +16,7 @@ export function ProductError({ message, retry }: { message: string | null; retry
   return message ? <div><p className="intent-error" role="alert" tabIndex={-1} ref={ref}>{message}</p>{retry && <button className="intent-text-button" type="button" onClick={() => { void retry(); }}>Попробовать снова</button>}</div> : null;
 }
 export function ProductUnavailable({ restricted }: { restricted: boolean }) {
-  return <div className="intent-empty"><h2>{restricted ? "Профиль недоступен" : "Начните со своего намерения"}</h2><p>{restricted ? "Действия в этой сессии ограничены. Настройки профиля и его удаление доступны в разделе «Я»." : "Для предложений и временных комнат нужен профиль Intavro."}</p><Link href={restricted ? "/profile" : "/"}>{restricted ? "Открыть мой профиль" : "На экран «Сейчас»"}</Link></div>;
+  return <div className="intent-empty"><h2>{restricted ? "Профиль недоступен" : "Начните со своего намерения"}</h2><p>{restricted ? "Действия в этой сессии ограничены. Настройки профиля и его удаление доступны в разделе «Я»." : "Для предложений и временных комнат нужен профиль Veya."}</p><Link href={restricted ? "/profile" : "/network"}>{restricted ? "Открыть мой профиль" : "На экран «Сейчас»"}</Link></div>;
 }
 /** Text and keys stay in memory. Live reads never replace an unsaved local edit. */
 export function useUnsavedGuard(dirty: boolean) {

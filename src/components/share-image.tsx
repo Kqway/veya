@@ -35,7 +35,11 @@ export async function shareImage(preview: InvitePreview) {
         }}
       >
         <div style={{ display: "flex", fontSize: 48, fontWeight: 700 }}>
-          <span style={{ color: "#c7432b", marginRight: 14 }}>*</span>intavro.
+          <svg width="44" height="44" viewBox="0 0 32 32" fill="none" style={{marginRight:14}}>
+            <circle cx="16" cy="16" r="11" stroke="#49644b" strokeWidth="1.3"/>
+            <ellipse cx="16" cy="16" rx="14" ry="5.5" stroke="#49644b" strokeWidth="1.3" transform="rotate(-38 16 16)"/>
+            <circle cx="24" cy="8" r="2.4" fill="#49644b"/>
+          </svg>veya
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div
@@ -59,7 +63,7 @@ export async function shareImage(preview: InvitePreview) {
             {preview.description}
           </div>
         </div>
-        <div style={{ display: "flex", color: "#c7432b", fontSize: 23 }}>
+        <div style={{ display: "flex", color: "#49644b", fontSize: 23 }}>
           Меньше планирования. Больше жизни. · Без регистрации.
         </div>
       </div>

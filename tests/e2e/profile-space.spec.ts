@@ -98,10 +98,10 @@ async function createProfile(page: Page, alias: string, mode: PrivacyMode = "OPE
   const created = responseFor(page, "/api/social/profile");
   await page.getByRole("button", { name: "Создать профиль", exact: true }).click();
   expect((await created).status()).toBe(201);
-  const key = await page.getByLabel("Ключ Intavro", { exact: true }).inputValue();
+  const key = await page.getByLabel("Ключ Veya", { exact: true }).inputValue();
   expect(key).toMatch(/^[A-Za-z0-9_-]{43}$/);
   await page.getByRole("button", { name: "Ключ сохранён", exact: true }).click();
-  await expect(page.getByLabel("Ключ Intavro", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Ключ Veya", { exact: true })).toHaveCount(0);
   return key;
 }
 
@@ -151,7 +151,7 @@ async function save(page: Page) {
 }
 
 async function edit(page: Page) {
-  await page.goto("/profile");
+  await page.goto("/network/profile");
   await page.getByRole("link", { name: "Настроить профиль", exact: true }).click();
   await expect(page).toHaveURL(/\/profile\/edit$/);
   await expect(page.getByLabel("Статус", { exact: true })).toBeVisible();
@@ -262,7 +262,7 @@ test("eight live worlds persist the editor, genuine activity counts, and fit 320
   // Return to the saved world before navigating, exercising a clean editor exit.
   await page.getByRole("button", { name: "Монохром", exact: true }).click();
   await page.getByRole("link", { name: "Посмотреть свой профиль", exact: true }).click();
-  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page).toHaveURL(/\/network\/profile$/);
   await expect(page.locator(".profile-scene")).toContainText("2 заявки");
   await overflow(page);
   await check();
@@ -321,7 +321,7 @@ test("OPEN fields stay explicit from discovery to request and chat; outsider and
     expect(pending.action.kind).toBe("connections");
     await expect(page.getByRole("button", { name: "Предложить что-нибудь", exact: true })).toHaveCount(0);
     await api(outsider.page, `/api/social/profiles/connection/${request.publicKey}`, "GET", undefined, 404);
-    await owner.page.goto("/connections");
+    await owner.page.goto("/network/connections");
     const accepted = responseFor(owner.page, `/api/social/connections/${request.publicKey}/respond`);
     await owner.page.getByRole("region", { name: "Входящие запросы", exact: true }).getByRole("button", { name: "Принять", exact: true }).click();
     const matchKey = ((await (await accepted).json()) as Connection).matchKey!;
@@ -344,12 +344,12 @@ test("OPEN fields stay explicit from discovery to request and chat; outsider and
     // Recovery preserves customization while rotating the one-time key.
     await owner.context.clearCookies();
     await owner.page.goto("/discover");
-    await owner.page.getByRole("button", { name: "Восстановить с помощью Ключа Intavro", exact: true }).click();
+    await owner.page.getByRole("button", { name: "Восстановить с помощью Ключа Veya", exact: true }).click();
     await owner.page.getByLabel("Ключ восстановления", { exact: true }).fill(recoveryKey);
     await owner.page.getByRole("button", { name: "Восстановить профиль", exact: true }).click();
-    await expect(owner.page.getByLabel("Ключ Intavro", { exact: true })).toBeVisible();
+    await expect(owner.page.getByLabel("Ключ Veya", { exact: true })).toBeVisible();
     await owner.page.getByRole("button", { name: "Ключ сохранён", exact: true }).click();
-    await owner.page.goto("/profile");
+    await owner.page.goto("/network/profile");
     await expect(owner.page.locator(".profile-scene")).toHaveAttribute("data-world", "cozy");
     await expect(owner.page.locator(".profile-scene")).toContainText(hiddenStatus);
     await page.getByRole("button", { name: "Заблокировать", exact: true }).click();
@@ -364,7 +364,7 @@ test("OPEN fields stay explicit from discovery to request and chat; outsider and
     await unavailable(page, discoveryPath);
     // Deletion makes the former viewer's context remain generically unavailable.
     await owner.page.goto("/discover");
-    await owner.page.getByRole("button", { name: "Удалить профиль Intavro", exact: true }).click();
+    await owner.page.getByRole("button", { name: "Удалить профиль Veya", exact: true }).click();
     await owner.page.getByLabel("Введите DELETE для подтверждения", { exact: true }).fill("DELETE");
     const deleted = responseFor(owner.page, "/api/social/profile", "DELETE");
     await owner.page.getByRole("button", { name: "Удалить профиль навсегда", exact: true }).click();
@@ -416,7 +416,7 @@ test("an INCOGNITO post hides an OPEN owner's global world independently for two
       const requested = responseFor(viewer.page, "/api/social/connections");
       await viewer.page.getByRole("button", { name: "Предложить что-нибудь", exact: true }).click();
       const request = await (await requested).json() as Connection;
-      await page.goto("/connections");
+      await page.goto("/network/connections");
       const accepted = responseFor(page, `/api/social/connections/${request.publicKey}/respond`);
       await page.getByRole("region", { name: "Входящие запросы", exact: true }).getByRole("button", { name: "Принять", exact: true }).click();
       const matchKey = ((await (await accepted).json()) as Connection).matchKey!;
@@ -436,7 +436,7 @@ test("an INCOGNITO post hides an OPEN owner's global world independently for two
     await api(second.page, `/api/social/profiles/match/${matchKeys[0]}`, "GET", undefined, 404);
     await first.page.reload();
     expect((await api<{ space: ProfileSpace }>(first.page, `/api/social/profiles/match/${matchKeys[0]}`)).space.identity).toEqual(identities[0]);
-    await page.goto("/profile");
+    await page.goto("/network/profile");
     for (const value of globalText) await expect(page.locator(".profile-scene")).toContainText(value);
     await Promise.all([checkOwner(), checkFirst(), checkSecond()]);
   } finally {

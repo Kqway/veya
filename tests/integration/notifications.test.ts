@@ -52,7 +52,7 @@ describe('recipient notifications and durable generic browser push',()=>{
  });
  it('claims concurrent workers once and sends only fixed generic content',async()=>{
   const {a,own,peer}=await actors();await service.subscribe(a.token,subscription());await notify(own.id,peer.id);
-  const sender=vi.fn(async(subscription:unknown,payload:string)=>{expect(subscription).toBeTruthy();expect(payload).toBe(genericPushPayload);});const outcomes=await Promise.all([processNotificationJobs(c.db,{push:config,sender,reminders:false}),processNotificationJobs(c.db,{push:config,sender,reminders:false})]);expect(outcomes.reduce((n,r)=>n+r.delivered,0)).toBe(1);expect(sender).toHaveBeenCalledTimes(1);expect(sender.mock.calls[0]![1]).toBe(genericPushPayload);expect(genericPushPayload).toBe(JSON.stringify({title:'Intavro',body:'У вас новое уведомление в Intavro',url:'/notifications'}));
+  const sender=vi.fn(async(subscription:unknown,payload:string)=>{expect(subscription).toBeTruthy();expect(payload).toBe(genericPushPayload);});const outcomes=await Promise.all([processNotificationJobs(c.db,{push:config,sender,reminders:false}),processNotificationJobs(c.db,{push:config,sender,reminders:false})]);expect(outcomes.reduce((n,r)=>n+r.delivered,0)).toBe(1);expect(sender).toHaveBeenCalledTimes(1);expect(sender.mock.calls[0]![1]).toBe(genericPushPayload);expect(genericPushPayload).toBe(JSON.stringify({title:'Veya',body:'У вас новое уведомление в Veya',url:'/notifications'}));
   expect((await c.db.query('SELECT status,attempts FROM social_notification_jobs')).rows).toEqual([{status:'delivered',attempts:1}]);
  });
  it('stops on interruption and releases unsent leases including final claims without losing retry budget',async()=>{

@@ -28,7 +28,8 @@
     "db:release:sql": "node --conditions=react-server --import tsx scripts/console-upgrade.ts",
     "db:backup": "bash scripts/backup.sh",
     "db:restore": "bash scripts/restore.sh",
-    "ops:status": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/status.ts"
+    "ops:status": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/status.ts",
+    "agent:process": "node --conditions=react-server --env-file-if-exists=.env.local --import tsx scripts/agent-worker.ts"
   },
   "overrides": {
     "@next/eslint-plugin-next": {

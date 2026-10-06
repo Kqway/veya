@@ -74,7 +74,7 @@ export function NowScreen() {
   }
   const rooms = state.data.rooms.filter((room) => !["completed", "archived", "closed"].includes(room.status));
   const selectedCommandSearch = editing ?? (active.length === 1 ? active[0] : null);
-  return <ProductShell title="Что хочешь сделать?" eyebrow="Intavro / сейчас">
+  return <ProductShell title="Что хочешь сделать?" eyebrow="Veya / сейчас">
     <p className="intent-intro">Одно намерение. Подходящая компания. Дальше — вместе.</p>
     <div className="intent-composer"><form onSubmit={interpret}><label className="intent-sr-only" htmlFor="intent-text">Что хочешь сделать?</label><textarea id="intent-text" ref={input} rows={2} maxLength={500} value={text} disabled={action.busy || state.restricted} placeholder={interpretation?.kind === "clarification" ? "Короткий ответ…" : editing ? "Что изменить в поиске?" : "Например, нужен пятый в Dota сегодня вечером"} onChange={(event) => setText(event.target.value)} /><button className="intent-compose-send" type="submit" disabled={action.busy || state.restricted} aria-label={interpretation?.kind === "clarification" ? "Ответить" : "Разобрать намерение"}>{action.busy ? "…" : "↑"}</button></form>{!interpretation && !editing && <div className="intent-suggestions" aria-label="Идеи для начала">{suggestions.map((suggestion) => <button key={suggestion} disabled={action.busy} onClick={() => { setText(suggestion); input.current?.focus(); }}>{suggestion}</button>)}</div>}</div>
     {contextualSearch && <p className="intent-muted">Текущий поиск: {contextualSearch.activityLabel}. Допишите, что изменить. Уже открытые комнаты сохраняют свои условия.</p>}
@@ -99,7 +99,7 @@ export function NowScreen() {
       {rooms.length > 0 && <section className="intent-section" aria-labelledby="room-title"><h2 id="room-title">Можно начинать</h2>{rooms.map((room) => <RoomCard key={room.publicKey} room={room} />)}</section>}
       <ProductRefresh refresh={state.refresh} live={state.live} />
     </>}
-    <div className="intent-secondary"><Link href="/seek/new">Расширенный поиск</Link><span aria-hidden="true">·</span><Link href="/plan">Встреча с друзьями</Link><span aria-hidden="true">·</span><Link href="/preferences">Мои правила</Link></div>
+    <div className="intent-secondary"><Link href="/people">Люди и комнаты</Link><span aria-hidden="true">·</span><Link href="/seek/new">Расширенный поиск</Link><span aria-hidden="true">·</span><Link href="/plan">Встреча с друзьями</Link><span aria-hidden="true">·</span><Link href="/preferences">Мои правила</Link></div>
     <p className="intent-footnote">Помощник разбирает только ваши слова. Правила и поиски видны вам; переписку людей он не читает.</p>
   </ProductShell>;
 }

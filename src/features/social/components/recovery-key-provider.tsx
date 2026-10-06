@@ -28,15 +28,15 @@ export function RecoveryKeyProvider({ children }: { children: ReactNode }) {
   return <RecoveryContext.Provider value={{ key: oneTimeKey, clearKey, showKey: (key) => { copyAttempt.current++; setCopyStatus(""); setDiscard(false); setOneTimeKey(key); } }}>
     {oneTimeKey && <section className="social-card social-recovery-banner" aria-label="Сохраните ключ восстановления">
         <div className="social-key">
-          <h3>Сохраните Ключ Intavro в надёжном месте</h3>
+          <h3>Сохраните Ключ Veya в надёжном месте</h3>
           <p>
-            Этот ключ показывается только один раз. Сохраните его в месте, доступном только вам, чтобы восстановить профиль. Любой, у кого есть ключ, может получить контроль над вашим профилем Intavro. Восстановление заменяет ключ и отключает другие сессии профиля, но не переносит права организатора ваших прежних планов.
+            Этот ключ показывается только один раз. Сохраните его в месте, доступном только вам, чтобы восстановить профиль. Любой, у кого есть ключ, может получить контроль над вашим профилем Veya. Восстановление заменяет ключ и отключает другие сессии профиля, но не переносит права организатора ваших прежних планов.
           </p>
           <p className="social-warning">
-            Вы ещё не сохранили ключ. Если вы потеряете и ключ, и сессию браузера, восстановить профиль будет невозможно. Intavro не сможет показать ключ повторно.
+            Вы ещё не сохранили ключ. Если вы потеряете и ключ, и сессию браузера, восстановить профиль будет невозможно. Veya не сможет показать ключ повторно.
           </p>
           <label className="field">
-            Ключ Intavro
+            Ключ Veya
             <input
               readOnly
               value={oneTimeKey}
@@ -59,7 +59,7 @@ export function RecoveryKeyProvider({ children }: { children: ReactNode }) {
                 }
               }}
             >
-              Скопировать Ключ Intavro
+              Скопировать Ключ Veya
             </button>
             <button
               className="button button-primary"

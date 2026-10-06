@@ -55,22 +55,22 @@ HTTP `/api/agent/goals`, `/goals/:key`, `/goals/:key/command`,
 `/goals/:key/approvals/:key`, `/goals/:key/artifacts/:key`, `/connections`,
 `/policy`, `/activity`. Read/no-store, mutations same-origin, existing limiter.
 
-- [ ] Write tests proving Goal parsing, rolling plan, evidence/policy validation,
+- [x] Write tests proving Goal parsing, rolling plan, evidence/policy validation,
   integer money, terminal transitions and risk bounds; run and observe RED.
-- [ ] Implement strict pure schema/interpreter/planner/state/policy/registry and
+- [x] Implement strict pure schema/interpreter/planner/state/policy/registry and
   typed connector/storage/payment/external-agent contracts; run unit GREEN.
-- [ ] Write native DB tests proving10,000 RUB completion through proposal/client/
+- [x] Write native DB tests proving10,000 RUB completion through proposal/client/
   stored verified artifact/delivery/invoice approval/confirmed payment; run RED.
-- [ ] Implement additive constrained schema, transactional mock connector effects,
+- [x] Implement additive constrained schema, transactional mock connector effects,
   durable worker/service and scoped DTOs; rerun native tests GREEN.
-- [ ] Add native races/retry/crash/lease nonce/duplicate action+webhook, approval
+- [x] Add native races/retry/crash/lease nonce/duplicate action+webhook, approval
   rejection/expiry, connector disable, cancellation, deletion and authorization.
-- [ ] Implement and test same-origin/beta/rate/body protections, authenticated
+- [x] Implement and test same-origin/beta/rate/body protections, authenticated
   artifact content and verified event ingestion, CLI batch/watch with AbortSignal.
-- [ ] Integrate fixed goals realtime and significant existing notifications,
+- [x] Integrate fixed goals realtime and significant existing notifications,
   profile erasure, retention preview, social worker/cron. Preserve historical
  18→20 console release via first20 migrations rather than modifying old SQL.
-- [ ] Run focused native/unit HTTP tests and typecheck; record results.
+- [x] Run focused native/unit HTTP tests and typecheck; record results.
 
 ### Task 2: Completely redesigned primary frontend
 
@@ -81,14 +81,14 @@ Tests: `tests/ui/goals.test.tsx`, `tests/e2e/goals.spec.ts`.
 Consumes Task1 public schema and `/api/agent` contracts. Uses existing ensureGuest,
 social identity/recovery provider, requestApi and goals realtime invalidation.
 
-- [ ] Write failing user-behavior UI tests for composer/demo/empty/error/approval.
-- [ ] Implement reusable primitives and tokens, new shell, responsive composer,
+- [x] Write failing user-behavior UI tests for composer/demo/empty/error/approval.
+- [x] Implement reusable primitives and tokens, new shell, responsive composer,
   goal cards/detail timeline/status/progress/next actions/artifact/controls.
-- [ ] Add approval route, Activity, Connections controls, saved bounded Autonomy,
+- [x] Add approval route, Activity, Connections controls, saved bounded Autonomy,
   Settings/profile identity/privacy/recovery/notification links and safe deletion.
-- [ ] Move former root and social connections to secondary network routes;
+- [x] Move former root and social connections to secondary network routes;
   update intentional old browser route expectations while preserving domain tests.
-- [ ] Run UI tests, lint and typecheck, then inspect main and legacy surfaces.
+- [x] Run UI tests, lint and typecheck, then inspect main and legacy surfaces.
 
 ### Task 3: Intent Network capability and hardening
 
@@ -96,15 +96,15 @@ Files: `src/features/goals/intent-network-adapter.ts`, AI provider/task extensio
 if required by typed planning, retention integration, README/CODEX_PROGRESS.
 Tests: unit/integration adapter and security cases, browser completed/approval flows.
 
-- [ ] Wrap existing authorized discovery as registered search_people/match_intent,
+- [x] Wrap existing authorized discovery as registered search_people/match_intent,
   using owned source keys and existing privacy/permission filters; no global IDs.
-- [ ] Verify typed AI output cannot select arbitrary tools or establish evidence;
+- [x] Verify typed AI output cannot select arbitrary tools or establish evidence;
   untrusted connector content cannot alter policy or bounded deterministic state.
-- [ ] Run complete lint/typecheck/test/build. Fix actual regressions and record
+- [x] Run complete lint/typecheck/test/build. Fix actual regressions and record
   any environment limitations accurately; keep original migration hashes intact.
-- [ ] Run production Playwright demo completion/reopen/approval plus legacy E2E;
+- [x] Run production Playwright demo completion/reopen/approval plus legacy E2E;
   inspect desktop/mobile/screenshots for empty/active/completed/wait/error/settings/
   connections/autonomy and320/375/390/tablet/reduced motion. Repair visual failures.
-- [ ] Obtain read-only whole-change review; fix actionable findings and verify.
-- [ ] Update docs with actual evidence and operations. Leave a reviewable branch
+- [x] Obtain read-only whole-change review; fix actionable findings and verify.
+- [x] Update docs with actual evidence and operations. Leave a reviewable branch
   and report delivered behavior plus real connector/deployment limitations.

@@ -64,11 +64,11 @@ export function ProfileScreen({editor=false,context,contextKey}:{editor?:boolean
     {own?<><Link className="button button-primary" href="/profile/edit">Настроить профиль</Link><Link className="button button-secondary" href="/seek/new">Добавить занятие</Link><Link className="social-text-button" href="/preferences">Мои правила</Link></>:space.action.kind==='interest'?<button className="button button-primary" disabled={action.busy} onClick={()=>void action.run(async alive=>{
      await socialApi('/connections','POST',{handle:space.action.key});
      if(alive()){setNotice('Предложение отправлено. Ответ появится в запросах.');setSpace({...space,action:{kind:'connections',key:null}});}
-    })}>Предложить что-нибудь</button>:space.action.kind==='chat'?<Link className="button button-primary" href={`/m/${encodeURIComponent(space.action.key??'')}`}>Открыть чат</Link>:space.action.kind==='connections'?<Link className="button button-primary" href="/connections">Посмотреть запрос</Link>:null}
+    })}>Предложить что-нибудь</button>:space.action.kind==='chat'?<Link className="button button-primary" href={`/m/${encodeURIComponent(space.action.key??'')}`}>Открыть чат</Link>:space.action.kind==='connections'?<Link className="button button-primary" href="/network/connections">Посмотреть запрос</Link>:null}
    </ProfileScene>}
    {notice&&<p role="status">{notice}</p>}
-   {editor&&<Link className="social-text-button" href="/profile">Посмотреть свой профиль</Link>}
-   {own&&profile&&<details className="profile-account-settings"><summary>Приватность, Ключ Intavro и управление профилем</summary><ProfilePanel profile={profile} onProfile={onProfile}/></details>}
+   {editor&&<Link className="social-text-button" href="/network/profile">Посмотреть свой профиль</Link>}
+   {own&&profile&&<details className="profile-account-settings"><summary>Приватность, Ключ Veya и управление профилем</summary><ProfilePanel profile={profile} onProfile={onProfile}/></details>}
   </>}
  </SocialShell>;
 }

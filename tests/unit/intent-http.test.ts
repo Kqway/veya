@@ -1,7 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createIntentProductHandler } from '@/features/intent-product/http';
 import type { BetaControls } from '@/lib/config/beta-policy';
 import type { RateAction } from '@/lib/security/rate-limit';
+
+beforeEach(() => { vi.useFakeTimers({toFake:['Date']}); vi.setSystemTime(new Date('2026-10-04T09:00:00Z')); });
+afterEach(() => vi.useRealTimers());
 
 const origin = 'https://intent.test';
 const controls: BetaControls = { signupsEnabled: true, seekingEnabled: true, readOnly: false };

@@ -1,3 +1,4 @@
+import { goalPlanningInputSchema } from "@/features/goals/ai-plan";
 import "server-only";
 import { z } from "zod";
 import { interpretInputSchema } from "@/features/intent-product/schema";
@@ -60,11 +61,13 @@ export class OpenAiProvider implements AiProvider {
   }
   async complete(request: AiRequest, signal: AbortSignal): Promise<unknown> {
     const input =
-      request.task === "parse_conversation"
-        ? interpretInputSchema.parse(request.input)
-        : request.task === "parse_intent" || request.task === "parse_seeking"
-        ? parseInputSchema.parse(request.input)
-        : planContextSchema.parse(request.input);
+      request.task === "plan_goal"
+        ? goalPlanningInputSchema.parse(request.input)
+        : request.task === "parse_conversation"
+          ? interpretInputSchema.parse(request.input)
+          : request.task === "parse_intent" || request.task === "parse_seeking"
+            ? parseInputSchema.parse(request.input)
+            : planContextSchema.parse(request.input);
     const definition = taskDefinitions[request.task];
     try {
       const response = await this.fetcher(

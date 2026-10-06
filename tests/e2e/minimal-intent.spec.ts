@@ -85,7 +85,7 @@ async function actor(browser: Browser, info: TestInfo) {
 }
 
 async function api<T>(page: Page, path: string, method = "GET", body?: unknown, status = 200): Promise<T> {
-  if (!page.url().startsWith(origin)) await page.goto("/");
+  if (!page.url().startsWith(origin)) await page.goto("/network");
   // Browser fetch preserves the production Secure session cookie on loopback.
   const response = await page.evaluate(async ({ path, method, body }) => {
     const result = await fetch(path, {
@@ -137,7 +137,7 @@ test("a phrase needs Start, a real offer consent fills five seats, and two human
   const createdProfiles: Page[] = [];
   try {
     if (info.project.name === "mobile") await page.setViewportSize({ width: 320, height: 760 });
-    await page.goto("/");
+    await page.goto("/network");
     await expect(page.getByRole("heading", { name: "Что хочешь сделать?", exact: true })).toBeVisible();
     await page.getByLabel("Псевдоним", { exact: true }).fill(`Intent A ${info.project.name}`);
     await page.getByLabel("Мне исполнилось 18 лет", { exact: true }).check();
@@ -146,10 +146,10 @@ test("a phrase needs Start, a real offer consent fills five seats, and two human
     await page.getByRole("button", { name: "Продолжить", exact: true }).click();
     expect((await profileResponse).status()).toBe(201);
     createdProfiles.push(page);
-    const recoveryKey = await page.getByLabel("Ключ Intavro", { exact: true }).inputValue();
+    const recoveryKey = await page.getByLabel("Ключ Veya", { exact: true }).inputValue();
     expect(recoveryKey).toMatch(/^[A-Za-z0-9_-]{43}$/);
     await page.getByRole("button", { name: "Ключ сохранён", exact: true }).click();
-    await expect(page.getByLabel("Ключ Intavro", { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("Ключ Veya", { exact: true })).toHaveCount(0);
 
     // Tomorrow keeps the actual server's future-only validation reproducible
     // even when this journey runs after today's evening has already started.
@@ -220,7 +220,7 @@ test("a phrase needs Start, a real offer consent fills five seats, and two human
     for (const person of [page, b.page]) {
       await expect(person.getByRole("heading", { name: "Компания собралась", exact: true })).toBeVisible();
       await expect(person.locator(".intent-room-overview")).toContainText("5 / 5");
-      await expect(person.locator(".intent-room-overview")).toContainText("ещё 3 участников вне Intavro");
+      await expect(person.locator(".intent-room-overview")).toContainText("ещё 3 участников вне Veya");
       await expect(person.getByRole("list", { name: "Участники комнаты", exact: true }).getByRole("listitem")).toHaveCount(2);
       await expect(person.locator(".intent-product")).not.toContainText(`Hidden B ${info.project.name}`);
       await live(person); await overflow(person);
@@ -276,7 +276,7 @@ test("profile browser Back can cancel, then discard an unsaved edit without pers
   test.setTimeout(45_000);
   await setupProfile(page, "Profile Back owner");
   try {
-    await page.goto("/profile");
+    await page.goto("/network/profile");
     await page.getByRole("link", { name: "Настроить профиль", exact: true }).click();
     await expect(page).toHaveURL(/\/profile\/edit$/);
     const status = page.getByLabel("Статус", { exact: true });
@@ -301,7 +301,7 @@ test("profile browser Back can cancel, then discard an unsaved edit without pers
     expect(discardDialog.type()).toBe("confirm");
     await discardDialog.accept();
     await secondBack;
-    await expect(page).toHaveURL(/\/profile$/);
+    await expect(page).toHaveURL(/\/network\/profile$/);
     await page.getByRole("link", { name: "Настроить профиль", exact: true }).click();
     await expect(page.getByLabel("Статус", { exact: true })).toHaveValue(saved);
   } finally {

@@ -65,21 +65,21 @@ async function createProfile(page: Page, alias: string, copyAndNavigate = false)
   const created = responseFor(page, "/api/social/profile");
   await page.getByRole("button", { name: "Создать профиль", exact: true }).click();
   expect((await created).status()).toBe(201);
-  const keyField = page.getByLabel("Ключ Intavro", { exact: true });
+  const keyField = page.getByLabel("Ключ Veya", { exact: true });
   await expect(keyField).toBeVisible();
   const key = await keyField.inputValue();
   expect(key).toMatch(/^[A-Za-z0-9_-]{43}$/);
   if (copyAndNavigate) {
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"], { origin });
-    await page.getByRole("button", { name: "Скопировать Ключ Intavro", exact: true }).click();
+    await page.getByRole("button", { name: "Скопировать Ключ Veya", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Ключ скопирован." })).toBeVisible();
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(key);
     // Copying is not acknowledgement; the memory-only banner survives SPA routes.
     await expect(keyField).toHaveValue(key);
-    await page.getByRole("navigation", { name: "Навигация Intavro" }).getByRole("link", { name: "Найти людей", exact: true }).click();
+    await page.getByRole("navigation", { name: "Навигация Veya" }).getByRole("link", { name: "Найти людей", exact: true }).click();
     await expect(keyField).toHaveValue(key);
     await overflow(page);
-    await page.getByRole("navigation", { name: "Навигация Intavro" }).getByRole("link", { name: "Новое занятие", exact: true }).click();
+    await page.getByRole("navigation", { name: "Навигация Veya" }).getByRole("link", { name: "Новое занятие", exact: true }).click();
     await expect(keyField).toHaveValue(key);
   }
   expect(await page.evaluate(key => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }).includes(key), key)).toBe(false);
@@ -130,7 +130,7 @@ async function discover(page: Page, post: OwnPost, count: number) {
 }
 
 async function connect(a: Page, b: Page, post: OwnPost) {
-  await b.goto("/connections");
+  await b.goto("/network/connections");
   await expect(b.getByRole("heading", { name: "Запросы", exact: true })).toBeVisible();
   const cards = await discover(a, post, 1);
   const requested = responseFor(a, "/api/social/connections");
@@ -252,7 +252,8 @@ test("two people create Russian chess posts through the UI, meet live and confir
     await expect(b.page.getByRole("heading", { name: "Встреча запланирована.", exact: true })).toBeVisible();
     for (const member of [page, b.page]) {
       await overflow(member);
-      await member.getByRole("navigation", { name: "Ваш Intavro" }).getByRole("link", { name: /Уведомления/ }).click();
+      await member.goto("/settings");
+      await member.getByRole("link", {name:/^Уведомления/}).click();
       await expect(member.getByRole("link", { name: "Ваш план готов", exact: true })).toBeVisible();
       await expect(member.getByRole("link", { name: "Новое сообщение", exact: true })).toBeVisible();
       const before = await api<{ unreadCount: number }>(member, "/api/notifications/unread");
@@ -300,7 +301,7 @@ test("cookie loss recovers the real conversation, then typed profile deletion er
     await context.clearCookies();
     await page.goto("/discover");
     await expect(page.getByRole("heading", { name: "Выберите, как вас будут видеть", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Восстановить с помощью Ключа Intavro", exact: true }).click();
+    await page.getByRole("button", { name: "Восстановить с помощью Ключа Veya", exact: true }).click();
     await page.getByLabel("Ключ восстановления", { exact: true }).fill(oldKey);
     const recovered = responseFor(page, "/api/social/profile/recover");
     await page.getByRole("button", { name: "Восстановить профиль", exact: true }).click();
@@ -309,20 +310,20 @@ test("cookie loss recovers the real conversation, then typed profile deletion er
     const recovery = await response.json() as { profile: Profile; recoveryKey: string };
     expect(recovery.profile.alias).toBe("Удаляемый профиль");
     expect(recovery.recoveryKey).not.toBe(oldKey);
-    await expect(page.getByLabel("Ключ Intavro", { exact: true })).toHaveValue(recovery.recoveryKey);
+    await expect(page.getByLabel("Ключ Veya", { exact: true })).toHaveValue(recovery.recoveryKey);
     await page.getByRole("button", { name: "Ключ сохранён", exact: true }).click();
     await page.goto(`/m/${key}`);
     await expect(page.getByRole("list", { name: "Сообщения чата" })).toContainText(ownText);
     await expect(page.getByRole("list", { name: "Сообщения чата" })).toContainText(peerText);
     await page.goto("/discover");
-    await page.getByRole("button", { name: "Удалить профиль Intavro", exact: true }).click();
+    await page.getByRole("button", { name: "Удалить профиль Veya", exact: true }).click();
     const confirm = page.getByRole("button", { name: "Удалить профиль навсегда", exact: true });
     await expect(confirm).toBeDisabled();
     await page.getByLabel("Введите DELETE для подтверждения", { exact: true }).fill("delete");
     await expect(confirm).toBeDisabled();
     await page.getByRole("button", { name: "Отменить удаление", exact: true }).click();
     expect((await api<{ profile: Profile }>(page, "/api/social/profile")).profile.alias).toBe("Удаляемый профиль");
-    await page.getByRole("button", { name: "Удалить профиль Intavro", exact: true }).click();
+    await page.getByRole("button", { name: "Удалить профиль Veya", exact: true }).click();
     await page.getByLabel("Введите DELETE для подтверждения", { exact: true }).fill("DELETE");
     await expect(confirm).toBeEnabled();
     const deleted = responseFor(page, "/api/social/profile", "DELETE");
@@ -330,10 +331,10 @@ test("cookie loss recovers the real conversation, then typed profile deletion er
     const result = await deleted;
     expect(result.status()).toBe(200);
     expect(await result.json()).toEqual({ deleted: true });
-    await expect(page.getByRole("status").filter({ hasText: "Ваш профиль Intavro удалён." })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "Ваш профиль Veya удалён." })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Выберите, как вас будут видеть", exact: true })).toBeVisible();
     await expect(page.getByLabel("Ваша активная заявка")).toHaveCount(0);
-    await expect(page.getByLabel("Ключ Intavro", { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("Ключ Veya", { exact: true })).toHaveCount(0);
     expect((await api<{ profile: Profile | null }>(page, "/api/social/profile")).profile).toBeNull();
     await api(page, "/api/social/seeking", "GET", undefined, 404);
     await api(page, path, "GET", undefined, 404);
@@ -350,13 +351,13 @@ test("cookie loss recovers the real conversation, then typed profile deletion er
     await api(b.page, `${path}/messages`, "POST", { text: "Bypass deleted contact" }, 409);
     expect((await api<{ profile: Profile }>(b.page, "/api/social/profile")).profile.alias).toBe("Остающийся профиль");
     await probe.page.goto("/discover");
-    await probe.page.getByRole("button", { name: "Восстановить с помощью Ключа Intavro", exact: true }).click();
+    await probe.page.getByRole("button", { name: "Восстановить с помощью Ключа Veya", exact: true }).click();
     for (const invalid of [oldKey, recovery.recoveryKey]) {
       await probe.page.getByLabel("Ключ восстановления", { exact: true }).fill(invalid);
       const rejected = responseFor(probe.page, "/api/social/profile/recover");
       await probe.page.getByRole("button", { name: "Восстановить профиль", exact: true }).click();
       expect((await rejected).status()).toBe(404);
-      await expect(probe.page.getByRole("alert").filter({ hasText: "Этот Ключ Intavro недействителен или больше не активен." })).toBeVisible();
+      await expect(probe.page.getByRole("alert").filter({ hasText: "Этот Ключ Veya недействителен или больше не активен." })).toBeVisible();
     }
     expect((await api<{ profile: Profile | null }>(probe.page, "/api/social/profile")).profile).toBeNull();
     await overflow(page);

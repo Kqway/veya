@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { interpretConversation } from "@/features/intent-product/parser";
 import { interpretationSchema } from "@/features/intent-product/schema";
 import { createAiTasks } from "@/lib/ai";
@@ -9,6 +9,9 @@ import { openAiEnvelope } from "../support/ai";
 
 const input = { text: "Дота завтра вечером, нужен пятый, саппорт не ниже легенды", timezone: "Europe/Moscow", referenceDate: "2026-10-04" };
 const provider = (output: unknown): AiProvider => ({ name: "openai", complete: async () => output });
+// These parsing fixtures refer to tomorrow relative to this date. The production
+// parser correctly rejects elapsed windows; the suite must own its wall clock.
+beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-04T09:00:00Z')); });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe("optional own conversation AI interpretation", () => {
