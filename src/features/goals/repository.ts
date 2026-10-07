@@ -15,7 +15,7 @@ import type {
 } from "./schema";
 import { planNext } from "./planner";
 import { toolRegistry, type ToolName } from "./tools";
-import { MockArtifactStorage } from "./storage";
+import { artifactStorage } from "./storage";
 export interface GoalRow {
   id: string;
   public_key: string;
@@ -245,7 +245,7 @@ export async function cleanupGoalArtifacts(db: Database, limit = 100) {
     )
   ).rows;
   for (const r of rows) {
-    await new MockArtifactStorage().erase(r.goal_id);
+    await artifactStorage(db).erase(r.goal_id);
     await db.query("DELETE FROM agent_artifact_erasure WHERE goal_id=$1", [
       r.goal_id,
     ]);

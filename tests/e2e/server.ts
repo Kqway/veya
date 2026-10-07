@@ -25,7 +25,7 @@ try {
 const environment={...isolatedBrowserEnvironment(process.env,database.connectionString),GOAL_ARTIFACT_DIR:artifactDirectory};
 // A separate durable process owns execution. Closing every browser tab cannot
 // stop it, and the fixture never exposes a production worker-control endpoint.
-const goalWorker=spawn(process.execPath,['--conditions=react-server','--import','tsx','scripts/agent-worker.ts','--watch'],{stdio:['ignore','ignore','inherit'],env:environment});
+const goalWorker=process.env.VEYA_TEST_SERVERLESS_GOALS==='1'?undefined:spawn(process.execPath,['--conditions=react-server','--import','tsx','scripts/agent-worker.ts','--watch'],{stdio:['ignore','ignore','inherit'],env:environment});
 const server = spawn(
   process.execPath,
   [
@@ -44,7 +44,7 @@ const server = spawn(
 async function stop(code: number) {
   if (stopping) return;
   stopping = true;
-  if(goalWorker.exitCode===null&&goalWorker.signalCode===null){
+  if(goalWorker&&goalWorker.exitCode===null&&goalWorker.signalCode===null){
     await new Promise<void>(resolve=>{const timeout=setTimeout(()=>goalWorker.kill('SIGKILL'),5000);goalWorker.once('exit',()=>{clearTimeout(timeout);resolve();});goalWorker.kill('SIGTERM');});
   }
   if (server.exitCode === null && server.signalCode === null) {
@@ -67,8 +67,8 @@ async function stop(code: number) {
 server.once("error", () => {
   void stop(1);
 });
-goalWorker.once('error',()=>{void stop(1);});
-goalWorker.once('exit',()=>{if(!stopping)void stop(1);});
+goalWorker?.once('error',()=>{void stop(1);});
+goalWorker?.once('exit',()=>{if(!stopping)void stop(1);});
 server.once("exit", (code) => {
   if (!stopping) void stop(code ?? 1);
 });

@@ -28,7 +28,7 @@ import {
   type GoalRow,
 } from "./repository";
 import { assertTransition, terminalStatuses } from "./state";
-import { MockArtifactStorage } from "./storage";
+import { artifactStorage } from "./storage";
 export class GoalService {
   constructor(private readonly db: Database) {}
   private async auth<T>(
@@ -293,7 +293,7 @@ export class GoalService {
           )
         ).rows[0] ?? fail("NOT_FOUND");
       return {
-        content: await new MockArtifactStorage().get(row.storage_ref),
+        content: await artifactStorage(tx).get(row.storage_ref),
         title: row.title,
         mediaType: row.media_type,
       };

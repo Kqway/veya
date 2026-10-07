@@ -5,7 +5,7 @@ import { opaqueKey } from "@/features/social/pairs";
 import type { Currency } from "./schema";
 import type { GoalRow } from "./repository";
 import { confirmedAmount } from "./repository";
-import { MockArtifactStorage, type ArtifactStorage } from "./storage";
+import { artifactStorage, type ArtifactStorage } from "./storage";
 import { evidenceSchema, type ToolName } from "./tools";
 export interface PaymentEvidence {
   providerEventId: string;
@@ -150,7 +150,7 @@ export class MockOpportunityConnector implements OpportunityConnector {
   readonly id = "mock" as const;
   readonly transactional = true as const;
   constructor(
-    private readonly storage: ArtifactStorage = new MockArtifactStorage(),
+    private readonly storage?: ArtifactStorage,
     private readonly client: ClientConnector = new MockClient(),
     private readonly payments: PaymentProvider = new MockPaymentProvider(),
   ) {}
@@ -176,6 +176,7 @@ export class MockOpportunityConnector implements OpportunityConnector {
     g: GoalRow,
     step: { id: string; actionKey: string },
   ): Promise<MockObservation> {
+    const storage = this.storage ?? artifactStorage(tx);
     const tool = g.next_tool;
     if (tool === "search") {
       const amount = Math.min(
@@ -292,7 +293,7 @@ export class MockOpportunityConnector implements OpportunityConnector {
       const revision = tool === "revise_artifact" ? g.revision + 1 : g.revision;
       if (revision > 3) throw new Error("Revision budget exceeded");
       const content = `# Организация удалённой работы\n\nДемонстрационный исследовательский документ. Содержимое подготовлено локально, без внешнего поиска.\n\n## Обзор\nУдалённая команда согласует цели, рабочие часы и способы документирования решений. Для небольших команд полезен общий журнал задач и регулярная короткая встреча.\n\n## Рекомендации\n1. Зафиксировать результат каждой задачи и ответственного.\n2. Публиковать решения в общем документе.\n3. Раз в неделю проверять сроки и препятствия.\n\n## Источники\nТребования демонстрационного клиента и фиксированный локальный каталог Veya. Внешние исследования не проводились.\n${revision ? "\n## План внедрения\nНеделя 1: согласовать часы связи. Неделя 2: вести журнал решений. Неделя 3: измерить долю завершённых задач и скорректировать процесс.\n" : ""}`;
-      const stored = await this.storage.put(g.id, content);
+      const stored = await storage.put(g.id, content);
       const key = opaqueKey();
       await tx.query(
         `INSERT INTO agent_artifacts(public_key,goal_id,step_id,deal_id,title,storage_ref,checksum,byte_size,revision,metadata) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(deal_id,revision) DO NOTHING`,
@@ -341,7 +342,7 @@ export class MockOpportunityConnector implements OpportunityConnector {
     ).rows[0];
     if (tool === "verify_artifact") {
       if (!artifact) throw new Error("Missing artifact");
-      const content = await this.storage.get(artifact.storage_ref);
+      const content = await storage.get(artifact.storage_ref);
       if (
         content.length < 300 ||
         content.length > 20000 ||
@@ -363,7 +364,7 @@ export class MockOpportunityConnector implements OpportunityConnector {
     }
     if (tool === "deliver") {
       if (!artifact?.verified) throw new Error("Unverified artifact");
-      await this.storage.get(artifact.storage_ref);
+      await storage.get(artifact.storage_ref);
       await tx.query("UPDATE agent_deals SET status='delivered' WHERE id=$1", [
         d.id,
       ]);

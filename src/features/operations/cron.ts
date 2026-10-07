@@ -1,4 +1,4 @@
-import {processGoalJobs} from '@/features/goals/worker';
+import {processGoalWindow} from '@/features/goals/background';
 import 'server-only';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { ServerEnv } from '@/lib/config/env';
@@ -32,7 +32,7 @@ export function createSocialCronHandler(options: {config: () => ServerEnv; datab
       const signal = AbortSignal.any([request.signal, AbortSignal.timeout(45_000)]);
       const db = options.database();
       logOperationalEvent('worker_started');
-      const goals = await processGoalJobs(db, {limit: 5, signal});
+      const goals = await processGoalWindow(db, {durationMs: 30000, signal});
       logOperationalEvent('worker_complete', goals);
       const intents = await processIntentJobs(db, {limit: 5, signal, analyticsEnabled: config.ANALYTICS_ENABLED});
       logOperationalEvent('worker_complete', intents);
